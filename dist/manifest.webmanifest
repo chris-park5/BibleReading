@@ -1,0 +1,1 @@
+{"name":"Bible Reading Plan App","short_name":"Bible Plan","description":"성경 읽기 계획과 진도 관리","start_url":"/","display":"standalone","background_color":"#ffffff","theme_color":"#3b82f6","lang":"en","scope":"/","icons":[{"src":"/icon.svg","sizes":"any","type":"image/svg+xml"},{"src":"/maskable-icon.svg","sizes":"any","type":"image/svg+xml","purpose":"maskable"}]}

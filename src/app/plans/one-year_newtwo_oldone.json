@@ -1,0 +1,6595 @@
+{
+  "id": "one-year-psalm-ot-nt",
+  "title": "성경 1년 1독 계획",
+  "description": "시편, 구약, 신약을 병행하여 읽는 365일 계획표",
+  "duration": "365일",
+  "totalDays": 365,
+  "schedule": [
+    {
+      "day": 1,
+      "date": "1월 1일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "1"
+        },
+        {
+          "book": "창세기",
+          "chapters": "1-2"
+        },
+        {
+          "book": "마태복음",
+          "chapters": "1-2"
+        }
+      ]
+    },
+    {
+      "day": 2,
+      "date": "1월 2일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "2"
+        },
+        {
+          "book": "창세기",
+          "chapters": "3-5"
+        },
+        {
+          "book": "마태복음",
+          "chapters": "3-4"
+        }
+      ]
+    },
+    {
+      "day": 3,
+      "date": "1월 3일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "3"
+        },
+        {
+          "book": "창세기",
+          "chapters": "6-7"
+        },
+        {
+          "book": "마태복음",
+          "chapters": "5"
+        }
+      ]
+    },
+    {
+      "day": 4,
+      "date": "1월 4일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "4"
+        },
+        {
+          "book": "창세기",
+          "chapters": "8-9"
+        },
+        {
+          "book": "마태복음",
+          "chapters": "6"
+        }
+      ]
+    },
+    {
+      "day": 5,
+      "date": "1월 5일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "5"
+        },
+        {
+          "book": "창세기",
+          "chapters": "10-12"
+        },
+        {
+          "book": "마태복음",
+          "chapters": "7"
+        }
+      ]
+    },
+    {
+      "day": 6,
+      "date": "1월 6일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "6"
+        },
+        {
+          "book": "창세기",
+          "chapters": "13-15"
+        },
+        {
+          "book": "마태복음",
+          "chapters": "8"
+        }
+      ]
+    },
+    {
+      "day": 7,
+      "date": "1월 7일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "7"
+        },
+        {
+          "book": "창세기",
+          "chapters": "16-18"
+        },
+        {
+          "book": "마태복음",
+          "chapters": "9"
+        }
+      ]
+    },
+    {
+      "day": 8,
+      "date": "1월 8일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "8"
+        },
+        {
+          "book": "창세기",
+          "chapters": "19-20"
+        },
+        {
+          "book": "마태복음",
+          "chapters": "10"
+        }
+      ]
+    },
+    {
+      "day": 9,
+      "date": "1월 9일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "9"
+        },
+        {
+          "book": "창세기",
+          "chapters": "21-23"
+        },
+        {
+          "book": "마태복음",
+          "chapters": "11"
+        }
+      ]
+    },
+    {
+      "day": 10,
+      "date": "1월 10일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "10"
+        },
+        {
+          "book": "창세기",
+          "chapters": "24"
+        },
+        {
+          "book": "마태복음",
+          "chapters": "12"
+        }
+      ]
+    },
+    {
+      "day": 11,
+      "date": "1월 11일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "11"
+        },
+        {
+          "book": "창세기",
+          "chapters": "25-26"
+        },
+        {
+          "book": "마태복음",
+          "chapters": "13"
+        }
+      ]
+    },
+    {
+      "day": 12,
+      "date": "1월 12일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "12"
+        },
+        {
+          "book": "창세기",
+          "chapters": "27-28"
+        },
+        {
+          "book": "마태복음",
+          "chapters": "14"
+        }
+      ]
+    },
+    {
+      "day": 13,
+      "date": "1월 13일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "13"
+        },
+        {
+          "book": "창세기",
+          "chapters": "29-30"
+        },
+        {
+          "book": "마태복음",
+          "chapters": "15"
+        }
+      ]
+    },
+    {
+      "day": 14,
+      "date": "1월 14일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "14"
+        },
+        {
+          "book": "창세기",
+          "chapters": "31-32"
+        },
+        {
+          "book": "마태복음",
+          "chapters": "16-17"
+        }
+      ]
+    },
+    {
+      "day": 15,
+      "date": "1월 15일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "15"
+        },
+        {
+          "book": "창세기",
+          "chapters": "33-34"
+        },
+        {
+          "book": "마태복음",
+          "chapters": "18"
+        }
+      ]
+    },
+    {
+      "day": 16,
+      "date": "1월 16일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "16"
+        },
+        {
+          "book": "창세기",
+          "chapters": "35-36"
+        },
+        {
+          "book": "마태복음",
+          "chapters": "19-20"
+        }
+      ]
+    },
+    {
+      "day": 17,
+      "date": "1월 17일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "17"
+        },
+        {
+          "book": "창세기",
+          "chapters": "37-38"
+        },
+        {
+          "book": "마태복음",
+          "chapters": "21"
+        }
+      ]
+    },
+    {
+      "day": 18,
+      "date": "1월 18일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "18:1-8"
+        },
+        {
+          "book": "창세기",
+          "chapters": "39-40"
+        },
+        {
+          "book": "마태복음",
+          "chapters": "22"
+        }
+      ]
+    },
+    {
+      "day": 19,
+      "date": "1월 19일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "18:9-16"
+        },
+        {
+          "book": "창세기",
+          "chapters": "41-42"
+        },
+        {
+          "book": "마태복음",
+          "chapters": "23-24"
+        }
+      ]
+    },
+    {
+      "day": 20,
+      "date": "1월 20일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "18:17-27"
+        },
+        {
+          "book": "창세기",
+          "chapters": "43-44"
+        },
+        {
+          "book": "마태복음",
+          "chapters": "25"
+        }
+      ]
+    },
+    {
+      "day": 21,
+      "date": "1월 21일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "18:28-42"
+        },
+        {
+          "book": "창세기",
+          "chapters": "45-46"
+        },
+        {
+          "book": "마태복음",
+          "chapters": "26"
+        }
+      ]
+    },
+    {
+      "day": 22,
+      "date": "1월 22일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "18:43-50"
+        },
+        {
+          "book": "창세기",
+          "chapters": "47-48"
+        },
+        {
+          "book": "마태복음",
+          "chapters": "27"
+        }
+      ]
+    },
+    {
+      "day": 23,
+      "date": "1월 23일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "19"
+        },
+        {
+          "book": "창세기",
+          "chapters": "49-50"
+        },
+        {
+          "book": "마태복음",
+          "chapters": "28"
+        }
+      ]
+    },
+    {
+      "day": 24,
+      "date": "1월 24일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "20"
+        },
+        {
+          "book": "출애굽기",
+          "chapters": "1-2"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "1"
+        }
+      ]
+    },
+    {
+      "day": 25,
+      "date": "1월 25일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "21"
+        },
+        {
+          "book": "출애굽기",
+          "chapters": "3-4"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "2"
+        }
+      ]
+    },
+    {
+      "day": 26,
+      "date": "1월 26일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "22:1-8"
+        },
+        {
+          "book": "출애굽기",
+          "chapters": "5-6"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "3"
+        }
+      ]
+    },
+    {
+      "day": 27,
+      "date": "1월 27일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "22:9-21"
+        },
+        {
+          "book": "출애굽기",
+          "chapters": "7-8"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "4"
+        }
+      ]
+    },
+    {
+      "day": 28,
+      "date": "1월 28일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "22:22-31"
+        },
+        {
+          "book": "출애굽기",
+          "chapters": "9-10"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "5"
+        }
+      ]
+    },
+    {
+      "day": 29,
+      "date": "1월 29일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "23"
+        },
+        {
+          "book": "출애굽기",
+          "chapters": "11-12"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "6"
+        }
+      ]
+    },
+    {
+      "day": 30,
+      "date": "1월 30일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "24"
+        },
+        {
+          "book": "출애굽기",
+          "chapters": "13-14"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "7"
+        }
+      ]
+    },
+    {
+      "day": 31,
+      "date": "1월 31일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "25"
+        },
+        {
+          "book": "출애굽기",
+          "chapters": "15-16"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "8"
+        }
+      ]
+    },
+    {
+      "day": 32,
+      "date": "2월 1일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "26"
+        },
+        {
+          "book": "출애굽기",
+          "chapters": "17-18"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "9"
+        }
+      ]
+    },
+    {
+      "day": 33,
+      "date": "2월 2일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "27:1-6"
+        },
+        {
+          "book": "출애굽기",
+          "chapters": "19-20"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "10"
+        }
+      ]
+    },
+    {
+      "day": 34,
+      "date": "2월 3일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "27:7-14"
+        },
+        {
+          "book": "출애굽기",
+          "chapters": "21-22"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "11-12"
+        }
+      ]
+    },
+    {
+      "day": 35,
+      "date": "2월 4일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "28"
+        },
+        {
+          "book": "출애굽기",
+          "chapters": "23-24"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "13"
+        }
+      ]
+    },
+    {
+      "day": 36,
+      "date": "2월 5일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "29"
+        },
+        {
+          "book": "출애굽기",
+          "chapters": "25-26"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "14"
+        }
+      ]
+    },
+    {
+      "day": 37,
+      "date": "2월 6일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "30"
+        },
+        {
+          "book": "출애굽기",
+          "chapters": "27-28"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "15"
+        }
+      ]
+    },
+    {
+      "day": 38,
+      "date": "2월 7일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "31:1-14"
+        },
+        {
+          "book": "출애굽기",
+          "chapters": "29-30"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "16"
+        }
+      ]
+    },
+    {
+      "day": 39,
+      "date": "2월 8일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "31:15-24"
+        },
+        {
+          "book": "출애굽기",
+          "chapters": "31-32"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "17"
+        }
+      ]
+    },
+    {
+      "day": 40,
+      "date": "2월 9일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "32"
+        },
+        {
+          "book": "출애굽기",
+          "chapters": "33-34"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "18"
+        }
+      ]
+    },
+    {
+      "day": 41,
+      "date": "2월 10일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "33:1-11"
+        },
+        {
+          "book": "출애굽기",
+          "chapters": "35-36"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "19"
+        }
+      ]
+    },
+    {
+      "day": 42,
+      "date": "2월 11일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "33:12-22"
+        },
+        {
+          "book": "출애굽기",
+          "chapters": "37-38"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "20"
+        }
+      ]
+    },
+    {
+      "day": 43,
+      "date": "2월 12일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "34"
+        },
+        {
+          "book": "출애굽기",
+          "chapters": "39-40"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "21"
+        }
+      ]
+    },
+    {
+      "day": 44,
+      "date": "2월 13일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "35"
+        },
+        {
+          "book": "레위기",
+          "chapters": "1-3"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "22-23"
+        }
+      ]
+    },
+    {
+      "day": 45,
+      "date": "2월 14일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "36"
+        },
+        {
+          "book": "레위기",
+          "chapters": "4-5"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "24-25"
+        }
+      ]
+    },
+    {
+      "day": 46,
+      "date": "2월 15일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "37:1-8"
+        },
+        {
+          "book": "레위기",
+          "chapters": "6-7"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "26"
+        }
+      ]
+    },
+    {
+      "day": 47,
+      "date": "2월 16일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "37:9-16"
+        },
+        {
+          "book": "레위기",
+          "chapters": "8-9"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "27-28"
+        }
+      ]
+    },
+    {
+      "day": 48,
+      "date": "2월 17일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "37:17-24"
+        },
+        {
+          "book": "레위기",
+          "chapters": "10-12"
+        },
+        {
+          "book": "마가복음",
+          "chapters": "1-2"
+        }
+      ]
+    },
+    {
+      "day": 49,
+      "date": "2월 18일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "37:25-40"
+        },
+        {
+          "book": "레위기",
+          "chapters": "13-14"
+        },
+        {
+          "book": "마가복음",
+          "chapters": "3"
+        }
+      ]
+    },
+    {
+      "day": 50,
+      "date": "2월 19일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "38"
+        },
+        {
+          "book": "레위기",
+          "chapters": "15-16"
+        },
+        {
+          "book": "마가복음",
+          "chapters": "4"
+        }
+      ]
+    },
+    {
+      "day": 51,
+      "date": "2월 20일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "39"
+        },
+        {
+          "book": "레위기",
+          "chapters": "17-18"
+        },
+        {
+          "book": "마가복음",
+          "chapters": "5"
+        }
+      ]
+    },
+    {
+      "day": 52,
+      "date": "2월 21일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "40"
+        },
+        {
+          "book": "레위기",
+          "chapters": "19-20"
+        },
+        {
+          "book": "마가복음",
+          "chapters": "6"
+        }
+      ]
+    },
+    {
+      "day": 53,
+      "date": "2월 22일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "41"
+        },
+        {
+          "book": "레위기",
+          "chapters": "21-22"
+        },
+        {
+          "book": "마가복음",
+          "chapters": "7-8"
+        }
+      ]
+    },
+    {
+      "day": 54,
+      "date": "2월 23일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "42"
+        },
+        {
+          "book": "레위기",
+          "chapters": "23-24"
+        },
+        {
+          "book": "마가복음",
+          "chapters": "9"
+        }
+      ]
+    },
+    {
+      "day": 55,
+      "date": "2월 24일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "43"
+        },
+        {
+          "book": "레위기",
+          "chapters": "25-27"
+        },
+        {
+          "book": "마가복음",
+          "chapters": "10"
+        }
+      ]
+    },
+    {
+      "day": 56,
+      "date": "2월 25일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "44"
+        },
+        {
+          "book": "민수기",
+          "chapters": "1-2"
+        },
+        {
+          "book": "마가복음",
+          "chapters": "11"
+        }
+      ]
+    },
+    {
+      "day": 57,
+      "date": "2월 26일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "45"
+        },
+        {
+          "book": "민수기",
+          "chapters": "3-4"
+        },
+        {
+          "book": "마가복음",
+          "chapters": "12"
+        }
+      ]
+    },
+    {
+      "day": 58,
+      "date": "2월 27일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "46"
+        },
+        {
+          "book": "민수기",
+          "chapters": "5-6"
+        },
+        {
+          "book": "마가복음",
+          "chapters": "13"
+        }
+      ]
+    },
+    {
+      "day": 59,
+      "date": "2월 28일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "47"
+        },
+        {
+          "book": "민수기",
+          "chapters": "7-8"
+        },
+        {
+          "book": "마가복음",
+          "chapters": "14"
+        }
+      ]
+    },
+    {
+      "day": 60,
+      "date": "3월 1일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "48"
+        },
+        {
+          "book": "민수기",
+          "chapters": "9-10"
+        },
+        {
+          "book": "마가복음",
+          "chapters": "15"
+        }
+      ]
+    },
+    {
+      "day": 61,
+      "date": "3월 2일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "49:1-12"
+        },
+        {
+          "book": "민수기",
+          "chapters": "11-12"
+        },
+        {
+          "book": "마가복음",
+          "chapters": "16"
+        }
+      ]
+    },
+    {
+      "day": 62,
+      "date": "3월 3일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "49:13-20"
+        },
+        {
+          "book": "민수기",
+          "chapters": "13-14"
+        },
+        {
+          "book": "로마서",
+          "chapters": "1"
+        }
+      ]
+    },
+    {
+      "day": 63,
+      "date": "3월 4일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "50:1-15"
+        },
+        {
+          "book": "민수기",
+          "chapters": "15-16"
+        },
+        {
+          "book": "로마서",
+          "chapters": "2-3"
+        }
+      ]
+    },
+    {
+      "day": 64,
+      "date": "3월 5일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "50:16-23"
+        },
+        {
+          "book": "민수기",
+          "chapters": "17-18"
+        },
+        {
+          "book": "로마서",
+          "chapters": "4-5"
+        }
+      ]
+    },
+    {
+      "day": 65,
+      "date": "3월 6일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "51"
+        },
+        {
+          "book": "민수기",
+          "chapters": "19-20"
+        },
+        {
+          "book": "로마서",
+          "chapters": "6-7"
+        }
+      ]
+    },
+    {
+      "day": 66,
+      "date": "3월 7일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "52"
+        },
+        {
+          "book": "민수기",
+          "chapters": "21-22"
+        },
+        {
+          "book": "로마서",
+          "chapters": "8"
+        }
+      ]
+    },
+    {
+      "day": 67,
+      "date": "3월 8일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "53"
+        },
+        {
+          "book": "민수기",
+          "chapters": "23-24"
+        },
+        {
+          "book": "로마서",
+          "chapters": "9"
+        }
+      ]
+    },
+    {
+      "day": 68,
+      "date": "3월 9일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "54"
+        },
+        {
+          "book": "민수기",
+          "chapters": "25-26"
+        },
+        {
+          "book": "로마서",
+          "chapters": "10"
+        }
+      ]
+    },
+    {
+      "day": 69,
+      "date": "3월 10일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "55"
+        },
+        {
+          "book": "민수기",
+          "chapters": "27-28"
+        },
+        {
+          "book": "로마서",
+          "chapters": "11"
+        }
+      ]
+    },
+    {
+      "day": 70,
+      "date": "3월 11일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "56"
+        },
+        {
+          "book": "민수기",
+          "chapters": "29-30"
+        },
+        {
+          "book": "로마서",
+          "chapters": "12"
+        }
+      ]
+    },
+    {
+      "day": 71,
+      "date": "3월 12일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "57"
+        },
+        {
+          "book": "민수기",
+          "chapters": "31-32"
+        },
+        {
+          "book": "로마서",
+          "chapters": "13-14"
+        }
+      ]
+    },
+    {
+      "day": 72,
+      "date": "3월 13일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "58"
+        },
+        {
+          "book": "민수기",
+          "chapters": "33-34"
+        },
+        {
+          "book": "로마서",
+          "chapters": "15-16"
+        }
+      ]
+    },
+    {
+      "day": 73,
+      "date": "3월 14일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "59"
+        },
+        {
+          "book": "민수기",
+          "chapters": "35-36"
+        },
+        {
+          "book": "고린도전서",
+          "chapters": "1"
+        }
+      ]
+    },
+    {
+      "day": 74,
+      "date": "3월 15일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "60"
+        },
+        {
+          "book": "신명기",
+          "chapters": "1-2"
+        },
+        {
+          "book": "고린도전서",
+          "chapters": "2"
+        }
+      ]
+    },
+    {
+      "day": 75,
+      "date": "3월 16일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "61"
+        },
+        {
+          "book": "신명기",
+          "chapters": "3-4"
+        },
+        {
+          "book": "고린도전서",
+          "chapters": "3"
+        }
+      ]
+    },
+    {
+      "day": 76,
+      "date": "3월 17일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "62"
+        },
+        {
+          "book": "신명기",
+          "chapters": "5-6"
+        },
+        {
+          "book": "고린도전서",
+          "chapters": "4"
+        }
+      ]
+    },
+    {
+      "day": 77,
+      "date": "3월 18일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "63"
+        },
+        {
+          "book": "신명기",
+          "chapters": "7-8"
+        },
+        {
+          "book": "고린도전서",
+          "chapters": "5"
+        }
+      ]
+    },
+    {
+      "day": 78,
+      "date": "3월 19일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "64"
+        },
+        {
+          "book": "신명기",
+          "chapters": "9-10"
+        },
+        {
+          "book": "고린도전서",
+          "chapters": "6"
+        }
+      ]
+    },
+    {
+      "day": 79,
+      "date": "3월 20일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "65"
+        },
+        {
+          "book": "신명기",
+          "chapters": "11-12"
+        },
+        {
+          "book": "고린도전서",
+          "chapters": "7"
+        }
+      ]
+    },
+    {
+      "day": 80,
+      "date": "3월 21일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "66"
+        },
+        {
+          "book": "신명기",
+          "chapters": "13-14"
+        },
+        {
+          "book": "고린도전서",
+          "chapters": "8"
+        }
+      ]
+    },
+    {
+      "day": 81,
+      "date": "3월 22일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "67"
+        },
+        {
+          "book": "신명기",
+          "chapters": "15-16"
+        },
+        {
+          "book": "고린도전서",
+          "chapters": "9"
+        }
+      ]
+    },
+    {
+      "day": 82,
+      "date": "3월 23일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "68:1-6"
+        },
+        {
+          "book": "신명기",
+          "chapters": "17-18"
+        },
+        {
+          "book": "고린도전서",
+          "chapters": "10"
+        }
+      ]
+    },
+    {
+      "day": 83,
+      "date": "3월 24일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "68:7-18"
+        },
+        {
+          "book": "신명기",
+          "chapters": "19-20"
+        },
+        {
+          "book": "고린도전서",
+          "chapters": "11-12"
+        }
+      ]
+    },
+    {
+      "day": 84,
+      "date": "3월 25일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "68:19-35"
+        },
+        {
+          "book": "신명기",
+          "chapters": "21-22"
+        },
+        {
+          "book": "고린도전서",
+          "chapters": "13-14"
+        }
+      ]
+    },
+    {
+      "day": 85,
+      "date": "3월 26일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "69:1-12"
+        },
+        {
+          "book": "신명기",
+          "chapters": "23-24"
+        },
+        {
+          "book": "고린도전서",
+          "chapters": "15-16"
+        }
+      ]
+    },
+    {
+      "day": 86,
+      "date": "3월 27일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "69:13-29"
+        },
+        {
+          "book": "신명기",
+          "chapters": "25-26"
+        },
+        {
+          "book": "고린도후서",
+          "chapters": "1"
+        }
+      ]
+    },
+    {
+      "day": 87,
+      "date": "3월 28일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "69:30-36"
+        },
+        {
+          "book": "신명기",
+          "chapters": "27-28"
+        },
+        {
+          "book": "고린도후서",
+          "chapters": "2-3"
+        }
+      ]
+    },
+    {
+      "day": 88,
+      "date": "3월 29일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "70"
+        },
+        {
+          "book": "신명기",
+          "chapters": "29-30"
+        },
+        {
+          "book": "고린도후서",
+          "chapters": "4-5"
+        }
+      ]
+    },
+    {
+      "day": 89,
+      "date": "3월 30일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "71:1-14"
+        },
+        {
+          "book": "신명기",
+          "chapters": "31-32"
+        },
+        {
+          "book": "고린도후서",
+          "chapters": "6-7"
+        }
+      ]
+    },
+    {
+      "day": 90,
+      "date": "3월 31일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "71:15-24"
+        },
+        {
+          "book": "신명기",
+          "chapters": "33-34"
+        },
+        {
+          "book": "고린도후서",
+          "chapters": "8"
+        }
+      ]
+    },
+    {
+      "day": 91,
+      "date": "4월 1일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "72"
+        },
+        {
+          "book": "여호수아",
+          "chapters": "1-2"
+        },
+        {
+          "book": "고린도후서",
+          "chapters": "9"
+        }
+      ]
+    },
+    {
+      "day": 92,
+      "date": "4월 2일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "73"
+        },
+        {
+          "book": "여호수아",
+          "chapters": "3-4"
+        },
+        {
+          "book": "고린도후서",
+          "chapters": "10-11"
+        }
+      ]
+    },
+    {
+      "day": 93,
+      "date": "4월 3일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "74:1-11"
+        },
+        {
+          "book": "여호수아",
+          "chapters": "5-6"
+        },
+        {
+          "book": "고린도후서",
+          "chapters": "12-13"
+        }
+      ]
+    },
+    {
+      "day": 94,
+      "date": "4월 4일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "74:12-23"
+        },
+        {
+          "book": "여호수아",
+          "chapters": "7-8"
+        },
+        {
+          "book": "누가복음",
+          "chapters": "1-2"
+        }
+      ]
+    },
+    {
+      "day": 95,
+      "date": "4월 5일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "75"
+        },
+        {
+          "book": "여호수아",
+          "chapters": "9-10"
+        },
+        {
+          "book": "누가복음",
+          "chapters": "3-4"
+        }
+      ]
+    },
+    {
+      "day": 96,
+      "date": "4월 6일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "76"
+        },
+        {
+          "book": "여호수아",
+          "chapters": "11-12"
+        },
+        {
+          "book": "누가복음",
+          "chapters": "5"
+        }
+      ]
+    },
+    {
+      "day": 97,
+      "date": "4월 7일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "77"
+        },
+        {
+          "book": "여호수아",
+          "chapters": "13-14"
+        },
+        {
+          "book": "누가복음",
+          "chapters": "6"
+        }
+      ]
+    },
+    {
+      "day": 98,
+      "date": "4월 8일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "78:1-8"
+        },
+        {
+          "book": "여호수아",
+          "chapters": "15-16"
+        },
+        {
+          "book": "누가복음",
+          "chapters": "7"
+        }
+      ]
+    },
+    {
+      "day": 99,
+      "date": "4월 9일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "78:9-25"
+        },
+        {
+          "book": "여호수아",
+          "chapters": "17-18"
+        },
+        {
+          "book": "누가복음",
+          "chapters": "8"
+        }
+      ]
+    },
+    {
+      "day": 100,
+      "date": "4월 10일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "78:26-39"
+        },
+        {
+          "book": "여호수아",
+          "chapters": "19-20"
+        },
+        {
+          "book": "누가복음",
+          "chapters": "9"
+        }
+      ]
+    },
+    {
+      "day": 101,
+      "date": "4월 11일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "78:40-53"
+        },
+        {
+          "book": "여호수아",
+          "chapters": "21-22"
+        },
+        {
+          "book": "누가복음",
+          "chapters": "10"
+        }
+      ]
+    },
+    {
+      "day": 102,
+      "date": "4월 12일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "78:54-64"
+        },
+        {
+          "book": "여호수아",
+          "chapters": "23-24"
+        },
+        {
+          "book": "누가복음",
+          "chapters": "11"
+        }
+      ]
+    },
+    {
+      "day": 103,
+      "date": "4월 13일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "78:65-72"
+        },
+        {
+          "book": "사사기",
+          "chapters": "1-2"
+        },
+        {
+          "book": "누가복음",
+          "chapters": "12"
+        }
+      ]
+    },
+    {
+      "day": 104,
+      "date": "4월 14일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "79"
+        },
+        {
+          "book": "사사기",
+          "chapters": "3-4"
+        },
+        {
+          "book": "누가복음",
+          "chapters": "13"
+        }
+      ]
+    },
+    {
+      "day": 105,
+      "date": "4월 15일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "80"
+        },
+        {
+          "book": "사사기",
+          "chapters": "5-6"
+        },
+        {
+          "book": "누가복음",
+          "chapters": "14"
+        }
+      ]
+    },
+    {
+      "day": 106,
+      "date": "4월 16일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "81"
+        },
+        {
+          "book": "사사기",
+          "chapters": "7-8"
+        },
+        {
+          "book": "누가복음",
+          "chapters": "15"
+        }
+      ]
+    },
+    {
+      "day": 107,
+      "date": "4월 17일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "82"
+        },
+        {
+          "book": "사사기",
+          "chapters": "9-10"
+        },
+        {
+          "book": "누가복음",
+          "chapters": "16-17"
+        }
+      ]
+    },
+    {
+      "day": 108,
+      "date": "4월 18일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "83"
+        },
+        {
+          "book": "사사기",
+          "chapters": "11-12"
+        },
+        {
+          "book": "누가복음",
+          "chapters": "18"
+        }
+      ]
+    },
+    {
+      "day": 109,
+      "date": "4월 19일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "84"
+        },
+        {
+          "book": "사사기",
+          "chapters": "13-14"
+        },
+        {
+          "book": "누가복음",
+          "chapters": "19-20"
+        }
+      ]
+    },
+    {
+      "day": 110,
+      "date": "4월 20일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "85"
+        },
+        {
+          "book": "사사기",
+          "chapters": "15-16"
+        },
+        {
+          "book": "누가복음",
+          "chapters": "21"
+        }
+      ]
+    },
+    {
+      "day": 111,
+      "date": "4월 21일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "86"
+        },
+        {
+          "book": "사사기",
+          "chapters": "17-18"
+        },
+        {
+          "book": "누가복음",
+          "chapters": "22"
+        }
+      ]
+    },
+    {
+      "day": 112,
+      "date": "4월 22일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "87"
+        },
+        {
+          "book": "사사기",
+          "chapters": "19-21"
+        },
+        {
+          "book": "누가복음",
+          "chapters": "23"
+        }
+      ]
+    },
+    {
+      "day": 113,
+      "date": "4월 23일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "88"
+        },
+        {
+          "book": "룻기",
+          "chapters": "1-2"
+        },
+        {
+          "book": "누가복음",
+          "chapters": "24"
+        }
+      ]
+    },
+    {
+      "day": 114,
+      "date": "4월 24일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "89:1-9"
+        },
+        {
+          "book": "룻기",
+          "chapters": "3-4"
+        },
+        {
+          "book": "갈라디아서",
+          "chapters": "1-2"
+        }
+      ]
+    },
+    {
+      "day": 115,
+      "date": "4월 25일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "89:10-18"
+        },
+        {
+          "book": "사무엘상",
+          "chapters": "1-2"
+        },
+        {
+          "book": "갈라디아서",
+          "chapters": "3-4"
+        }
+      ]
+    },
+    {
+      "day": 116,
+      "date": "4월 26일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "89:19-37"
+        },
+        {
+          "book": "사무엘상",
+          "chapters": "3-4"
+        },
+        {
+          "book": "갈라디아서",
+          "chapters": "5-6"
+        }
+      ]
+    },
+    {
+      "day": 117,
+      "date": "4월 27일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "89:38-52"
+        },
+        {
+          "book": "사무엘상",
+          "chapters": "5-6"
+        },
+        {
+          "book": "에베소서",
+          "chapters": "1-2"
+        }
+      ]
+    },
+    {
+      "day": 118,
+      "date": "4월 28일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "90"
+        },
+        {
+          "book": "사무엘상",
+          "chapters": "7-8"
+        },
+        {
+          "book": "에베소서",
+          "chapters": "3-4"
+        }
+      ]
+    },
+    {
+      "day": 119,
+      "date": "4월 29일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "91"
+        },
+        {
+          "book": "사무엘상",
+          "chapters": "9-10"
+        },
+        {
+          "book": "에베소서",
+          "chapters": "5-6"
+        }
+      ]
+    },
+    {
+      "day": 120,
+      "date": "4월 30일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "92"
+        },
+        {
+          "book": "사무엘상",
+          "chapters": "11-12"
+        },
+        {
+          "book": "빌립보서",
+          "chapters": "1-2"
+        }
+      ]
+    },
+    {
+      "day": 121,
+      "date": "5월 1일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "93"
+        },
+        {
+          "book": "사무엘상",
+          "chapters": "13-14"
+        },
+        {
+          "book": "빌립보서",
+          "chapters": "3-4"
+        }
+      ]
+    },
+    {
+      "day": 122,
+      "date": "5월 2일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "94:1-11"
+        },
+        {
+          "book": "사무엘상",
+          "chapters": "15-16"
+        },
+        {
+          "book": "골로새서",
+          "chapters": "1-2"
+        }
+      ]
+    },
+    {
+      "day": 123,
+      "date": "5월 3일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "94:12-23"
+        },
+        {
+          "book": "사무엘상",
+          "chapters": "17-18"
+        },
+        {
+          "book": "골로새서",
+          "chapters": "3-4"
+        }
+      ]
+    },
+    {
+      "day": 124,
+      "date": "5월 4일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "95"
+        },
+        {
+          "book": "사무엘상",
+          "chapters": "19-20"
+        },
+        {
+          "book": "데살로니가전서",
+          "chapters": "1-2"
+        }
+      ]
+    },
+    {
+      "day": 125,
+      "date": "5월 5일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "96"
+        },
+        {
+          "book": "사무엘상",
+          "chapters": "21-22"
+        },
+        {
+          "book": "데살로니가전서",
+          "chapters": "3-5"
+        }
+      ]
+    },
+    {
+      "day": 126,
+      "date": "5월 6일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "97"
+        },
+        {
+          "book": "사무엘상",
+          "chapters": "23-24"
+        },
+        {
+          "book": "데살로니가후서",
+          "chapters": "1-3"
+        }
+      ]
+    },
+    {
+      "day": 127,
+      "date": "5월 7일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "98"
+        },
+        {
+          "book": "사무엘상",
+          "chapters": "25-26"
+        },
+        {
+          "book": "디모데전서",
+          "chapters": "1-2"
+        }
+      ]
+    },
+    {
+      "day": 128,
+      "date": "5월 8일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "99"
+        },
+        {
+          "book": "사무엘상",
+          "chapters": "27-28"
+        },
+        {
+          "book": "디모데전서",
+          "chapters": "3-4"
+        }
+      ]
+    },
+    {
+      "day": 129,
+      "date": "5월 9일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "100"
+        },
+        {
+          "book": "사무엘상",
+          "chapters": "29-31"
+        },
+        {
+          "book": "디모데전서",
+          "chapters": "5-6"
+        }
+      ]
+    },
+    {
+      "day": 130,
+      "date": "5월 10일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "101"
+        },
+        {
+          "book": "사무엘하",
+          "chapters": "1-2"
+        },
+        {
+          "book": "디모데후서",
+          "chapters": "1-2"
+        }
+      ]
+    },
+    {
+      "day": 131,
+      "date": "5월 11일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "102:1-11"
+        },
+        {
+          "book": "사무엘하",
+          "chapters": "3-4"
+        },
+        {
+          "book": "디모데후서",
+          "chapters": "3-4"
+        }
+      ]
+    },
+    {
+      "day": 132,
+      "date": "5월 12일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "102:12-28"
+        },
+        {
+          "book": "사무엘하",
+          "chapters": "5-6"
+        },
+        {
+          "book": "디도서",
+          "chapters": "1-2"
+        }
+      ]
+    },
+    {
+      "day": 133,
+      "date": "5월 13일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "103:1-11"
+        },
+        {
+          "book": "사무엘하",
+          "chapters": "7-8"
+        },
+        {
+          "book": "디도서",
+          "chapters": "3"
+        }
+      ]
+    },
+    {
+      "day": 134,
+      "date": "5월 14일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "103:12-22"
+        },
+        {
+          "book": "사무엘하",
+          "chapters": "9-10"
+        },
+        {
+          "book": "빌레몬서",
+          "chapters": "1"
+        }
+      ]
+    },
+    {
+      "day": 135,
+      "date": "5월 15일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "104:1-19"
+        },
+        {
+          "book": "사무엘하",
+          "chapters": "11-12"
+        },
+        {
+          "book": "요한복음",
+          "chapters": "1"
+        }
+      ]
+    },
+    {
+      "day": 136,
+      "date": "5월 16일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "104:20-35"
+        },
+        {
+          "book": "사무엘하",
+          "chapters": "13-14"
+        },
+        {
+          "book": "요한복음",
+          "chapters": "2"
+        }
+      ]
+    },
+    {
+      "day": 137,
+      "date": "5월 17일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "105:1-16"
+        },
+        {
+          "book": "사무엘하",
+          "chapters": "15-16"
+        },
+        {
+          "book": "요한복음",
+          "chapters": "3"
+        }
+      ]
+    },
+    {
+      "day": 138,
+      "date": "5월 18일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "105:17-38"
+        },
+        {
+          "book": "사무엘하",
+          "chapters": "17-18"
+        },
+        {
+          "book": "요한복음",
+          "chapters": "4"
+        }
+      ]
+    },
+    {
+      "day": 139,
+      "date": "5월 19일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "105:39-45"
+        },
+        {
+          "book": "사무엘하",
+          "chapters": "19-20"
+        },
+        {
+          "book": "요한복음",
+          "chapters": "5"
+        }
+      ]
+    },
+    {
+      "day": 140,
+      "date": "5월 20일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "106:1-12"
+        },
+        {
+          "book": "사무엘하",
+          "chapters": "21-22"
+        },
+        {
+          "book": "요한복음",
+          "chapters": "6"
+        }
+      ]
+    },
+    {
+      "day": 141,
+      "date": "5월 21일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "106:13-23"
+        },
+        {
+          "book": "사무엘하",
+          "chapters": "23-24"
+        },
+        {
+          "book": "요한복음",
+          "chapters": "7"
+        }
+      ]
+    },
+    {
+      "day": 142,
+      "date": "5월 22일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "106:24-31"
+        },
+        {
+          "book": "열왕기상",
+          "chapters": "1-2"
+        },
+        {
+          "book": "요한복음",
+          "chapters": "8"
+        }
+      ]
+    },
+    {
+      "day": 143,
+      "date": "5월 23일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "106:32-48"
+        },
+        {
+          "book": "열왕기상",
+          "chapters": "3-4"
+        },
+        {
+          "book": "요한복음",
+          "chapters": "9"
+        }
+      ]
+    },
+    {
+      "day": 144,
+      "date": "5월 24일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "107:1-9"
+        },
+        {
+          "book": "열왕기상",
+          "chapters": "5-6"
+        },
+        {
+          "book": "요한복음",
+          "chapters": "10"
+        }
+      ]
+    },
+    {
+      "day": 145,
+      "date": "5월 25일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "107:10-22"
+        },
+        {
+          "book": "열왕기상",
+          "chapters": "7-8"
+        },
+        {
+          "book": "요한복음",
+          "chapters": "11"
+        }
+      ]
+    },
+    {
+      "day": 146,
+      "date": "5월 26일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "107:23-32"
+        },
+        {
+          "book": "열왕기상",
+          "chapters": "9-10"
+        },
+        {
+          "book": "요한복음",
+          "chapters": "12"
+        }
+      ]
+    },
+    {
+      "day": 147,
+      "date": "5월 27일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "107:33-43"
+        },
+        {
+          "book": "열왕기상",
+          "chapters": "11-12"
+        },
+        {
+          "book": "요한복음",
+          "chapters": "13"
+        }
+      ]
+    },
+    {
+      "day": 148,
+      "date": "5월 28일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "108"
+        },
+        {
+          "book": "열왕기상",
+          "chapters": "13-14"
+        },
+        {
+          "book": "요한복음",
+          "chapters": "14"
+        }
+      ]
+    },
+    {
+      "day": 149,
+      "date": "5월 29일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "109:1-20"
+        },
+        {
+          "book": "열왕기상",
+          "chapters": "15-16"
+        },
+        {
+          "book": "요한복음",
+          "chapters": "15"
+        }
+      ]
+    },
+    {
+      "day": 150,
+      "date": "5월 30일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "109:21-31"
+        },
+        {
+          "book": "열왕기상",
+          "chapters": "17-18"
+        },
+        {
+          "book": "요한복음",
+          "chapters": "16"
+        }
+      ]
+    },
+    {
+      "day": 151,
+      "date": "5월 31일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "110"
+        },
+        {
+          "book": "열왕기상",
+          "chapters": "19-20"
+        },
+        {
+          "book": "요한복음",
+          "chapters": "17"
+        }
+      ]
+    },
+    {
+      "day": 152,
+      "date": "6월 1일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "111"
+        },
+        {
+          "book": "열왕기상",
+          "chapters": "21-22"
+        },
+        {
+          "book": "요한복음",
+          "chapters": "18"
+        }
+      ]
+    },
+    {
+      "day": 153,
+      "date": "6월 2일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "112"
+        },
+        {
+          "book": "열왕기하",
+          "chapters": "1-2"
+        },
+        {
+          "book": "요한복음",
+          "chapters": "19"
+        }
+      ]
+    },
+    {
+      "day": 154,
+      "date": "6월 3일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "113"
+        },
+        {
+          "book": "열왕기하",
+          "chapters": "3-4"
+        },
+        {
+          "book": "요한복음",
+          "chapters": "20"
+        }
+      ]
+    },
+    {
+      "day": 155,
+      "date": "6월 4일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "114"
+        },
+        {
+          "book": "열왕기하",
+          "chapters": "5-6"
+        },
+        {
+          "book": "요한복음",
+          "chapters": "21"
+        }
+      ]
+    },
+    {
+      "day": 156,
+      "date": "6월 5일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "115"
+        },
+        {
+          "book": "열왕기하",
+          "chapters": "7-8"
+        },
+        {
+          "book": "히브리서",
+          "chapters": "1-2"
+        }
+      ]
+    },
+    {
+      "day": 157,
+      "date": "6월 6일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "116"
+        },
+        {
+          "book": "열왕기하",
+          "chapters": "9-10"
+        },
+        {
+          "book": "히브리서",
+          "chapters": "3-4"
+        }
+      ]
+    },
+    {
+      "day": 158,
+      "date": "6월 7일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "117"
+        },
+        {
+          "book": "열왕기하",
+          "chapters": "11-12"
+        },
+        {
+          "book": "히브리서",
+          "chapters": "5-6"
+        }
+      ]
+    },
+    {
+      "day": 159,
+      "date": "6월 8일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "118:1-9"
+        },
+        {
+          "book": "열왕기하",
+          "chapters": "13-14"
+        },
+        {
+          "book": "히브리서",
+          "chapters": "7-8"
+        }
+      ]
+    },
+    {
+      "day": 160,
+      "date": "6월 9일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "118:10-21"
+        },
+        {
+          "book": "열왕기하",
+          "chapters": "15-16"
+        },
+        {
+          "book": "히브리서",
+          "chapters": "9-10"
+        }
+      ]
+    },
+    {
+      "day": 161,
+      "date": "6월 10일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "118:22-29"
+        },
+        {
+          "book": "열왕기하",
+          "chapters": "17-18"
+        },
+        {
+          "book": "히브리서",
+          "chapters": "11-13"
+        }
+      ]
+    },
+    {
+      "day": 162,
+      "date": "6월 11일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "119:1-8"
+        },
+        {
+          "book": "열왕기하",
+          "chapters": "19-20"
+        },
+        {
+          "book": "야고보서",
+          "chapters": "1-2"
+        }
+      ]
+    },
+    {
+      "day": 163,
+      "date": "6월 12일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "119:9-16"
+        },
+        {
+          "book": "열왕기하",
+          "chapters": "21-22"
+        },
+        {
+          "book": "야고보서",
+          "chapters": "3-5"
+        }
+      ]
+    },
+    {
+      "day": 164,
+      "date": "6월 13일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "119:17-24"
+        },
+        {
+          "book": "열왕기하",
+          "chapters": "23-25"
+        },
+        {
+          "book": "베드로전서",
+          "chapters": "1-2"
+        }
+      ]
+    },
+    {
+      "day": 165,
+      "date": "6월 14일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "119:25-32"
+        },
+        {
+          "book": "역대대상",
+          "chapters": "1-2"
+        },
+        {
+          "book": "베드로전서",
+          "chapters": "3-5"
+        }
+      ]
+    },
+    {
+      "day": 166,
+      "date": "6월 15일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "119:33-40"
+        },
+        {
+          "book": "역대대상",
+          "chapters": "3-4"
+        },
+        {
+          "book": "베드로후서",
+          "chapters": "1-3"
+        }
+      ]
+    },
+    {
+      "day": 167,
+      "date": "6월 16일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "119:41-48"
+        },
+        {
+          "book": "역대대상",
+          "chapters": "5-6"
+        },
+        {
+          "book": "요한1서",
+          "chapters": "1-2"
+        }
+      ]
+    },
+    {
+      "day": 168,
+      "date": "6월 17일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "119:49-56"
+        },
+        {
+          "book": "역대대상",
+          "chapters": "7-8"
+        },
+        {
+          "book": "요한1서",
+          "chapters": "3-5"
+        }
+      ]
+    },
+    {
+      "day": 169,
+      "date": "6월 18일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "119:57-64"
+        },
+        {
+          "book": "역대대상",
+          "chapters": "9-10"
+        },
+        {
+          "book": "요한2서",
+          "chapters": "1"
+        },
+        {
+          "book": "요한3서",
+          "chapters": "1"
+        },
+        {
+          "book": "유다서",
+          "chapters": "1"
+        }
+      ]
+    },
+    {
+      "day": 170,
+      "date": "6월 19일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "119:65-72"
+        },
+        {
+          "book": "역대대상",
+          "chapters": "11-12"
+        },
+        {
+          "book": "요한계시록",
+          "chapters": "1-2"
+        }
+      ]
+    },
+    {
+      "day": 171,
+      "date": "6월 20일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "119:73-80"
+        },
+        {
+          "book": "역대대상",
+          "chapters": "13-14"
+        },
+        {
+          "book": "요한계시록",
+          "chapters": "3-4"
+        }
+      ]
+    },
+    {
+      "day": 172,
+      "date": "6월 21일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "119:81-88"
+        },
+        {
+          "book": "역대대상",
+          "chapters": "15-16"
+        },
+        {
+          "book": "요한계시록",
+          "chapters": "5-6"
+        }
+      ]
+    },
+    {
+      "day": 173,
+      "date": "6월 22일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "119:89-96"
+        },
+        {
+          "book": "역대대상",
+          "chapters": "17-18"
+        },
+        {
+          "book": "요한계시록",
+          "chapters": "7-8"
+        }
+      ]
+    },
+    {
+      "day": 174,
+      "date": "6월 23일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "119:97-104"
+        },
+        {
+          "book": "역대대상",
+          "chapters": "19-20"
+        },
+        {
+          "book": "요한계시록",
+          "chapters": "9-10"
+        }
+      ]
+    },
+    {
+      "day": 175,
+      "date": "6월 24일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "119:105-112"
+        },
+        {
+          "book": "역대대상",
+          "chapters": "21-22"
+        },
+        {
+          "book": "요한계시록",
+          "chapters": "11-12"
+        }
+      ]
+    },
+    {
+      "day": 176,
+      "date": "6월 25일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "119:113-120"
+        },
+        {
+          "book": "역대대상",
+          "chapters": "23-24"
+        },
+        {
+          "book": "요한계시록",
+          "chapters": "13-14"
+        }
+      ]
+    },
+    {
+      "day": 177,
+      "date": "6월 26일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "119:121-128"
+        },
+        {
+          "book": "역대대상",
+          "chapters": "25-26"
+        },
+        {
+          "book": "요한계시록",
+          "chapters": "15-16"
+        }
+      ]
+    },
+    {
+      "day": 178,
+      "date": "6월 27일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "119:129-136"
+        },
+        {
+          "book": "역대대상",
+          "chapters": "27-29"
+        },
+        {
+          "book": "요한계시록",
+          "chapters": "17-18"
+        }
+      ]
+    },
+    {
+      "day": 179,
+      "date": "6월 28일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "119:137-144"
+        },
+        {
+          "book": "역대하",
+          "chapters": "1-2"
+        },
+        {
+          "book": "요한계시록",
+          "chapters": "19-20"
+        }
+      ]
+    },
+    {
+      "day": 180,
+      "date": "6월 29일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "119:145-152"
+        },
+        {
+          "book": "역대하",
+          "chapters": "3-4"
+        },
+        {
+          "book": "요한계시록",
+          "chapters": "21"
+        }
+      ]
+    },
+    {
+      "day": 181,
+      "date": "6월 30일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "119:153-160"
+        },
+        {
+          "book": "역대하",
+          "chapters": "5-6"
+        },
+        {
+          "book": "요한계시록",
+          "chapters": "22"
+        }
+      ]
+    },
+    {
+      "day": 182,
+      "date": "7월 1일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "119:161-168"
+        },
+        {
+          "book": "역대하",
+          "chapters": "7-8"
+        },
+        {
+          "book": "마태복음",
+          "chapters": "1-2"
+        }
+      ]
+    },
+    {
+      "day": 183,
+      "date": "7월 2일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "119:169-176"
+        },
+        {
+          "book": "역대하",
+          "chapters": "9-10"
+        },
+        {
+          "book": "마태복음",
+          "chapters": "3-4"
+        }
+      ]
+    },
+    {
+      "day": 184,
+      "date": "7월 3일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "120"
+        },
+        {
+          "book": "역대하",
+          "chapters": "11-12"
+        },
+        {
+          "book": "마태복음",
+          "chapters": "5"
+        }
+      ]
+    },
+    {
+      "day": 185,
+      "date": "7월 4일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "121"
+        },
+        {
+          "book": "역대하",
+          "chapters": "13-14"
+        },
+        {
+          "book": "마태복음",
+          "chapters": "6"
+        }
+      ]
+    },
+    {
+      "day": 186,
+      "date": "7월 5일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "122"
+        },
+        {
+          "book": "역대하",
+          "chapters": "15-16"
+        },
+        {
+          "book": "마태복음",
+          "chapters": "7"
+        }
+      ]
+    },
+    {
+      "day": 187,
+      "date": "7월 6일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "123"
+        },
+        {
+          "book": "역대하",
+          "chapters": "17-18"
+        },
+        {
+          "book": "마태복음",
+          "chapters": "8"
+        }
+      ]
+    },
+    {
+      "day": 188,
+      "date": "7월 7일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "124"
+        },
+        {
+          "book": "역대하",
+          "chapters": "19-20"
+        },
+        {
+          "book": "마태복음",
+          "chapters": "9"
+        }
+      ]
+    },
+    {
+      "day": 189,
+      "date": "7월 8일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "125"
+        },
+        {
+          "book": "역대하",
+          "chapters": "21-22"
+        },
+        {
+          "book": "마태복음",
+          "chapters": "10"
+        }
+      ]
+    },
+    {
+      "day": 190,
+      "date": "7월 9일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "126"
+        },
+        {
+          "book": "역대하",
+          "chapters": "23-24"
+        },
+        {
+          "book": "마태복음",
+          "chapters": "11"
+        }
+      ]
+    },
+    {
+      "day": 191,
+      "date": "7월 10일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "127"
+        },
+        {
+          "book": "역대하",
+          "chapters": "25-26"
+        },
+        {
+          "book": "마태복음",
+          "chapters": "12"
+        }
+      ]
+    },
+    {
+      "day": 192,
+      "date": "7월 11일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "128"
+        },
+        {
+          "book": "역대하",
+          "chapters": "27-28"
+        },
+        {
+          "book": "마태복음",
+          "chapters": "13"
+        }
+      ]
+    },
+    {
+      "day": 193,
+      "date": "7월 12일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "129"
+        },
+        {
+          "book": "역대하",
+          "chapters": "29-30"
+        },
+        {
+          "book": "마태복음",
+          "chapters": "14"
+        }
+      ]
+    },
+    {
+      "day": 194,
+      "date": "7월 13일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "130"
+        },
+        {
+          "book": "역대하",
+          "chapters": "31-32"
+        },
+        {
+          "book": "마태복음",
+          "chapters": "15"
+        }
+      ]
+    },
+    {
+      "day": 195,
+      "date": "7월 14일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "131"
+        },
+        {
+          "book": "역대하",
+          "chapters": "33-34"
+        },
+        {
+          "book": "마태복음",
+          "chapters": "16-17"
+        }
+      ]
+    },
+    {
+      "day": 196,
+      "date": "7월 15일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "132"
+        },
+        {
+          "book": "역대하",
+          "chapters": "35-36"
+        },
+        {
+          "book": "마태복음",
+          "chapters": "18"
+        }
+      ]
+    },
+    {
+      "day": 197,
+      "date": "7월 16일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "133"
+        },
+        {
+          "book": "에스라",
+          "chapters": "1-2"
+        },
+        {
+          "book": "마태복음",
+          "chapters": "19-20"
+        }
+      ]
+    },
+    {
+      "day": 198,
+      "date": "7월 17일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "134"
+        },
+        {
+          "book": "에스라",
+          "chapters": "3-4"
+        },
+        {
+          "book": "마태복음",
+          "chapters": "21"
+        }
+      ]
+    },
+    {
+      "day": 199,
+      "date": "7월 18일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "135"
+        },
+        {
+          "book": "에스라",
+          "chapters": "5-6"
+        },
+        {
+          "book": "마태복음",
+          "chapters": "22"
+        }
+      ]
+    },
+    {
+      "day": 200,
+      "date": "7월 19일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "136"
+        },
+        {
+          "book": "에스라",
+          "chapters": "7-8"
+        },
+        {
+          "book": "마태복음",
+          "chapters": "23-24"
+        }
+      ]
+    },
+    {
+      "day": 201,
+      "date": "7월 20일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "137"
+        },
+        {
+          "book": "에스라",
+          "chapters": "9-10"
+        },
+        {
+          "book": "마태복음",
+          "chapters": "25"
+        }
+      ]
+    },
+    {
+      "day": 202,
+      "date": "7월 21일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "138"
+        },
+        {
+          "book": "느헤미야",
+          "chapters": "1-2"
+        },
+        {
+          "book": "마태복음",
+          "chapters": "26"
+        }
+      ]
+    },
+    {
+      "day": 203,
+      "date": "7월 22일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "139:1-12"
+        },
+        {
+          "book": "느헤미야",
+          "chapters": "3-4"
+        },
+        {
+          "book": "마태복음",
+          "chapters": "27"
+        }
+      ]
+    },
+    {
+      "day": 204,
+      "date": "7월 23일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "139:13-24"
+        },
+        {
+          "book": "느헤미야",
+          "chapters": "5-6"
+        },
+        {
+          "book": "마태복음",
+          "chapters": "28"
+        }
+      ]
+    },
+    {
+      "day": 205,
+      "date": "7월 24일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "140"
+        },
+        {
+          "book": "느헤미야",
+          "chapters": "7-8"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "1"
+        }
+      ]
+    },
+    {
+      "day": 206,
+      "date": "7월 25일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "141"
+        },
+        {
+          "book": "느헤미야",
+          "chapters": "9-10"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "2"
+        }
+      ]
+    },
+    {
+      "day": 207,
+      "date": "7월 26일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "142"
+        },
+        {
+          "book": "느헤미야",
+          "chapters": "11-13"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "3"
+        }
+      ]
+    },
+    {
+      "day": 208,
+      "date": "7월 27일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "143"
+        },
+        {
+          "book": "에스더",
+          "chapters": "1-2"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "4"
+        }
+      ]
+    },
+    {
+      "day": 209,
+      "date": "7월 28일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "144"
+        },
+        {
+          "book": "에스더",
+          "chapters": "3-4"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "5"
+        }
+      ]
+    },
+    {
+      "day": 210,
+      "date": "7월 29일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "145"
+        },
+        {
+          "book": "에스더",
+          "chapters": "5-6"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "6"
+        }
+      ]
+    },
+    {
+      "day": 211,
+      "date": "7월 30일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "146"
+        },
+        {
+          "book": "에스더",
+          "chapters": "7-8"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "7"
+        }
+      ]
+    },
+    {
+      "day": 212,
+      "date": "7월 31일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "147"
+        },
+        {
+          "book": "에스더",
+          "chapters": "9-10"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "8"
+        }
+      ]
+    },
+    {
+      "day": 213,
+      "date": "8월 1일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "148"
+        },
+        {
+          "book": "이사야",
+          "chapters": "1-2"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "9"
+        }
+      ]
+    },
+    {
+      "day": 214,
+      "date": "8월 2일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "149"
+        },
+        {
+          "book": "이사야",
+          "chapters": "3-4"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "10"
+        }
+      ]
+    },
+    {
+      "day": 215,
+      "date": "8월 3일",
+      "readings": [
+        {
+          "book": "시편",
+          "chapters": "150"
+        },
+        {
+          "book": "이사야",
+          "chapters": "5-6"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "11-12"
+        }
+      ]
+    },
+    {
+      "day": 216,
+      "date": "8월 4일",
+      "readings": [
+        {
+          "book": "욥기",
+          "chapters": "1"
+        },
+        {
+          "book": "이사야",
+          "chapters": "7-8"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "13"
+        }
+      ]
+    },
+    {
+      "day": 217,
+      "date": "8월 5일",
+      "readings": [
+        {
+          "book": "욥기",
+          "chapters": "2"
+        },
+        {
+          "book": "이사야",
+          "chapters": "9-10"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "14"
+        }
+      ]
+    },
+    {
+      "day": 218,
+      "date": "8월 6일",
+      "readings": [
+        {
+          "book": "욥기",
+          "chapters": "3"
+        },
+        {
+          "book": "이사야",
+          "chapters": "11-12"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "15"
+        }
+      ]
+    },
+    {
+      "day": 219,
+      "date": "8월 7일",
+      "readings": [
+        {
+          "book": "욥기",
+          "chapters": "4"
+        },
+        {
+          "book": "이사야",
+          "chapters": "13-14"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "16"
+        }
+      ]
+    },
+    {
+      "day": 220,
+      "date": "8월 8일",
+      "readings": [
+        {
+          "book": "욥기",
+          "chapters": "5"
+        },
+        {
+          "book": "이사야",
+          "chapters": "15-16"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "17"
+        }
+      ]
+    },
+    {
+      "day": 221,
+      "date": "8월 9일",
+      "readings": [
+        {
+          "book": "욥기",
+          "chapters": "6"
+        },
+        {
+          "book": "이사야",
+          "chapters": "17-18"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "18"
+        }
+      ]
+    },
+    {
+      "day": 222,
+      "date": "8월 10일",
+      "readings": [
+        {
+          "book": "욥기",
+          "chapters": "7"
+        },
+        {
+          "book": "이사야",
+          "chapters": "19-20"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "19"
+        }
+      ]
+    },
+    {
+      "day": 223,
+      "date": "8월 11일",
+      "readings": [
+        {
+          "book": "욥기",
+          "chapters": "8"
+        },
+        {
+          "book": "이사야",
+          "chapters": "21-22"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "20"
+        }
+      ]
+    },
+    {
+      "day": 224,
+      "date": "8월 12일",
+      "readings": [
+        {
+          "book": "욥기",
+          "chapters": "9"
+        },
+        {
+          "book": "이사야",
+          "chapters": "23-24"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "21"
+        }
+      ]
+    },
+    {
+      "day": 225,
+      "date": "8월 13일",
+      "readings": [
+        {
+          "book": "욥기",
+          "chapters": "10"
+        },
+        {
+          "book": "이사야",
+          "chapters": "25-26"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "22-23"
+        }
+      ]
+    },
+    {
+      "day": 226,
+      "date": "8월 14일",
+      "readings": [
+        {
+          "book": "욥기",
+          "chapters": "11"
+        },
+        {
+          "book": "이사야",
+          "chapters": "27-28"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "24-25"
+        }
+      ]
+    },
+    {
+      "day": 227,
+      "date": "8월 15일",
+      "readings": [
+        {
+          "book": "욥기",
+          "chapters": "12"
+        },
+        {
+          "book": "이사야",
+          "chapters": "29-30"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "26"
+        }
+      ]
+    },
+    {
+      "day": 228,
+      "date": "8월 16일",
+      "readings": [
+        {
+          "book": "욥기",
+          "chapters": "13"
+        },
+        {
+          "book": "이사야",
+          "chapters": "31-32"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "27"
+        }
+      ]
+    },
+    {
+      "day": 229,
+      "date": "8월 17일",
+      "readings": [
+        {
+          "book": "욥기",
+          "chapters": "14"
+        },
+        {
+          "book": "이사야",
+          "chapters": "33-34"
+        },
+        {
+          "book": "사도행전",
+          "chapters": "28"
+        }
+      ]
+    },
+    {
+      "day": 230,
+      "date": "8월 18일",
+      "readings": [
+        {
+          "book": "욥기",
+          "chapters": "15"
+        },
+        {
+          "book": "이사야",
+          "chapters": "35-36"
+        },
+        {
+          "book": "마가복음",
+          "chapters": "1"
+        }
+      ]
+    },
+    {
+      "day": 231,
+      "date": "8월 19일",
+      "readings": [
+        {
+          "book": "욥기",
+          "chapters": "16"
+        },
+        {
+          "book": "이사야",
+          "chapters": "37-38"
+        },
+        {
+          "book": "마가복음",
+          "chapters": "2"
+        }
+      ]
+    },
+    {
+      "day": 232,
+      "date": "8월 20일",
+      "readings": [
+        {
+          "book": "욥기",
+          "chapters": "17"
+        },
+        {
+          "book": "이사야",
+          "chapters": "39-40"
+        },
+        {
+          "book": "마가복음",
+          "chapters": "3"
+        }
+      ]
+    },
+    {
+      "day": 233,
+      "date": "8월 21일",
+      "readings": [
+        {
+          "book": "욥기",
+          "chapters": "18"
+        },
+        {
+          "book": "이사야",
+          "chapters": "41-42"
+        },
+        {
+          "book": "마가복음",
+          "chapters": "4"
+        }
+      ]
+    },
+    {
+      "day": 234,
+      "date": "8월 22일",
+      "readings": [
+        {
+          "book": "욥기",
+          "chapters": "19"
+        },
+        {
+          "book": "이사야",
+          "chapters": "43-44"
+        },
+        {
+          "book": "마가복음",
+          "chapters": "5"
+        }
+      ]
+    },
+    {
+      "day": 235,
+      "date": "8월 23일",
+      "readings": [
+        {
+          "book": "욥기",
+          "chapters": "20"
+        },
+        {
+          "book": "이사야",
+          "chapters": "45-46"
+        },
+        {
+          "book": "마가복음",
+          "chapters": "6"
+        }
+      ]
+    },
+    {
+      "day": 236,
+      "date": "8월 24일",
+      "readings": [
+        {
+          "book": "욥기",
+          "chapters": "21"
+        },
+        {
+          "book": "이사야",
+          "chapters": "47-48"
+        },
+        {
+          "book": "마가복음",
+          "chapters": "7"
+        }
+      ]
+    },
+    {
+      "day": 237,
+      "date": "8월 25일",
+      "readings": [
+        {
+          "book": "욥기",
+          "chapters": "22"
+        },
+        {
+          "book": "이사야",
+          "chapters": "49-50"
+        },
+        {
+          "book": "마가복음",
+          "chapters": "8"
+        }
+      ]
+    },
+    {
+      "day": 238,
+      "date": "8월 26일",
+      "readings": [
+        {
+          "book": "욥기",
+          "chapters": "23"
+        },
+        {
+          "book": "이사야",
+          "chapters": "51-52"
+        },
+        {
+          "book": "마가복음",
+          "chapters": "9"
+        }
+      ]
+    },
+    {
+      "day": 239,
+      "date": "8월 27일",
+      "readings": [
+        {
+          "book": "욥기",
+          "chapters": "24"
+        },
+        {
+          "book": "이사야",
+          "chapters": "53-54"
+        },
+        {
+          "book": "마가복음",
+          "chapters": "10"
+        }
+      ]
+    },
+    {
+      "day": 240,
+      "date": "8월 28일",
+      "readings": [
+        {
+          "book": "욥기",
+          "chapters": "25"
+        },
+        {
+          "book": "이사야",
+          "chapters": "55-57"
+        },
+        {
+          "book": "마가복음",
+          "chapters": "11"
+        }
+      ]
+    },
+    {
+      "day": 241,
+      "date": "8월 29일",
+      "readings": [
+        {
+          "book": "욥기",
+          "chapters": "26"
+        },
+        {
+          "book": "이사야",
+          "chapters": "58-60"
+        },
+        {
+          "book": "마가복음",
+          "chapters": "12"
+        }
+      ]
+    },
+    {
+      "day": 242,
+      "date": "8월 30일",
+      "readings": [
+        {
+          "book": "욥기",
+          "chapters": "27"
+        },
+        {
+          "book": "이사야",
+          "chapters": "61-63"
+        },
+        {
+          "book": "마가복음",
+          "chapters": "13"
+        }
+      ]
+    },
+    {
+      "day": 243,
+      "date": "8월 31일",
+      "readings": [
+        {
+          "book": "욥기",
+          "chapters": "28"
+        },
+        {
+          "book": "이사야",
+          "chapters": "64-66"
+        },
+        {
+          "book": "마가복음",
+          "chapters": "14"
+        }
+      ]
+    },
+    {
+      "day": 244,
+      "date": "9월 1일",
+      "readings": [
+        {
+          "book": "욥기",
+          "chapters": "29"
+        },
+        {
+          "book": "예레미야",
+          "chapters": "1-2"
+        },
+        {
+          "book": "마가복음",
+          "chapters": "15"
+        }
+      ]
+    },
+    {
+      "day": 245,
+      "date": "9월 2일",
+      "readings": [
+        {
+          "book": "욥기",
+          "chapters": "30"
+        },
+        {
+          "book": "예레미야",
+          "chapters": "3-4"
+        },
+        {
+          "book": "마가복음",
+          "chapters": "16"
+        }
+      ]
+    },
+    {
+      "day": 246,
+      "date": "9월 3일",
+      "readings": [
+        {
+          "book": "욥기",
+          "chapters": "31"
+        },
+        {
+          "book": "예레미야",
+          "chapters": "5-6"
+        },
+        {
+          "book": "로마서",
+          "chapters": "1"
+        }
+      ]
+    },
+    {
+      "day": 247,
+      "date": "9월 4일",
+      "readings": [
+        {
+          "book": "욥기",
+          "chapters": "32"
+        },
+        {
+          "book": "예레미야",
+          "chapters": "7-8"
+        },
+        {
+          "book": "로마서",
+          "chapters": "2-3"
+        }
+      ]
+    },
+    {
+      "day": 248,
+      "date": "9월 5일",
+      "readings": [
+        {
+          "book": "욥기",
+          "chapters": "33"
+        },
+        {
+          "book": "예레미야",
+          "chapters": "9-10"
+        },
+        {
+          "book": "로마서",
+          "chapters": "4-5"
+        }
+      ]
+    },
+    {
+      "day": 249,
+      "date": "9월 6일",
+      "readings": [
+        {
+          "book": "욥기",
+          "chapters": "34"
+        },
+        {
+          "book": "예레미야",
+          "chapters": "11-12"
+        },
+        {
+          "book": "로마서",
+          "chapters": "6-7"
+        }
+      ]
+    },
+    {
+      "day": 250,
+      "date": "9월 7일",
+      "readings": [
+        {
+          "book": "욥기",
+          "chapters": "35"
+        },
+        {
+          "book": "예레미야",
+          "chapters": "13-14"
+        },
+        {
+          "book": "로마서",
+          "chapters": "8"
+        }
+      ]
+    },
+    {
+      "day": 251,
+      "date": "9월 8일",
+      "readings": [
+        {
+          "book": "욥기",
+          "chapters": "36"
+        },
+        {
+          "book": "예레미야",
+          "chapters": "15-16"
+        },
+        {
+          "book": "로마서",
+          "chapters": "9"
+        }
+      ]
+    },
+    {
+      "day": 252,
+      "date": "9월 9일",
+      "readings": [
+        {
+          "book": "욥기",
+          "chapters": "37"
+        },
+        {
+          "book": "예레미야",
+          "chapters": "17-18"
+        },
+        {
+          "book": "로마서",
+          "chapters": "10"
+        }
+      ]
+    },
+    {
+      "day": 253,
+      "date": "9월 10일",
+      "readings": [
+        {
+          "book": "욥기",
+          "chapters": "38"
+        },
+        {
+          "book": "예레미야",
+          "chapters": "19-20"
+        },
+        {
+          "book": "로마서",
+          "chapters": "11"
+        }
+      ]
+    },
+    {
+      "day": 254,
+      "date": "9월 11일",
+      "readings": [
+        {
+          "book": "욥기",
+          "chapters": "39"
+        },
+        {
+          "book": "예레미야",
+          "chapters": "21-22"
+        },
+        {
+          "book": "로마서",
+          "chapters": "12"
+        }
+      ]
+    },
+    {
+      "day": 255,
+      "date": "9월 12일",
+      "readings": [
+        {
+          "book": "욥기",
+          "chapters": "40"
+        },
+        {
+          "book": "예레미야",
+          "chapters": "23-24"
+        },
+        {
+          "book": "로마서",
+          "chapters": "13-14"
+        }
+      ]
+    },
+    {
+      "day": 256,
+      "date": "9월 13일",
+      "readings": [
+        {
+          "book": "욥기",
+          "chapters": "41"
+        },
+        {
+          "book": "예레미야",
+          "chapters": "25-26"
+        },
+        {
+          "book": "로마서",
+          "chapters": "15-16"
+        }
+      ]
+    },
+    {
+      "day": 257,
+      "date": "9월 14일",
+      "readings": [
+        {
+          "book": "욥기",
+          "chapters": "42"
+        },
+        {
+          "book": "예레미야",
+          "chapters": "27-28"
+        },
+        {
+          "book": "고린도전서",
+          "chapters": "1"
+        }
+      ]
+    },
+    {
+      "day": 258,
+      "date": "9월 15일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "1:1-6"
+        },
+        {
+          "book": "예레미야",
+          "chapters": "29-30"
+        },
+        {
+          "book": "고린도전서",
+          "chapters": "2"
+        }
+      ]
+    },
+    {
+      "day": 259,
+      "date": "9월 16일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "1:7-19"
+        },
+        {
+          "book": "예레미야",
+          "chapters": "31-32"
+        },
+        {
+          "book": "고린도전서",
+          "chapters": "3"
+        }
+      ]
+    },
+    {
+      "day": 260,
+      "date": "9월 17일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "1:20-33"
+        },
+        {
+          "book": "예레미야",
+          "chapters": "33-34"
+        },
+        {
+          "book": "고린도전서",
+          "chapters": "4"
+        }
+      ]
+    },
+    {
+      "day": 261,
+      "date": "9월 18일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "2:1-15"
+        },
+        {
+          "book": "예레미야",
+          "chapters": "35-36"
+        },
+        {
+          "book": "고린도전서",
+          "chapters": "5-6"
+        }
+      ]
+    },
+    {
+      "day": 262,
+      "date": "9월 19일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "2:16-22"
+        },
+        {
+          "book": "예레미야",
+          "chapters": "37-38"
+        },
+        {
+          "book": "고린도전서",
+          "chapters": "7-8"
+        }
+      ]
+    },
+    {
+      "day": 263,
+      "date": "9월 20일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "3:1-10"
+        },
+        {
+          "book": "예레미야",
+          "chapters": "39-40"
+        },
+        {
+          "book": "고린도전서",
+          "chapters": "9-10"
+        }
+      ]
+    },
+    {
+      "day": 264,
+      "date": "9월 21일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "3:11-26"
+        },
+        {
+          "book": "예레미야",
+          "chapters": "41-42"
+        },
+        {
+          "book": "고린도전서",
+          "chapters": "11-12"
+        }
+      ]
+    },
+    {
+      "day": 265,
+      "date": "9월 22일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "3:27-35"
+        },
+        {
+          "book": "예레미야",
+          "chapters": "43-44"
+        },
+        {
+          "book": "고린도전서",
+          "chapters": "13-14"
+        }
+      ]
+    },
+    {
+      "day": 266,
+      "date": "9월 23일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "4:1-9"
+        },
+        {
+          "book": "예레미야",
+          "chapters": "45-46"
+        },
+        {
+          "book": "고린도전서",
+          "chapters": "15-16"
+        }
+      ]
+    },
+    {
+      "day": 267,
+      "date": "9월 24일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "4:10-27"
+        },
+        {
+          "book": "예레미야",
+          "chapters": "47-48"
+        },
+        {
+          "book": "고린도후서",
+          "chapters": "1"
+        }
+      ]
+    },
+    {
+      "day": 268,
+      "date": "9월 25일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "5:1-14"
+        },
+        {
+          "book": "예레미야",
+          "chapters": "49-50"
+        },
+        {
+          "book": "고린도후서",
+          "chapters": "2-3"
+        }
+      ]
+    },
+    {
+      "day": 269,
+      "date": "9월 26일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "5:15-23"
+        },
+        {
+          "book": "예레미야",
+          "chapters": "51"
+        },
+        {
+          "book": "고린도후서",
+          "chapters": "4-5"
+        }
+      ]
+    },
+    {
+      "day": 270,
+      "date": "9월 27일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "6:1-19"
+        },
+        {
+          "book": "예레미야",
+          "chapters": "52"
+        },
+        {
+          "book": "고린도후서",
+          "chapters": "6-7"
+        }
+      ]
+    },
+    {
+      "day": 271,
+      "date": "9월 28일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "6:20-35"
+        },
+        {
+          "book": "예레미야 애가",
+          "chapters": "1-2"
+        },
+        {
+          "book": "고린도후서",
+          "chapters": "8-9"
+        }
+      ]
+    },
+    {
+      "day": 272,
+      "date": "9월 29일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "7:1-27"
+        },
+        {
+          "book": "예레미야 애가",
+          "chapters": "3-4"
+        },
+        {
+          "book": "고린도후서",
+          "chapters": "10-11"
+        }
+      ]
+    },
+    {
+      "day": 273,
+      "date": "9월 30일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "8:1-21"
+        },
+        {
+          "book": "예레미야 애가",
+          "chapters": "5"
+        },
+        {
+          "book": "고린도후서",
+          "chapters": "12-13"
+        }
+      ]
+    },
+    {
+      "day": 274,
+      "date": "10월 1일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "8:22-36"
+        },
+        {
+          "book": "에스겔",
+          "chapters": "1-2"
+        },
+        {
+          "book": "누가복음",
+          "chapters": "1"
+        }
+      ]
+    },
+    {
+      "day": 275,
+      "date": "10월 2일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "9:1-18"
+        },
+        {
+          "book": "에스겔",
+          "chapters": "3-4"
+        },
+        {
+          "book": "누가복음",
+          "chapters": "2"
+        }
+      ]
+    },
+    {
+      "day": 276,
+      "date": "10월 3일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "10:1-10"
+        },
+        {
+          "book": "에스겔",
+          "chapters": "5-6"
+        },
+        {
+          "book": "누가복음",
+          "chapters": "3"
+        }
+      ]
+    },
+    {
+      "day": 277,
+      "date": "10월 4일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "10:11-21"
+        },
+        {
+          "book": "에스겔",
+          "chapters": "7-8"
+        },
+        {
+          "book": "누가복음",
+          "chapters": "4"
+        }
+      ]
+    },
+    {
+      "day": 278,
+      "date": "10월 5일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "10:22-32"
+        },
+        {
+          "book": "에스겔",
+          "chapters": "9-10"
+        },
+        {
+          "book": "누가복음",
+          "chapters": "5"
+        }
+      ]
+    },
+    {
+      "day": 279,
+      "date": "10월 6일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "11:1-11"
+        },
+        {
+          "book": "에스겔",
+          "chapters": "11-12"
+        },
+        {
+          "book": "누가복음",
+          "chapters": "6"
+        }
+      ]
+    },
+    {
+      "day": 280,
+      "date": "10월 7일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "11:12-21"
+        },
+        {
+          "book": "에스겔",
+          "chapters": "13-14"
+        },
+        {
+          "book": "누가복음",
+          "chapters": "7"
+        }
+      ]
+    },
+    {
+      "day": 281,
+      "date": "10월 8일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "11:22-31"
+        },
+        {
+          "book": "에스겔",
+          "chapters": "15-16"
+        },
+        {
+          "book": "누가복음",
+          "chapters": "8"
+        }
+      ]
+    },
+    {
+      "day": 282,
+      "date": "10월 9일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "12:1-14"
+        },
+        {
+          "book": "에스겔",
+          "chapters": "17-18"
+        },
+        {
+          "book": "누가복음",
+          "chapters": "9"
+        }
+      ]
+    },
+    {
+      "day": 283,
+      "date": "10월 10일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "12:15-28"
+        },
+        {
+          "book": "에스겔",
+          "chapters": "19-20"
+        },
+        {
+          "book": "누가복음",
+          "chapters": "10"
+        }
+      ]
+    },
+    {
+      "day": 284,
+      "date": "10월 11일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "13:1-13"
+        },
+        {
+          "book": "에스겔",
+          "chapters": "21-22"
+        },
+        {
+          "book": "누가복음",
+          "chapters": "11"
+        }
+      ]
+    },
+    {
+      "day": 285,
+      "date": "10월 12일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "13:14-25"
+        },
+        {
+          "book": "에스겔",
+          "chapters": "23-24"
+        },
+        {
+          "book": "누가복음",
+          "chapters": "12"
+        }
+      ]
+    },
+    {
+      "day": 286,
+      "date": "10월 13일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "14:1-12"
+        },
+        {
+          "book": "에스겔",
+          "chapters": "25-26"
+        },
+        {
+          "book": "누가복음",
+          "chapters": "13"
+        }
+      ]
+    },
+    {
+      "day": 287,
+      "date": "10월 14일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "14:13-24"
+        },
+        {
+          "book": "에스겔",
+          "chapters": "27"
+        },
+        {
+          "book": "누가복음",
+          "chapters": "14"
+        }
+      ]
+    },
+    {
+      "day": 288,
+      "date": "10월 15일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "14:25-35"
+        },
+        {
+          "book": "에스겔",
+          "chapters": "28"
+        },
+        {
+          "book": "누가복음",
+          "chapters": "15"
+        }
+      ]
+    },
+    {
+      "day": 289,
+      "date": "10월 16일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "15:1-11"
+        },
+        {
+          "book": "에스겔",
+          "chapters": "29"
+        },
+        {
+          "book": "누가복음",
+          "chapters": "16"
+        }
+      ]
+    },
+    {
+      "day": 290,
+      "date": "10월 17일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "15:12-22"
+        },
+        {
+          "book": "에스겔",
+          "chapters": "30"
+        },
+        {
+          "book": "누가복음",
+          "chapters": "17"
+        }
+      ]
+    },
+    {
+      "day": 291,
+      "date": "10월 18일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "15:23-33"
+        },
+        {
+          "book": "에스겔",
+          "chapters": "31"
+        },
+        {
+          "book": "누가복음",
+          "chapters": "18"
+        }
+      ]
+    },
+    {
+      "day": 292,
+      "date": "10월 19일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "16:1-11"
+        },
+        {
+          "book": "에스겔",
+          "chapters": "32"
+        },
+        {
+          "book": "누가복음",
+          "chapters": "19"
+        }
+      ]
+    },
+    {
+      "day": 293,
+      "date": "10월 20일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "16:12-22"
+        },
+        {
+          "book": "에스겔",
+          "chapters": "33"
+        },
+        {
+          "book": "누가복음",
+          "chapters": "20"
+        }
+      ]
+    },
+    {
+      "day": 294,
+      "date": "10월 21일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "16:23-33"
+        },
+        {
+          "book": "에스겔",
+          "chapters": "34"
+        },
+        {
+          "book": "누가복음",
+          "chapters": "21"
+        }
+      ]
+    },
+    {
+      "day": 295,
+      "date": "10월 22일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "17:1-14"
+        },
+        {
+          "book": "에스겔",
+          "chapters": "35"
+        },
+        {
+          "book": "누가복음",
+          "chapters": "22"
+        }
+      ]
+    },
+    {
+      "day": 296,
+      "date": "10월 23일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "17:15-28"
+        },
+        {
+          "book": "에스겔",
+          "chapters": "36"
+        },
+        {
+          "book": "누가복음",
+          "chapters": "23"
+        }
+      ]
+    },
+    {
+      "day": 297,
+      "date": "10월 24일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "18:1-12"
+        },
+        {
+          "book": "에스겔",
+          "chapters": "37"
+        },
+        {
+          "book": "누가복음",
+          "chapters": "24"
+        }
+      ]
+    },
+    {
+      "day": 298,
+      "date": "10월 25일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "18:13-24"
+        },
+        {
+          "book": "에스겔",
+          "chapters": "38"
+        },
+        {
+          "book": "갈라디아서",
+          "chapters": "1-2"
+        }
+      ]
+    },
+    {
+      "day": 299,
+      "date": "10월 26일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "19:1-10"
+        },
+        {
+          "book": "에스겔",
+          "chapters": "39"
+        },
+        {
+          "book": "갈라디아서",
+          "chapters": "3-4"
+        }
+      ]
+    },
+    {
+      "day": 300,
+      "date": "10월 27일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "19:11-20"
+        },
+        {
+          "book": "에스겔",
+          "chapters": "40-41"
+        },
+        {
+          "book": "갈라디아서",
+          "chapters": "5-6"
+        }
+      ]
+    },
+    {
+      "day": 301,
+      "date": "10월 28일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "19:21-29"
+        },
+        {
+          "book": "에스겔",
+          "chapters": "42-43"
+        },
+        {
+          "book": "에베소서",
+          "chapters": "1-2"
+        }
+      ]
+    },
+    {
+      "day": 302,
+      "date": "10월 29일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "20:1-10"
+        },
+        {
+          "book": "에스겔",
+          "chapters": "44-45"
+        },
+        {
+          "book": "에베소서",
+          "chapters": "3-4"
+        }
+      ]
+    },
+    {
+      "day": 303,
+      "date": "10월 30일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "20:11-20"
+        },
+        {
+          "book": "에스겔",
+          "chapters": "46-47"
+        },
+        {
+          "book": "에베소서",
+          "chapters": "5-6"
+        }
+      ]
+    },
+    {
+      "day": 304,
+      "date": "10월 31일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "20:21-30"
+        },
+        {
+          "book": "에스겔",
+          "chapters": "48"
+        },
+        {
+          "book": "빌립보서",
+          "chapters": "1-2"
+        }
+      ]
+    },
+    {
+      "day": 305,
+      "date": "11월 1일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "21:1-10"
+        },
+        {
+          "book": "다니엘",
+          "chapters": "1-2"
+        },
+        {
+          "book": "빌립보서",
+          "chapters": "3-4"
+        }
+      ]
+    },
+    {
+      "day": 306,
+      "date": "11월 2일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "21:11-20"
+        },
+        {
+          "book": "다니엘",
+          "chapters": "3-4"
+        },
+        {
+          "book": "골로새서",
+          "chapters": "1-2"
+        }
+      ]
+    },
+    {
+      "day": 307,
+      "date": "11월 3일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "21:21-31"
+        },
+        {
+          "book": "다니엘",
+          "chapters": "5-6"
+        },
+        {
+          "book": "골로새서",
+          "chapters": "3-4"
+        }
+      ]
+    },
+    {
+      "day": 308,
+      "date": "11월 4일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "22:1-16"
+        },
+        {
+          "book": "다니엘",
+          "chapters": "7-8"
+        },
+        {
+          "book": "데살로니가전서",
+          "chapters": "1-2"
+        }
+      ]
+    },
+    {
+      "day": 309,
+      "date": "11월 5일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "22:17-29"
+        },
+        {
+          "book": "다니엘",
+          "chapters": "9-10"
+        },
+        {
+          "book": "데살로니가전서",
+          "chapters": "3-5"
+        }
+      ]
+    },
+    {
+      "day": 310,
+      "date": "11월 6일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "23:1-12"
+        },
+        {
+          "book": "다니엘",
+          "chapters": "11-12"
+        },
+        {
+          "book": "데살로니가후서",
+          "chapters": "1-3"
+        }
+      ]
+    },
+    {
+      "day": 311,
+      "date": "11월 7일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "23:13-25"
+        },
+        {
+          "book": "호세아",
+          "chapters": "1-2"
+        },
+        {
+          "book": "디모데전서",
+          "chapters": "1-2"
+        }
+      ]
+    },
+    {
+      "day": 312,
+      "date": "11월 8일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "23:26-35"
+        },
+        {
+          "book": "호세아",
+          "chapters": "3-4"
+        },
+        {
+          "book": "디모데전서",
+          "chapters": "3-4"
+        }
+      ]
+    },
+    {
+      "day": 313,
+      "date": "11월 9일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "24:1-10"
+        },
+        {
+          "book": "호세아",
+          "chapters": "5-6"
+        },
+        {
+          "book": "디모데전서",
+          "chapters": "5-6"
+        }
+      ]
+    },
+    {
+      "day": 314,
+      "date": "11월 10일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "24:11-22"
+        },
+        {
+          "book": "호세아",
+          "chapters": "7-8"
+        },
+        {
+          "book": "디모데후서",
+          "chapters": "1-2"
+        }
+      ]
+    },
+    {
+      "day": 315,
+      "date": "11월 11일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "24:23-34"
+        },
+        {
+          "book": "호세아",
+          "chapters": "9-10"
+        },
+        {
+          "book": "디모데후서",
+          "chapters": "3-4"
+        }
+      ]
+    },
+    {
+      "day": 316,
+      "date": "11월 12일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "25:1-14"
+        },
+        {
+          "book": "호세아",
+          "chapters": "11-12"
+        },
+        {
+          "book": "디도서",
+          "chapters": "1-3"
+        }
+      ]
+    },
+    {
+      "day": 317,
+      "date": "11월 13일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "25:15-28"
+        },
+        {
+          "book": "호세아",
+          "chapters": "13-14"
+        },
+        {
+          "book": "빌레몬서",
+          "chapters": "1"
+        }
+      ]
+    },
+    {
+      "day": 318,
+      "date": "11월 14일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "26:1-9"
+        },
+        {
+          "book": "요엘",
+          "chapters": "1-2"
+        },
+        {
+          "book": "요한복음",
+          "chapters": "1"
+        }
+      ]
+    },
+    {
+      "day": 319,
+      "date": "11월 15일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "26:10-19"
+        },
+        {
+          "book": "요엘",
+          "chapters": "3"
+        },
+        {
+          "book": "요한복음",
+          "chapters": "2"
+        }
+      ]
+    },
+    {
+      "day": 320,
+      "date": "11월 16일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "26:20-28"
+        },
+        {
+          "book": "아모스",
+          "chapters": "1-2"
+        },
+        {
+          "book": "요한복음",
+          "chapters": "3"
+        }
+      ]
+    },
+    {
+      "day": 321,
+      "date": "11월 17일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "27:1-9"
+        },
+        {
+          "book": "아모스",
+          "chapters": "3-4"
+        },
+        {
+          "book": "요한복음",
+          "chapters": "4"
+        }
+      ]
+    },
+    {
+      "day": 322,
+      "date": "11월 18일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "27:10-18"
+        },
+        {
+          "book": "아모스",
+          "chapters": "5-6"
+        },
+        {
+          "book": "요한복음",
+          "chapters": "5"
+        }
+      ]
+    },
+    {
+      "day": 323,
+      "date": "11월 19일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "27:19-27"
+        },
+        {
+          "book": "아모스",
+          "chapters": "7-8"
+        },
+        {
+          "book": "요한복음",
+          "chapters": "6"
+        }
+      ]
+    },
+    {
+      "day": 324,
+      "date": "11월 20일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "28:1-9"
+        },
+        {
+          "book": "아모스",
+          "chapters": "9"
+        },
+        {
+          "book": "요한복음",
+          "chapters": "7"
+        }
+      ]
+    },
+    {
+      "day": 325,
+      "date": "11월 21일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "28:10-18"
+        },
+        {
+          "book": "오바댜",
+          "chapters": "1"
+        },
+        {
+          "book": "요한복음",
+          "chapters": "8"
+        }
+      ]
+    },
+    {
+      "day": 326,
+      "date": "11월 22일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "28:19-28"
+        },
+        {
+          "book": "요나",
+          "chapters": "1"
+        },
+        {
+          "book": "요한복음",
+          "chapters": "9"
+        }
+      ]
+    },
+    {
+      "day": 327,
+      "date": "11월 23일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "29:1-9"
+        },
+        {
+          "book": "요나",
+          "chapters": "2"
+        },
+        {
+          "book": "요한복음",
+          "chapters": "10"
+        }
+      ]
+    },
+    {
+      "day": 328,
+      "date": "11월 24일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "29:10-18"
+        },
+        {
+          "book": "요나",
+          "chapters": "3"
+        },
+        {
+          "book": "요한복음",
+          "chapters": "11"
+        }
+      ]
+    },
+    {
+      "day": 329,
+      "date": "11월 25일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "29:19-27"
+        },
+        {
+          "book": "요나",
+          "chapters": "4"
+        },
+        {
+          "book": "요한복음",
+          "chapters": "12"
+        }
+      ]
+    },
+    {
+      "day": 330,
+      "date": "11월 26일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "30:1-14"
+        },
+        {
+          "book": "미가",
+          "chapters": "1"
+        },
+        {
+          "book": "요한복음",
+          "chapters": "13"
+        }
+      ]
+    },
+    {
+      "day": 331,
+      "date": "11월 27일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "30:15-33"
+        },
+        {
+          "book": "미가",
+          "chapters": "2"
+        },
+        {
+          "book": "요한복음",
+          "chapters": "14"
+        }
+      ]
+    },
+    {
+      "day": 332,
+      "date": "11월 28일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "31:1-9"
+        },
+        {
+          "book": "미가",
+          "chapters": "3"
+        },
+        {
+          "book": "요한복음",
+          "chapters": "15"
+        }
+      ]
+    },
+    {
+      "day": 333,
+      "date": "11월 29일",
+      "readings": [
+        {
+          "book": "잠언",
+          "chapters": "31:10-31"
+        },
+        {
+          "book": "미가",
+          "chapters": "4"
+        },
+        {
+          "book": "요한복음",
+          "chapters": "16"
+        }
+      ]
+    },
+    {
+      "day": 334,
+      "date": "11월 30일",
+      "readings": [
+        {
+          "book": "전도서",
+          "chapters": "1:1-11"
+        },
+        {
+          "book": "미가",
+          "chapters": "5"
+        },
+        {
+          "book": "요한복음",
+          "chapters": "17"
+        }
+      ]
+    },
+    {
+      "day": 335,
+      "date": "12월 1일",
+      "readings": [
+        {
+          "book": "전도서",
+          "chapters": "1:12-18"
+        },
+        {
+          "book": "미가",
+          "chapters": "6"
+        },
+        {
+          "book": "요한복음",
+          "chapters": "18"
+        }
+      ]
+    },
+    {
+      "day": 336,
+      "date": "12월 2일",
+      "readings": [
+        {
+          "book": "전도서",
+          "chapters": "2:1-11"
+        },
+        {
+          "book": "미가",
+          "chapters": "7"
+        },
+        {
+          "book": "요한복음",
+          "chapters": "19"
+        }
+      ]
+    },
+    {
+      "day": 337,
+      "date": "12월 3일",
+      "readings": [
+        {
+          "book": "전도서",
+          "chapters": "2:12-17"
+        },
+        {
+          "book": "나훔",
+          "chapters": "1"
+        },
+        {
+          "book": "요한복음",
+          "chapters": "20"
+        }
+      ]
+    },
+    {
+      "day": 338,
+      "date": "12월 4일",
+      "readings": [
+        {
+          "book": "전도서",
+          "chapters": "2:18-26"
+        },
+        {
+          "book": "나훔",
+          "chapters": "2"
+        },
+        {
+          "book": "요한복음",
+          "chapters": "21"
+        }
+      ]
+    },
+    {
+      "day": 339,
+      "date": "12월 5일",
+      "readings": [
+        {
+          "book": "전도서",
+          "chapters": "3:1-11"
+        },
+        {
+          "book": "나훔",
+          "chapters": "3"
+        },
+        {
+          "book": "히브리서",
+          "chapters": "1-2"
+        }
+      ]
+    },
+    {
+      "day": 340,
+      "date": "12월 6일",
+      "readings": [
+        {
+          "book": "전도서",
+          "chapters": "3:12-22"
+        },
+        {
+          "book": "하박국",
+          "chapters": "1"
+        },
+        {
+          "book": "히브리서",
+          "chapters": "3-4"
+        }
+      ]
+    },
+    {
+      "day": 341,
+      "date": "12월 7일",
+      "readings": [
+        {
+          "book": "전도서",
+          "chapters": "4:1-6"
+        },
+        {
+          "book": "하박국",
+          "chapters": "2"
+        },
+        {
+          "book": "히브리서",
+          "chapters": "5-6"
+        }
+      ]
+    },
+    {
+      "day": 342,
+      "date": "12월 8일",
+      "readings": [
+        {
+          "book": "전도서",
+          "chapters": "4:7-16"
+        },
+        {
+          "book": "하박국",
+          "chapters": "3"
+        },
+        {
+          "book": "히브리서",
+          "chapters": "7-8"
+        }
+      ]
+    },
+    {
+      "day": 343,
+      "date": "12월 9일",
+      "readings": [
+        {
+          "book": "전도서",
+          "chapters": "5:1-9"
+        },
+        {
+          "book": "스바냐",
+          "chapters": "1"
+        },
+        {
+          "book": "히브리서",
+          "chapters": "9-10"
+        }
+      ]
+    },
+    {
+      "day": 344,
+      "date": "12월 10일",
+      "readings": [
+        {
+          "book": "전도서",
+          "chapters": "5:10-20"
+        },
+        {
+          "book": "스바냐",
+          "chapters": "2"
+        },
+        {
+          "book": "히브리서",
+          "chapters": "11-13"
+        }
+      ]
+    },
+    {
+      "day": 345,
+      "date": "12월 11일",
+      "readings": [
+        {
+          "book": "전도서",
+          "chapters": "6:1-12"
+        },
+        {
+          "book": "스바냐",
+          "chapters": "3"
+        },
+        {
+          "book": "야고보서",
+          "chapters": "1-2"
+        }
+      ]
+    },
+    {
+      "day": 346,
+      "date": "12월 12일",
+      "readings": [
+        {
+          "book": "전도서",
+          "chapters": "7:1-10"
+        },
+        {
+          "book": "학개",
+          "chapters": "1"
+        },
+        {
+          "book": "야고보서",
+          "chapters": "3-5"
+        }
+      ]
+    },
+    {
+      "day": 347,
+      "date": "12월 13일",
+      "readings": [
+        {
+          "book": "전도서",
+          "chapters": "11:1-18"
+        },
+        {
+          "book": "학개",
+          "chapters": "2"
+        },
+        {
+          "book": "베드로전서",
+          "chapters": "1-2"
+        }
+      ]
+    },
+    {
+      "day": 348,
+      "date": "12월 14일",
+      "readings": [
+        {
+          "book": "전도서",
+          "chapters": "11:19-29"
+        },
+        {
+          "book": "스가랴",
+          "chapters": "1"
+        },
+        {
+          "book": "베드로전서",
+          "chapters": "3-5"
+        }
+      ]
+    },
+    {
+      "day": 349,
+      "date": "12월 15일",
+      "readings": [
+        {
+          "book": "전도서",
+          "chapters": "8:1-8"
+        },
+        {
+          "book": "스가랴",
+          "chapters": "2"
+        },
+        {
+          "book": "베드로후서",
+          "chapters": "1-3"
+        }
+      ]
+    },
+    {
+      "day": 350,
+      "date": "12월 16일",
+      "readings": [
+        {
+          "book": "전도서",
+          "chapters": "9:9-17"
+        },
+        {
+          "book": "스가랴",
+          "chapters": "3"
+        },
+        {
+          "book": "요한1서",
+          "chapters": "1-2"
+        }
+      ]
+    },
+    {
+      "day": 351,
+      "date": "12월 17일",
+      "readings": [
+        {
+          "book": "전도서",
+          "chapters": "9:1-10"
+        },
+        {
+          "book": "스가랴",
+          "chapters": "4"
+        },
+        {
+          "book": "요한1서",
+          "chapters": "3-5"
+        }
+      ]
+    },
+    {
+      "day": 352,
+      "date": "12월 18일",
+      "readings": [
+        {
+          "book": "전도서",
+          "chapters": "11:11-18"
+        },
+        {
+          "book": "스가랴",
+          "chapters": "5"
+        },
+        {
+          "book": "요한2서",
+          "chapters": "1"
+        },
+        {
+          "book": "요한3서",
+          "chapters": "1"
+        },
+        {
+          "book": "유다서",
+          "chapters": "1"
+        }
+      ]
+    },
+    {
+      "day": 353,
+      "date": "12월 19일",
+      "readings": [
+        {
+          "book": "전도서",
+          "chapters": "10:1-11"
+        },
+        {
+          "book": "스가랴",
+          "chapters": "6"
+        },
+        {
+          "book": "요한계시록",
+          "chapters": "1-2"
+        }
+      ]
+    },
+    {
+      "day": 354,
+      "date": "12월 20일",
+      "readings": [
+        {
+          "book": "전도서",
+          "chapters": "12:12-20"
+        },
+        {
+          "book": "스가랴",
+          "chapters": "7"
+        },
+        {
+          "book": "요한계시록",
+          "chapters": "3-4"
+        }
+      ]
+    },
+    {
+      "day": 355,
+      "date": "12월 21일",
+      "readings": [
+        {
+          "book": "전도서",
+          "chapters": "11:1-10"
+        },
+        {
+          "book": "스가랴",
+          "chapters": "8"
+        },
+        {
+          "book": "요한계시록",
+          "chapters": "5-6"
+        }
+      ]
+    },
+    {
+      "day": 356,
+      "date": "12월 22일",
+      "readings": [
+        {
+          "book": "전도서",
+          "chapters": "12:1-8"
+        },
+        {
+          "book": "스가랴",
+          "chapters": "9"
+        },
+        {
+          "book": "요한계시록",
+          "chapters": "7-8"
+        }
+      ]
+    },
+    {
+      "day": 357,
+      "date": "12월 23일",
+      "readings": [
+        {
+          "book": "전도서",
+          "chapters": "9:9-14"
+        },
+        {
+          "book": "스가랴",
+          "chapters": "10"
+        },
+        {
+          "book": "요한계시록",
+          "chapters": "9-10"
+        }
+      ]
+    },
+    {
+      "day": 358,
+      "date": "12월 24일",
+      "readings": [
+        {
+          "book": "아가",
+          "chapters": "1"
+        },
+        {
+          "book": "스가랴",
+          "chapters": "11"
+        },
+        {
+          "book": "요한계시록",
+          "chapters": "11-12"
+        }
+      ]
+    },
+    {
+      "day": 359,
+      "date": "12월 25일",
+      "readings": [
+        {
+          "book": "아가",
+          "chapters": "2"
+        },
+        {
+          "book": "스가랴",
+          "chapters": "12"
+        },
+        {
+          "book": "요한계시록",
+          "chapters": "13-14"
+        }
+      ]
+    },
+    {
+      "day": 360,
+      "date": "12월 26일",
+      "readings": [
+        {
+          "book": "아가",
+          "chapters": "3"
+        },
+        {
+          "book": "스가랴",
+          "chapters": "13"
+        },
+        {
+          "book": "요한계시록",
+          "chapters": "15-16"
+        }
+      ]
+    },
+    {
+      "day": 361,
+      "date": "12월 27일",
+      "readings": [
+        {
+          "book": "아가",
+          "chapters": "4"
+        },
+        {
+          "book": "스가랴",
+          "chapters": "14"
+        },
+        {
+          "book": "요한계시록",
+          "chapters": "17-18"
+        }
+      ]
+    },
+    {
+      "day": 362,
+      "date": "12월 28일",
+      "readings": [
+        {
+          "book": "아가",
+          "chapters": "5"
+        },
+        {
+          "book": "말라기",
+          "chapters": "1"
+        },
+        {
+          "book": "요한계시록",
+          "chapters": "19"
+        }
+      ]
+    },
+    {
+      "day": 363,
+      "date": "12월 29일",
+      "readings": [
+        {
+          "book": "아가",
+          "chapters": "6"
+        },
+        {
+          "book": "말라기",
+          "chapters": "2"
+        },
+        {
+          "book": "요한계시록",
+          "chapters": "20"
+        }
+      ]
+    },
+    {
+      "day": 364,
+      "date": "12월 30일",
+      "readings": [
+        {
+          "book": "아가",
+          "chapters": "7"
+        },
+        {
+          "book": "말라기",
+          "chapters": "3"
+        },
+        {
+          "book": "요한계시록",
+          "chapters": "21"
+        }
+      ]
+    },
+    {
+      "day": 365,
+      "date": "12월 31일",
+      "readings": [
+        {
+          "book": "아가",
+          "chapters": "8"
+        },
+        {
+          "book": "말라기",
+          "chapters": "4"
+        },
+        {
+          "book": "요한계시록",
+          "chapters": "22"
+        }
+      ]
+    }
+  ]
+}

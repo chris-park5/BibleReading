@@ -1,0 +1,19 @@
+{
+  "id": "new-testament",
+  "title": "신약 90일 읽기",
+  "description": "매일 3장씩 신약 전체를 90일 안에 읽는 계획",
+  "duration": "90일",
+  "totalDays": 90,
+  "schedule": [
+    { "day": 1, "readings": [{ "book": "마태복음", "chapters": "1장" }] },
+    { "day": 2, "readings": [{ "book": "마태복음", "chapters": "2장" }] },
+    { "day": 3, "readings": [{ "book": "마태복음", "chapters": "3장" }] },
+    { "day": 4, "readings": [{ "book": "마태복음", "chapters": "4장" }] },
+    { "day": 5, "readings": [{ "book": "마태복음", "chapters": "5장" }] },
+    { "day": 6, "readings": [{ "book": "마태복음", "chapters": "6장" }] },
+    { "day": 7, "readings": [{ "book": "마태복음", "chapters": "7장" }] },
+    { "day": 8, "readings": [{ "book": "마태복음", "chapters": "8장" }] },
+    { "day": 9, "readings": [{ "book": "마태복음", "chapters": "9장" }] },
+    { "day": 10, "readings": [{ "book": "마태복음", "chapters": "10장" }] }
+  ]
+}

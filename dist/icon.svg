@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Bible Reading Plan">
+  <rect width="512" height="512" rx="96" fill="#3b82f6"/>
+  <path d="M164 148h184c18 0 32 14 32 32v210c0 18-14 32-32 32H196c-18 0-32-14-32-32V148z" fill="#ffffff" opacity="0.95"/>
+  <path d="M196 176h120a14 14 0 0 1 0 28H196a14 14 0 0 1 0-28zm0 56h184a14 14 0 0 1 0 28H196a14 14 0 0 1 0-28zm0 56h184a14 14 0 0 1 0 28H196a14 14 0 0 1 0-28zm0 56h184a14 14 0 0 1 0 28H196a14 14 0 0 1 0-28z" fill="#3b82f6"/>
+</svg>

@@ -1,0 +1,19 @@
+{
+  "id": "ninety-day",
+  "title": "90일 성경 읽기",
+  "description": "매일 12-15장씩 90일 안에 성경 전체를 읽는 계획",
+  "duration": "90일",
+  "totalDays": 90,
+  "schedule": [
+    { "day": 1, "readings": [{ "book": "창세기", "chapters": "1-12장" }] },
+    { "day": 2, "readings": [{ "book": "창세기", "chapters": "13-24장" }] },
+    { "day": 3, "readings": [{ "book": "창세기", "chapters": "25-36장" }] },
+    { "day": 4, "readings": [{ "book": "창세기", "chapters": "37-50장" }] },
+    { "day": 5, "readings": [{ "book": "출애굽기", "chapters": "1-15장" }] },
+    { "day": 6, "readings": [{ "book": "출애굽기", "chapters": "16-30장" }] },
+    { "day": 7, "readings": [{ "book": "출애굽기", "chapters": "31-40장" }] },
+    { "day": 8, "readings": [{ "book": "레위기", "chapters": "1-14장" }] },
+    { "day": 9, "readings": [{ "book": "레위기", "chapters": "15-27장" }] },
+    { "day": 10, "readings": [{ "book": "민수기", "chapters": "1-18장" }] }
+  ]
+}
