@@ -102,7 +102,7 @@ export function FriendsTabPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
+    <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-6">
       <div className="flex items-center gap-3">
         <div className="p-3 bg-purple-100 rounded-lg">
           <UsersRound className="w-6 h-6 text-purple-600" />
@@ -122,7 +122,7 @@ export function FriendsTabPage() {
                 key={req.requestId}
                 className="p-4 border-2 border-gray-200 rounded-lg"
               >
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div>
                     <p>
                       {req.fromUser.name}
@@ -132,12 +132,12 @@ export function FriendsTabPage() {
                     </p>
                     <p className="text-sm text-gray-600">{req.fromUser.email}</p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
                     <button
                       type="button"
                       disabled={respondingRequestId === req.requestId}
                       onClick={() => handleRespond(req.requestId, "accept")}
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors w-full sm:w-auto"
                     >
                       <Check className="w-4 h-4" />
                       수락
@@ -146,7 +146,7 @@ export function FriendsTabPage() {
                       type="button"
                       disabled={respondingRequestId === req.requestId}
                       onClick={() => handleRespond(req.requestId, "decline")}
-                      className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors w-full sm:w-auto"
                     >
                       <X className="w-4 h-4" />
                       거부
@@ -168,7 +168,7 @@ export function FriendsTabPage() {
                 key={req.requestId}
                 className="p-4 border-2 border-gray-200 rounded-lg"
               >
-                <div className="flex items-center justify-between gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div>
                     <p>
                       {req.toUser.name}
@@ -182,7 +182,7 @@ export function FriendsTabPage() {
                     type="button"
                     disabled={respondingRequestId === req.requestId}
                     onClick={() => handleCancel(req.requestId)}
-                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors w-full sm:w-auto"
                   >
                     <X className="w-4 h-4" />
                     취소
@@ -196,7 +196,7 @@ export function FriendsTabPage() {
 
       <div className="bg-white border-2 border-gray-200 rounded-xl p-6">
         <h2 className="mb-3">친구 요청 보내기</h2>
-        <form onSubmit={handleSendFriendRequest} className="flex gap-2">
+        <form onSubmit={handleSendFriendRequest} className="flex flex-col sm:flex-row gap-2">
           <input
             type="text"
             value={friendUsername}
@@ -208,7 +208,7 @@ export function FriendsTabPage() {
           <button
             type="submit"
             disabled={loading}
-            className="flex items-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors w-full sm:w-auto"
           >
             <UserPlus className="w-5 h-5" />
             요청
@@ -228,7 +228,7 @@ export function FriendsTabPage() {
                 key={friend.userId}
                 className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-300 transition-colors"
               >
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div>
                     <p>{friend.name}</p>
                     <p className="text-sm text-gray-600">
@@ -236,11 +236,11 @@ export function FriendsTabPage() {
                       {friend.email}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
                     <button
                       type="button"
                       onClick={() => handleViewStatus(friend)}
-                      className="flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors"
+                      className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors w-full sm:w-auto"
                     >
                       <TrendingUp className="w-4 h-4" />
                       보기
@@ -249,7 +249,7 @@ export function FriendsTabPage() {
                       type="button"
                       disabled={deletingFriendId === friend.userId}
                       onClick={() => handleDeleteFriend(friend)}
-                      className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors w-full sm:w-auto"
                       title="친구 삭제"
                     >
                       <Trash2 className="w-4 h-4" />
