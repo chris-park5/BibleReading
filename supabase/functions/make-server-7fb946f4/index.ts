@@ -61,6 +61,12 @@ api.post("/share-plan", routes.requireAuth, routes.setSharePlan);
 api.post("/notifications", routes.requireAuth, routes.saveNotification);
 api.get("/notifications", routes.requireAuth, routes.getNotifications);
 
+api.post("/push/subscribe", routes.requireAuth, routes.savePushSubscription);
+api.post("/push/test", routes.requireAuth, routes.sendTestPush);
+
+// Scheduled/cron trigger (protect with a shared secret header).
+api.post("/cron/send-notifications", routes.sendScheduledNotifications);
+
 api.delete("/account", routes.requireAuth, routes.deleteAccount);
 
 // Mount routes for both cases:

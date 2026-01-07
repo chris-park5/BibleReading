@@ -7,6 +7,7 @@
 import { Context } from "npm:hono";
 import { getSupabaseClient, verifyAccessToken, fetchUserProgress, handleError } from "./utils.ts";
 import * as auth from "./auth.ts";
+import webpush from "npm:web-push@3";
 import type {
   CreatePlanRequest,
   UpdatePlanOrderRequest,
@@ -19,6 +20,100 @@ import type {
 } from "./types.ts";
 
 const supabase = getSupabaseClient();
+
+function timeHHMM(value: string) {
+  // Accept 'HH:MM' or 'HH:MM:SS'
+  const parts = String(value || "").split(":");
+  if (parts.length < 2) return null;
+  const hh = parts[0].padStart(2, "0");
+  const mm = parts[1].padStart(2, "0");
+  return `${hh}:${mm}`;
+}
+
+function nowInSeoul() {
+  // Supabase Edge runs in UTC. We normalize to Asia/Seoul for scheduling.
+  const now = new Date();
+  const dtf = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+  const parts = dtf.formatToParts(now);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value;
+  const yyyy = get("year") ?? "";
+  const mm = get("month") ?? "";
+  const dd = get("day") ?? "";
+  const hour = get("hour") ?? "00";
+  const minute = get("minute") ?? "00";
+  return {
+    date: `${yyyy}-${mm}-${dd}`,
+    hhmm: `${hour}:${minute}`,
+  };
+}
+
+function requireCronSecret(c: Context) {
+  const expected = Deno.env.get("CRON_SECRET");
+  if (!expected) return { ok: false as const, reason: "Missing CRON_SECRET env" };
+  const got = c.req.header("x-cron-secret");
+  if (!got || got !== expected) return { ok: false as const, reason: "Invalid cron secret" };
+  return { ok: true as const };
+}
+
+function initWebPush() {
+  const publicKey = Deno.env.get("VAPID_PUBLIC_KEY");
+  const privateKey = Deno.env.get("VAPID_PRIVATE_KEY");
+  const subject = Deno.env.get("VAPID_SUBJECT") ?? "mailto:admin@example.com";
+  if (!publicKey || !privateKey) {
+    throw new Error("Missing VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY");
+  }
+  webpush.setVapidDetails(subject, publicKey, privateKey);
+}
+
+async function sendPushToUser(userId: string, payloadJson: unknown) {
+  const payload = JSON.stringify(payloadJson);
+
+  const { data: subs, error: subsError } = await supabase
+    .from("push_subscriptions")
+    .select("id,endpoint,p256dh,auth,expiration_time")
+    .eq("user_id", userId);
+
+  if (subsError) throw subsError;
+  if (!subs?.length) return { delivered: 0, removed: 0 };
+
+  let delivered = 0;
+  let removed = 0;
+
+  for (const s of subs) {
+    const subscription = {
+      endpoint: s.endpoint,
+      expirationTime: s.expiration_time ?? null,
+      keys: {
+        p256dh: s.p256dh,
+        auth: s.auth,
+      },
+    };
+
+    try {
+      await webpush.sendNotification(subscription as any, payload);
+      delivered++;
+    } catch (e: any) {
+      const statusCode = e?.statusCode ?? e?.status;
+      if (statusCode === 404 || statusCode === 410) {
+        const { error: delErr } = await supabase
+          .from("push_subscriptions")
+          .delete()
+          .eq("id", s.id);
+        if (!delErr) removed++;
+      }
+    }
+  }
+
+  return { delivered, removed };
+}
 
 // ============================================
 // Middleware
@@ -1090,11 +1185,216 @@ export async function deleteFriend(c: Context) {
 // ============================================
 
 export async function saveNotification(c: Context) {
-  // TODO: 알림 기능 구현
-  return c.json({ success: true });
+  try {
+    const userId = c.get("userId");
+    const { planId, time, enabled } = (await c.req.json()) as NotificationRequest;
+
+    if (!userId) {
+      return c.json({ error: "Unauthorized" }, 401);
+    }
+
+    if (!planId || typeof planId !== "string") {
+      return c.json({ error: "planId is required" }, 400);
+    }
+
+    if (!time || typeof time !== "string") {
+      return c.json({ error: "time is required" }, 400);
+    }
+
+    if (typeof enabled !== "boolean") {
+      return c.json({ error: "enabled must be boolean" }, 400);
+    }
+
+    // Ensure the plan belongs to the user.
+    const { data: planRow, error: planError } = await supabase
+      .from("plans")
+      .select("id")
+      .eq("id", planId)
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (planError) throw planError;
+    if (!planRow) {
+      return c.json({ error: "Plan not found" }, 404);
+    }
+
+    const { data, error } = await supabase
+      .from("notification_settings")
+      .upsert(
+        {
+          user_id: userId,
+          plan_id: planId,
+          time,
+          enabled,
+        },
+        { onConflict: "user_id,plan_id" }
+      )
+      .select("plan_id,time,enabled")
+      .maybeSingle();
+
+    if (error) throw error;
+
+    return c.json({
+      success: true,
+      notification: {
+        planId: data?.plan_id ?? planId,
+        time: data?.time ?? time,
+        enabled: typeof data?.enabled === "boolean" ? data.enabled : enabled,
+      },
+    });
+  } catch (error) {
+    return c.json(handleError(error, "Failed to save notification"), 500);
+  }
 }
 
 export async function getNotifications(c: Context) {
-  // TODO: 알림 기능 구현
-  return c.json({ success: true, notifications: [] });
+  try {
+    const userId = c.get("userId");
+    if (!userId) {
+      return c.json({ error: "Unauthorized" }, 401);
+    }
+
+    const { data, error } = await supabase
+      .from("notification_settings")
+      .select("plan_id,time,enabled")
+      .eq("user_id", userId);
+
+    if (error) throw error;
+
+    const notifications = (data ?? []).map((row: any) => ({
+      planId: row.plan_id,
+      time: row.time,
+      enabled: Boolean(row.enabled),
+    }));
+
+    return c.json({ success: true, notifications });
+  } catch (error) {
+    return c.json(handleError(error, "Failed to get notifications"), 500);
+  }
+}
+
+// ============================================
+// Web Push
+// ============================================
+
+export async function savePushSubscription(c: Context) {
+  try {
+    const userId = c.get("userId");
+    if (!userId) return c.json({ error: "Unauthorized" }, 401);
+
+    const body = await c.req.json();
+    const endpoint = body?.endpoint;
+    const p256dh = body?.keys?.p256dh;
+    const authKey = body?.keys?.auth;
+    const expirationTime = body?.expirationTime ?? null;
+    const userAgent = body?.userAgent ?? null;
+
+    if (!endpoint || !p256dh || !authKey) {
+      return c.json({ error: "Invalid subscription" }, 400);
+    }
+
+    const { error } = await supabase
+      .from("push_subscriptions")
+      .upsert(
+        {
+          user_id: userId,
+          endpoint,
+          p256dh,
+          auth: authKey,
+          expiration_time: typeof expirationTime === "number" ? expirationTime : null,
+          user_agent: typeof userAgent === "string" ? userAgent : null,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id,endpoint" }
+      );
+
+    if (error) throw error;
+
+    return c.json({ success: true });
+  } catch (error) {
+    return c.json(handleError(error, "Failed to save push subscription"), 500);
+  }
+}
+
+export async function sendScheduledNotifications(c: Context) {
+  try {
+    const authz = requireCronSecret(c);
+    if (!authz.ok) return c.json({ error: authz.reason }, 401);
+
+    initWebPush();
+
+    const { date, hhmm } = nowInSeoul();
+
+    const { data: due, error: dueError } = await supabase
+      .from("notification_settings")
+      .select("id,user_id,plan_id,time,enabled,last_sent_at")
+      .eq("enabled", true);
+
+    if (dueError) throw dueError;
+
+    const dueFiltered = (due ?? []).filter((row: any) => {
+      const t = timeHHMM(row.time);
+      if (!t || t !== hhmm) return false;
+
+      const last = row.last_sent_at ? new Date(row.last_sent_at) : null;
+      if (!last) return true;
+
+      const lastDate = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Seoul",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(last);
+
+      return lastDate !== date;
+    });
+
+    let sent = 0;
+    let removed = 0;
+
+    for (const row of dueFiltered) {
+      const userId = row.user_id;
+
+      const payload = {
+        title: "성경 읽기 알림",
+        body: "오늘 말씀을 읽을 시간이에요. 앱을 열어 오늘의 읽기를 확인하세요.",
+        url: "/",
+      };
+
+      const result = await sendPushToUser(userId, payload);
+      removed += result.removed;
+
+      if (result.delivered > 0) {
+        sent++;
+        await supabase
+          .from("notification_settings")
+          .update({ last_sent_at: new Date().toISOString() })
+          .eq("id", row.id);
+      }
+    }
+
+    return c.json({ success: true, hhmm, date, due: dueFiltered.length, sent, removed });
+  } catch (error) {
+    return c.json(handleError(error, "Failed to send scheduled notifications"), 500);
+  }
+}
+
+export async function sendTestPush(c: Context) {
+  try {
+    const userId = c.get("userId");
+    if (!userId) return c.json({ error: "Unauthorized" }, 401);
+
+    initWebPush();
+
+    const payload = {
+      title: "테스트 알림",
+      body: "오늘 말씀을 읽을 시간이에요. 알림이 정상적으로 작동합니다!",
+      url: "/",
+    };
+
+    const result = await sendPushToUser(userId, payload);
+    return c.json({ success: true, delivered: result.delivered, removed: result.removed });
+  } catch (error) {
+    return c.json(handleError(error, "Failed to send test push"), 500);
+  }
 }

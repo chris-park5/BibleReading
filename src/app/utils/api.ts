@@ -577,6 +577,26 @@ export async function getNotifications() {
   return fetchAPI("/notifications");
 }
 
+// ============================================================================
+// Web Push APIs
+// ============================================================================
+
+export async function savePushSubscription(input: {
+  endpoint: string;
+  expirationTime: number | null;
+  keys: { p256dh: string; auth: string };
+  userAgent?: string;
+}) {
+  return fetchAPI("/push/subscribe", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export async function sendTestPush() {
+  return fetchAPI("/push/test", { method: "POST" });
+}
+
 export async function deleteAccount(): Promise<{ success: boolean }> {
   return fetchAPI("/account", { method: "DELETE" });
 }

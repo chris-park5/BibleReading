@@ -5,6 +5,8 @@ import { usePlanStore } from "../../stores/plan.store";
 import { usePlans } from "../../hooks/usePlans";
 import * as authService from "../../services/authService";
 import * as notificationService from "../../services/notificationService";
+import { ensurePushSubscriptionRegistered } from "../utils/pushClient";
+import * as api from "../utils/api";
 
 export function SettingsTabPage() {
   const selectedPlanId = usePlanStore((s) => s.selectedPlanId);
@@ -53,12 +55,55 @@ export function SettingsTabPage() {
 
   const checkNotificationPermission = async () => {
     if ("Notification" in window) {
-      if (Notification.permission === "granted") {
-        setPermissionGranted(true);
-      } else if (Notification.permission !== "denied") {
-        const permission = await Notification.requestPermission();
-        setPermissionGranted(permission === "granted");
+      setPermissionGranted(Notification.permission === "granted");
+    }
+  };
+
+  const ensureNotificationPermission = async () => {
+    if (!("Notification" in window)) {
+      alert("이 브라우저는 알림을 지원하지 않습니다");
+      return false;
+    }
+
+    if (Notification.permission === "granted") {
+      setPermissionGranted(true);
+      return true;
+    }
+
+    if (Notification.permission === "denied") {
+      setPermissionGranted(false);
+      alert("알림 권한이 차단되어 있습니다. 브라우저 설정에서 알림을 허용해주세요");
+      return false;
+    }
+
+    // On mobile, permission requests often require a user gesture.
+    const permission = await Notification.requestPermission();
+    const ok = permission === "granted";
+    setPermissionGranted(ok);
+    if (!ok) {
+      alert("알림 권한이 필요합니다");
+    }
+    return ok;
+  };
+
+  const showNotification = async (title: string, body: string) => {
+    if (!("Notification" in window)) return;
+    if (Notification.permission !== "granted") return;
+
+    try {
+      if ("serviceWorker" in navigator) {
+        const reg = await navigator.serviceWorker.ready;
+        await reg.showNotification(title, { body, icon: "/icon.svg" });
+        return;
       }
+    } catch {
+      // fall back to window Notification
+    }
+
+    try {
+      new Notification(title, { body, icon: "/icon.svg" });
+    } catch {
+      // ignore
     }
   };
 
@@ -116,10 +161,10 @@ export function SettingsTabPage() {
 
     setTimeout(() => {
       if (Notification.permission === "granted") {
-        new Notification("성경 읽기 알림", {
-          body: "오늘 말씀을 읽을 시간이에요. 앱을 열어 오늘의 읽기를 확인하세요.",
-          icon: "/icon.svg",
-        });
+        void showNotification(
+          "성경 읽기 알림",
+          "오늘 말씀을 읽을 시간이에요. 앱을 열어 오늘의 읽기를 확인하세요."
+        );
       }
     }, delay);
   };
@@ -130,14 +175,28 @@ export function SettingsTabPage() {
       return;
     }
 
-    if (Notification.permission === "granted") {
-      new Notification("테스트 알림", {
-        body: "오늘 말씀을 읽을 시간이에요. 알림이 정상적으로 작동합니다!",
-        icon: "/icon.svg",
-      });
-    } else {
-      alert("알림 권한이 필요합니다");
-    }
+    void (async () => {
+      const ok = await ensureNotificationPermission();
+      if (!ok) return;
+
+      // Register push so notifications can arrive even when app is closed.
+      try {
+        await ensurePushSubscriptionRegistered();
+      } catch {
+        // ignore
+      }
+
+      try {
+        // Prefer server-sent push to verify background delivery.
+        await api.sendTestPush();
+      } catch {
+        // Fallback: local notification
+        await showNotification(
+          "테스트 알림",
+          "오늘 말씀을 읽을 시간이에요. 알림이 정상적으로 작동합니다!"
+        );
+      }
+    })();
   };
 
   const handleSave = async () => {
@@ -146,9 +205,12 @@ export function SettingsTabPage() {
       return;
     }
 
-    if (enabled && !permissionGranted) {
-      alert("알림 권한이 필요합니다");
-      return;
+    if (enabled) {
+      const ok = await ensureNotificationPermission();
+      if (!ok) return;
+
+      // Push subscription is required for background delivery.
+      await ensurePushSubscriptionRegistered();
     }
 
     try {
@@ -434,7 +496,7 @@ export function SettingsTabPage() {
             </div>
             <div>
               <h2>알림</h2>
-              <p className="text-gray-600">{planName || "계획을 선택하면 설정할 수 있어요"}</p>
+              <p className="text-gray-600">오늘 말씀 알림</p>
             </div>
           </div>
 
@@ -453,7 +515,18 @@ export function SettingsTabPage() {
               <input
                 type="checkbox"
                 checked={enabled}
-                onChange={(e) => setEnabled(e.target.checked)}
+                onChange={(e) => {
+                  const next = e.target.checked;
+                  if (!next) {
+                    setEnabled(false);
+                    return;
+                  }
+
+                  void (async () => {
+                    const ok = await ensureNotificationPermission();
+                    setEnabled(ok);
+                  })();
+                }}
                 className="sr-only peer"
               />
               <span className="absolute inset-0 bg-gray-300 rounded-full peer-checked:bg-blue-500 transition-colors cursor-pointer"></span>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Bell, X } from "lucide-react";
 import * as api from "../utils/api";
+import { ensurePushSubscriptionRegistered } from "../utils/pushClient";
 
 interface NotificationSettingsProps {
   onClose: () => void;
@@ -24,12 +25,52 @@ export function NotificationSettings({
 
   const checkNotificationPermission = async () => {
     if ("Notification" in window) {
-      if (Notification.permission === "granted") {
-        setPermissionGranted(true);
-      } else if (Notification.permission !== "denied") {
-        const permission = await Notification.requestPermission();
-        setPermissionGranted(permission === "granted");
+      setPermissionGranted(Notification.permission === "granted");
+    }
+  };
+
+  const ensureNotificationPermission = async () => {
+    if (!("Notification" in window)) {
+      alert("이 브라우저는 알림을 지원하지 않습니다");
+      return false;
+    }
+
+    if (Notification.permission === "granted") {
+      setPermissionGranted(true);
+      return true;
+    }
+
+    if (Notification.permission === "denied") {
+      setPermissionGranted(false);
+      alert("알림 권한이 차단되어 있습니다. 브라우저 설정에서 알림을 허용해주세요");
+      return false;
+    }
+
+    const permission = await Notification.requestPermission();
+    const ok = permission === "granted";
+    setPermissionGranted(ok);
+    if (!ok) alert("알림 권한이 필요합니다");
+    return ok;
+  };
+
+  const showNotification = async (title: string, body: string) => {
+    if (!("Notification" in window)) return;
+    if (Notification.permission !== "granted") return;
+
+    try {
+      if ("serviceWorker" in navigator) {
+        const reg = await navigator.serviceWorker.ready;
+        await reg.showNotification(title, { body, icon: "/icon.svg" });
+        return;
       }
+    } catch {
+      // fall back
+    }
+
+    try {
+      new Notification(title, { body, icon: "/icon.svg" });
+    } catch {
+      // ignore
     }
   };
 
@@ -49,9 +90,12 @@ export function NotificationSettings({
   };
 
   const handleSave = async () => {
-    if (enabled && !permissionGranted) {
-      alert("알림 권한이 필요합니다");
-      return;
+    if (enabled) {
+      const ok = await ensureNotificationPermission();
+      if (!ok) return;
+
+      // Register push so notifications can arrive even when app is closed.
+      await ensurePushSubscriptionRegistered();
     }
 
     try {
@@ -88,23 +132,34 @@ export function NotificationSettings({
 
     setTimeout(() => {
       if (Notification.permission === "granted") {
-        new Notification("성경 읽기 알림", {
-          body: "오늘 말씀을 읽을 시간이에요. 앱을 열어 오늘의 읽기를 확인하세요.",
-          icon: "/icon.svg",
-        });
+        void showNotification(
+          "성경 읽기 알림",
+          "오늘 말씀을 읽을 시간이에요. 앱을 열어 오늘의 읽기를 확인하세요."
+        );
       }
     }, delay);
   };
 
   const handleTestNotification = () => {
-    if (Notification.permission === "granted") {
-      new Notification("테스트 알림", {
-        body: "오늘 말씀을 읽을 시간이에요. 알림이 정상적으로 작동합니다!",
-        icon: "/icon.svg",
-      });
-    } else {
-      alert("알림 권한이 필요합니다");
-    }
+    void (async () => {
+      const ok = await ensureNotificationPermission();
+      if (!ok) return;
+
+      try {
+        await ensurePushSubscriptionRegistered();
+      } catch {
+        // ignore
+      }
+
+      try {
+        await api.sendTestPush();
+      } catch {
+        await showNotification(
+          "테스트 알림",
+          "오늘 말씀을 읽을 시간이에요. 알림이 정상적으로 작동합니다!"
+        );
+      }
+    })();
   };
 
   return (
