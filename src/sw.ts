@@ -14,6 +14,14 @@ clientsClaim();
 cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST);
 
+// 클라이언트에서 즉시 업데이트 적용을 요청할 수 있도록 합니다.
+self.addEventListener('message', (event: ExtendableMessageEvent) => {
+  const data: any = (event as any).data;
+  if (data && data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
 // 배포 후 하얀 화면(구버전 index.html 캐시로 인해 새 hashed asset을 못 찾는 문제)을 줄이기 위해
 // HTML(navigation) 요청은 네트워크 우선으로 가져오고, 오프라인 시에만 캐시를 사용합니다.
 registerRoute(
