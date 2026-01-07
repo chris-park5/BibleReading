@@ -329,7 +329,7 @@ function HomeTab() {
           day,
           readingIndex,
           readingCount,
-          book: `${plan.name} · ${r.book}`,
+          book: r.book,
           chapters: r.chapters,
           completed: isDayCompleted || completedSet.has(readingIndex),
         });
@@ -340,7 +340,7 @@ function HomeTab() {
   }, [progressByPlanId, viewPlans]);
 
   const readings = useMemo(
-    () => combined.map((c) => ({ book: c.book, chapters: c.chapters })),
+    () => combined.map((c) => ({ planName: c.planName, book: c.book, chapters: c.chapters })),
     [combined]
   );
   const completedByIndex = useMemo(() => combined.map((c) => c.completed), [combined]);
