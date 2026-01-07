@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query';
 import { BookOpen } from 'lucide-react';
 import { usePlanStore } from '../../stores/plan.store';
 import { usePlan } from '../../hooks/usePlans';
@@ -5,6 +6,8 @@ import { useProgress } from '../../hooks/useProgress';
 import { TodayReading } from '../components/TodayReading';
 import { ProgressChart } from '../components/ProgressChart';
 import { ReadingHistory } from '../components/ReadingHistory';
+import { useAuthStore } from '../../stores/auth.store';
+import * as friendService from '../../services/friendService';
 
 export function DashboardPage({ embedded = false }: { embedded?: boolean }) {
   const { 
@@ -14,6 +17,14 @@ export function DashboardPage({ embedded = false }: { embedded?: boolean }) {
     nextDay,
     prevDay,
   } = usePlanStore();
+
+  const userId = useAuthStore((s) => s.user?.id ?? null);
+  const { data: friendsData } = useQuery({
+    queryKey: ['friends', userId],
+    queryFn: friendService.getFriends,
+    enabled: !!userId,
+  });
+  const incomingRequestsCount = friendsData?.incomingRequests?.length ?? 0;
   
   const selectedPlan = usePlan(selectedPlanId);
   const { progress, toggleReading } = useProgress(selectedPlanId);
@@ -30,9 +41,17 @@ export function DashboardPage({ embedded = false }: { embedded?: boolean }) {
   }
 
   const todayReading = selectedPlan.schedule.find((s) => s.day === currentDay);
+  
+  // DB 스키마 한계로 인해 completedReadingsByDay가 비어있을 수 있음
+  // 따라서 completedDays에 포함되어 있다면 모든 reading이 완료된 것으로 간주
+  const isDayCompleted = progress.completedDays.includes(currentDay);
   const completedIndices = progress.completedReadingsByDay?.[String(currentDay)] ?? [];
   const completedSet = new Set(completedIndices);
-  const completedByIndex = (todayReading?.readings ?? []).map((_, i) => completedSet.has(i));
+  
+  const completedByIndex = (todayReading?.readings ?? []).map((_, i) => 
+    isDayCompleted || completedSet.has(i)
+  );
+  
   const readingCount = todayReading?.readings.length ?? 0;
 
   const handleNextDay = () => {
@@ -83,6 +102,23 @@ export function DashboardPage({ embedded = false }: { embedded?: boolean }) {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-6 py-8">
+        {incomingRequestsCount > 0 && (
+          <div className="bg-white border-2 border-gray-200 rounded-xl p-4 mb-6 flex items-center justify-between gap-4">
+            <div>
+              <p>새 친구 요청이 있습니다</p>
+              <p className="text-sm text-gray-600">{incomingRequestsCount}개</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                window.location.hash = "#/friends";
+              }}
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              확인하기
+            </button>
+          </div>
+        )}
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Left Column */}
           <div className="lg:col-span-2 space-y-6">

@@ -1,21 +1,84 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import * as api from '../app/utils/api';
+import { useRef } from 'react';
+import * as progressService from '../services/progressService';
 import type { Progress } from '../types/domain';
+import { useAuthStore } from '../stores/auth.store';
+import {
+  enqueueDayToggle,
+  enqueueReadingToggle,
+  isOfflineLikeError,
+  OfflineError,
+} from '../app/utils/offlineProgressQueue';
 
 export function useProgress(planId: string | null) {
   const queryClient = useQueryClient();
+  const userId = useAuthStore((s) => s.user?.id ?? null);
+
+  const progressQueryKey = ['progress', userId, planId] as const;
+
+  const toggleCompleteSeqRef = useRef(0);
+  const toggleReadingSeqRef = useRef(0);
   
   const { data, isLoading } = useQuery({
-    queryKey: ['progress', planId],
-    queryFn: () => api.getProgress(planId!),
-    enabled: !!planId,
+    queryKey: progressQueryKey,
+    queryFn: () => progressService.getProgress(planId!),
+    enabled: !!userId && !!planId,
   });
   
   const toggleCompleteMutation = useMutation({
-    mutationFn: ({ day, completed }: { day: number; completed: boolean }) =>
-      api.updateProgress(planId!, day, completed),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['progress', planId] });
+    mutationFn: ({ day, completed }: { day: number; completed: boolean }) => {
+      if (typeof navigator !== 'undefined' && navigator && navigator.onLine === false) {
+        throw new OfflineError();
+      }
+      return progressService.updateProgress(planId!, day, completed);
+    },
+    onMutate: ({ day, completed }) => {
+      toggleCompleteSeqRef.current += 1;
+      const seq = toggleCompleteSeqRef.current;
+
+      // Do not await here. Waiting for an in-flight fetch can make the UI feel laggy.
+      void queryClient.cancelQueries({ queryKey: progressQueryKey });
+
+      const previous = queryClient.getQueryData<{ success: boolean; progress: Progress }>(progressQueryKey);
+
+      queryClient.setQueryData<{ success: boolean; progress: Progress }>(progressQueryKey, (current) => {
+        if (!current?.progress) return current as any;
+
+        const prevProgress = current.progress;
+        const nextCompletedDays = new Set(prevProgress.completedDays ?? []);
+        if (completed) nextCompletedDays.add(day);
+        else nextCompletedDays.delete(day);
+
+        return {
+          ...current,
+          progress: {
+            ...prevProgress,
+            completedDays: Array.from(nextCompletedDays),
+            lastUpdated: new Date().toISOString(),
+          },
+        };
+      });
+
+      return { previous, seq };
+    },
+    onError: (err, vars, ctx) => {
+      if (!ctx) return;
+      if (ctx.seq !== toggleCompleteSeqRef.current) return;
+
+      // 오프라인/네트워크 문제면 롤백하지 않고 큐에 저장 (온라인 복구 시 자동 동기화)
+      if (isOfflineLikeError(err)) {
+        void enqueueDayToggle({ planId: planId!, day: vars.day, completed: vars.completed });
+        return;
+      }
+
+      if (ctx.previous) {
+        queryClient.setQueryData(progressQueryKey, ctx.previous);
+      }
+    },
+    onSuccess: (data, _vars, ctx) => {
+      if (!ctx) return;
+      if (ctx.seq !== toggleCompleteSeqRef.current) return;
+      queryClient.setQueryData(progressQueryKey, data);
     },
   });
 
@@ -30,9 +93,82 @@ export function useProgress(planId: string | null) {
       readingIndex: number;
       completed: boolean;
       readingCount: number;
-    }) => api.updateReadingProgress(planId!, day, readingIndex, completed, readingCount),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['progress', planId] });
+    }) => {
+      if (typeof navigator !== 'undefined' && navigator && navigator.onLine === false) {
+        throw new OfflineError();
+      }
+      return progressService.updateReadingProgress(planId!, day, readingIndex, completed, readingCount);
+    },
+    onMutate: ({ day, readingIndex, completed, readingCount }) => {
+      toggleReadingSeqRef.current += 1;
+      const seq = toggleReadingSeqRef.current;
+
+      // Do not await here. Waiting for an in-flight fetch can make the UI feel laggy.
+      void queryClient.cancelQueries({ queryKey: progressQueryKey });
+
+      const previous = queryClient.getQueryData<{ success: boolean; progress: Progress }>(progressQueryKey);
+
+      queryClient.setQueryData<{ success: boolean; progress: Progress }>(progressQueryKey, (current) => {
+        if (!current?.progress) return current as any;
+
+        const prevProgress = current.progress;
+        const key = String(day);
+        const prevMap = prevProgress.completedReadingsByDay ?? {};
+        const prevList = Array.isArray(prevMap[key]) ? prevMap[key] : [];
+
+        const nextSet = new Set(prevList);
+        if (completed) nextSet.add(readingIndex);
+        else nextSet.delete(readingIndex);
+
+        const nextList = Array.from(nextSet).sort((a, b) => a - b);
+        const nextCompletedReadingsByDay: Record<string, number[]> = {
+          ...prevMap,
+          [key]: nextList,
+        };
+
+        const nextCompletedDays = new Set(prevProgress.completedDays ?? []);
+        const isDayCompleted = readingCount > 0 && nextList.length >= readingCount;
+        if (isDayCompleted) nextCompletedDays.add(day);
+        else nextCompletedDays.delete(day);
+
+        return {
+          ...current,
+          progress: {
+            ...prevProgress,
+            completedReadingsByDay: nextCompletedReadingsByDay,
+            completedDays: Array.from(nextCompletedDays),
+            lastUpdated: new Date().toISOString(),
+          },
+        };
+      });
+
+      return { previous, seq };
+    },
+    onError: (err, vars, ctx) => {
+      if (!ctx) return;
+      if (ctx.seq !== toggleReadingSeqRef.current) return;
+
+      // 오프라인/네트워크 문제면 롤백하지 않고 큐에 저장 (온라인 복구 시 자동 동기화)
+      if (isOfflineLikeError(err)) {
+        void enqueueReadingToggle({
+          planId: planId!,
+          day: vars.day,
+          readingIndex: vars.readingIndex,
+          completed: vars.completed,
+          readingCount: vars.readingCount,
+        });
+        return;
+      }
+
+      if (ctx.previous) {
+        queryClient.setQueryData(progressQueryKey, ctx.previous);
+      }
+    },
+    onSuccess: (data, _vars, ctx) => {
+      if (!ctx) return;
+      if (ctx.seq !== toggleReadingSeqRef.current) return;
+      // 서버 응답으로 캐시를 확정 (invalidate 없이도 UI 안정)
+      queryClient.setQueryData(progressQueryKey, data);
     },
   });
   

@@ -1,30 +1,18 @@
 import { useEffect, useState } from "react";
-import { TrendingUp, UserPlus, UsersRound } from "lucide-react";
-import { usePlanStore } from "../../stores/plan.store";
-import * as api from "../utils/api";
-
-interface Friend {
-  userId: string;
-  email: string;
-  name: string;
-  addedAt: string;
-}
-
-interface FriendProgress {
-  user: { id: string; email: string; name: string };
-  plan: { name: string; totalDays: number };
-  progress: { completedDays: number[] };
-}
+import { Check, Trash2, TrendingUp, UserPlus, UsersRound, X } from "lucide-react";
+import * as friendService from "../../services/friendService";
 
 export function FriendsTabPage() {
-  const currentPlanId = usePlanStore((s) => s.selectedPlanId);
-
-  const [friends, setFriends] = useState<Friend[]>([]);
-  const [friendEmail, setFriendEmail] = useState("");
+  const [friends, setFriends] = useState<friendService.Friend[]>([]);
+  const [incomingRequests, setIncomingRequests] = useState<friendService.IncomingFriendRequest[]>([]);
+  const [outgoingRequests, setOutgoingRequests] = useState<friendService.OutgoingFriendRequest[]>([]);
+  const [friendUsername, setFriendUsername] = useState("");
   const [loading, setLoading] = useState(false);
+  const [respondingRequestId, setRespondingRequestId] = useState<string | null>(null);
+  const [deletingFriendId, setDeletingFriendId] = useState<string | null>(null);
   const [error, setError] = useState("");
-  const [selectedFriend, setSelectedFriend] = useState<string | null>(null);
-  const [friendProgress, setFriendProgress] = useState<FriendProgress | null>(null);
+  const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
+  const [friendStatus, setFriendStatus] = useState<friendService.FriendStatus | null>(null);
 
   useEffect(() => {
     void loadFriends();
@@ -32,21 +20,23 @@ export function FriendsTabPage() {
 
   const loadFriends = async () => {
     try {
-      const result = await api.getFriends();
+      const result = await friendService.getFriends();
       setFriends(result.friends || []);
+      setIncomingRequests(result.incomingRequests || []);
+      setOutgoingRequests(result.outgoingRequests || []);
     } catch (err: any) {
       console.error("Failed to load friends:", err);
     }
   };
 
-  const handleAddFriend = async (e: React.FormEvent) => {
+  const handleSendFriendRequest = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
     try {
-      await api.addFriend(friendEmail);
-      setFriendEmail("");
+      await friendService.addFriend(friendUsername.trim());
+      setFriendUsername("");
       await loadFriends();
     } catch (err: any) {
       setError(err.message || "친구 추가에 실패했습니다");
@@ -55,19 +45,59 @@ export function FriendsTabPage() {
     }
   };
 
-  const handleViewProgress = async (friend: Friend) => {
-    if (!currentPlanId) {
-      alert("현재 선택된 계획이 없습니다");
-      return;
-    }
-
+  const handleViewStatus = async (friend: friendService.Friend) => {
     try {
-      const result = await api.getFriendProgress(friend.userId, currentPlanId);
-      setFriendProgress(result.friendProgress);
-      setSelectedFriend(friend.userId);
+      const result = await friendService.getFriendStatus(friend.userId);
+      setFriendStatus(result.friendStatus);
+      setSelectedFriendId(friend.userId);
     } catch (err: any) {
-      alert("친구의 진도를 불러올 수 없습니다");
+      alert("친구 정보를 불러올 수 없습니다");
       console.error(err);
+    }
+  };
+
+  const handleDeleteFriend = async (friend: friendService.Friend) => {
+    if (!window.confirm("친구를 삭제할까요?")) return;
+
+    setError("");
+    setDeletingFriendId(friend.userId);
+    try {
+      await friendService.deleteFriend(friend.userId);
+      if (selectedFriendId === friend.userId) {
+        setSelectedFriendId(null);
+        setFriendStatus(null);
+      }
+      await loadFriends();
+    } catch (err: any) {
+      setError(err.message || "친구 삭제에 실패했습니다");
+    } finally {
+      setDeletingFriendId(null);
+    }
+  };
+
+  const handleRespond = async (requestId: string, action: "accept" | "decline") => {
+    setError("");
+    setRespondingRequestId(requestId);
+    try {
+      await friendService.respondFriendRequest(requestId, action);
+      await loadFriends();
+    } catch (err: any) {
+      setError(err.message || "요청 처리에 실패했습니다");
+    } finally {
+      setRespondingRequestId(null);
+    }
+  };
+
+  const handleCancel = async (requestId: string) => {
+    setError("");
+    setRespondingRequestId(requestId);
+    try {
+      await friendService.cancelFriendRequest(requestId);
+      await loadFriends();
+    } catch (err: any) {
+      setError(err.message || "요청 취소에 실패했습니다");
+    } finally {
+      setRespondingRequestId(null);
     }
   };
 
@@ -83,15 +113,96 @@ export function FriendsTabPage() {
         </div>
       </div>
 
+      {incomingRequests.length > 0 && (
+        <div className="bg-white border-2 border-gray-200 rounded-xl p-6">
+          <h2 className="mb-3">받은 친구 요청 ({incomingRequests.length})</h2>
+          <div className="space-y-2">
+            {incomingRequests.map((req) => (
+              <div
+                key={req.requestId}
+                className="p-4 border-2 border-gray-200 rounded-lg"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p>
+                      {req.fromUser.name}
+                      {req.fromUser.username ? (
+                        <span className="text-sm text-gray-600"> (#{req.fromUser.username})</span>
+                      ) : null}
+                    </p>
+                    <p className="text-sm text-gray-600">{req.fromUser.email}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={respondingRequestId === req.requestId}
+                      onClick={() => handleRespond(req.requestId, "accept")}
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <Check className="w-4 h-4" />
+                      수락
+                    </button>
+                    <button
+                      type="button"
+                      disabled={respondingRequestId === req.requestId}
+                      onClick={() => handleRespond(req.requestId, "decline")}
+                      className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                      거부
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {outgoingRequests.length > 0 && (
+        <div className="bg-white border-2 border-gray-200 rounded-xl p-6">
+          <h2 className="mb-3">내가 보낸 요청 ({outgoingRequests.length})</h2>
+          <div className="space-y-2">
+            {outgoingRequests.map((req) => (
+              <div
+                key={req.requestId}
+                className="p-4 border-2 border-gray-200 rounded-lg"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p>
+                      {req.toUser.name}
+                      {req.toUser.username ? (
+                        <span className="text-sm text-gray-600"> (#{req.toUser.username})</span>
+                      ) : null}
+                    </p>
+                    <p className="text-sm text-gray-600">{req.toUser.email}</p>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={respondingRequestId === req.requestId}
+                    onClick={() => handleCancel(req.requestId)}
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                    취소
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="bg-white border-2 border-gray-200 rounded-xl p-6">
-        <h2 className="mb-3">친구 추가</h2>
-        <form onSubmit={handleAddFriend} className="flex gap-2">
+        <h2 className="mb-3">친구 요청 보내기</h2>
+        <form onSubmit={handleSendFriendRequest} className="flex gap-2">
           <input
-            type="email"
-            value={friendEmail}
-            onChange={(e) => setFriendEmail(e.target.value)}
+            type="text"
+            value={friendUsername}
+            onChange={(e) => setFriendUsername(e.target.value)}
             className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
-            placeholder="친구의 이메일 입력"
+            placeholder="친구 아이디(Username) 입력"
             required
           />
           <button
@@ -100,7 +211,7 @@ export function FriendsTabPage() {
             className="flex items-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <UserPlus className="w-5 h-5" />
-            추가
+            요청
           </button>
         </form>
         {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
@@ -120,16 +231,31 @@ export function FriendsTabPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p>{friend.name}</p>
-                    <p className="text-sm text-gray-600">{friend.email}</p>
+                    <p className="text-sm text-gray-600">
+                      {friend.username ? `#${friend.username} · ` : ""}
+                      {friend.email}
+                    </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => handleViewProgress(friend)}
-                    className="flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors"
-                  >
-                    <TrendingUp className="w-4 h-4" />
-                    진도 보기
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleViewStatus(friend)}
+                      className="flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors"
+                    >
+                      <TrendingUp className="w-4 h-4" />
+                      보기
+                    </button>
+                    <button
+                      type="button"
+                      disabled={deletingFriendId === friend.userId}
+                      onClick={() => handleDeleteFriend(friend)}
+                      className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      title="친구 삭제"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      삭제
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -137,32 +263,29 @@ export function FriendsTabPage() {
         )}
       </div>
 
-      {selectedFriend && friendProgress && (
+      {selectedFriendId && friendStatus && (
         <div className="bg-white border-2 border-purple-200 rounded-xl p-6">
-          <h2 className="mb-4">{friendProgress.user.name}님의 진도</h2>
+          <h2 className="mb-4">{friendStatus.user.name}님</h2>
           <div className="space-y-3">
             <div>
               <p className="text-sm text-gray-600">계획</p>
-              <p>{friendProgress.plan.name}</p>
+              <p>{friendStatus.plan?.name ?? "공유된 계획이 없습니다"}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-600">진행률</p>
+              <p className="text-sm text-gray-600">달성률</p>
               <div className="flex items-center gap-3">
                 <div className="flex-1 bg-gray-200 rounded-full h-3">
                   <div
                     className="bg-purple-500 h-3 rounded-full transition-all"
                     style={{
-                      width: `${
-                        (friendProgress.progress.completedDays.length /
-                          friendProgress.plan.totalDays) *
-                        100
-                      }%`,
+                      width: `${Math.max(0, Math.min(100, friendStatus.achievementRate))}%`,
                     }}
                   />
                 </div>
                 <span>
-                  {friendProgress.progress.completedDays.length}/
-                  {friendProgress.plan.totalDays}
+                  {friendStatus.totalDays > 0
+                    ? `${friendStatus.completedDays}/${friendStatus.totalDays}`
+                    : "0/0"}
                 </span>
               </div>
             </div>

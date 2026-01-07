@@ -1,14 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
-import { Bell, LogOut, Settings } from "lucide-react";
+import { Bell, Eye, EyeOff, LogOut, Settings, User, UserX } from "lucide-react";
 import { useAuthStore } from "../../stores/auth.store";
 import { usePlanStore } from "../../stores/plan.store";
 import { usePlan } from "../../hooks/usePlans";
-import * as api from "../utils/api";
+import * as authService from "../../services/authService";
+import * as notificationService from "../../services/notificationService";
 
 export function SettingsTabPage() {
   const selectedPlanId = usePlanStore((s) => s.selectedPlanId);
   const plan = usePlan(selectedPlanId);
   const logout = useAuthStore((s) => s.logout);
+  const userId = useAuthStore((s) => s.user?.id ?? null);
 
   const planName = useMemo(() => plan?.name ?? "", [plan]);
 
@@ -16,9 +18,31 @@ export function SettingsTabPage() {
   const [time, setTime] = useState("09:00");
   const [permissionGranted, setPermissionGranted] = useState(false);
 
+  const [activeTab, setActiveTab] = useState<"profile" | "notifications">("notifications");
+
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profileUsername, setProfileUsername] = useState("");
+  const [profileEmail, setProfileEmail] = useState("");
+
+  const [newUsername, setNewUsername] = useState("");
+  const [updatingUsername, setUpdatingUsername] = useState(false);
+
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [newPasswordConfirm, setNewPasswordConfirm] = useState("");
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showNewPasswordConfirm, setShowNewPasswordConfirm] = useState(false);
+  const [updatingPassword, setUpdatingPassword] = useState(false);
+
   useEffect(() => {
     void checkNotificationPermission();
   }, []);
+
+  useEffect(() => {
+    void loadProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
 
   useEffect(() => {
     void loadSettings();
@@ -40,7 +64,7 @@ export function SettingsTabPage() {
     if (!selectedPlanId) return;
 
     try {
-      const result = await api.getNotifications();
+      const result = await notificationService.getNotifications();
       const notification = result.notifications.find(
         (n: any) => n.planId === selectedPlanId
       );
@@ -53,6 +77,21 @@ export function SettingsTabPage() {
       }
     } catch (err) {
       console.error("Failed to load notification settings:", err);
+    }
+  };
+
+  const loadProfile = async () => {
+    if (!userId) return;
+    setProfileLoading(true);
+    try {
+      const result = await authService.getMyProfile();
+      setProfileUsername(result.profile.username);
+      setProfileEmail(result.profile.email);
+      setNewUsername(result.profile.username);
+    } catch (err) {
+      console.error("Failed to load profile:", err);
+    } finally {
+      setProfileLoading(false);
     }
   };
 
@@ -113,7 +152,7 @@ export function SettingsTabPage() {
     }
 
     try {
-      await api.saveNotification(selectedPlanId, time, enabled);
+      await notificationService.saveNotification(selectedPlanId, time, enabled);
 
       if (enabled) {
         scheduleNotification();
@@ -126,8 +165,102 @@ export function SettingsTabPage() {
   };
 
   const handleSignOut = async () => {
-    await api.signOut();
+    await authService.signOut();
     logout();
+  };
+
+  const handleDeleteAccount = async () => {
+    const confirmMessage = "정말로 회원 탈퇴하시겠습니까?\n\n모든 데이터(계획, 진도 등)가 영구적으로 삭제되며 복구할 수 없습니다.";
+    
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    const doubleConfirm = prompt('회원 탈퇴를 진행하려면 "탈퇴"를 입력하세요:');
+    
+    if (doubleConfirm !== "탈퇴") {
+      alert("회원 탈퇴가 취소되었습니다.");
+      return;
+    }
+
+    try {
+      await authService.deleteAccount();
+      alert("회원 탈퇴가 완료되었습니다.");
+      await authService.signOut();
+      logout();
+    } catch (err) {
+      console.error("Failed to delete account:", err);
+      alert("회원 탈퇴에 실패했습니다. 잠시 후 다시 시도해주세요.");
+    }
+  };
+
+  const handleUpdateUsername = async () => {
+    if (!userId) {
+      alert("로그인이 필요합니다");
+      return;
+    }
+
+    const next = newUsername.trim();
+    if (!next) {
+      alert("새 아이디를 입력해주세요");
+      return;
+    }
+
+    if (next === profileUsername) {
+      alert("현재 아이디와 동일합니다");
+      return;
+    }
+
+    try {
+      setUpdatingUsername(true);
+      await authService.updateUsername(next);
+      setProfileUsername(next);
+      alert("아이디가 변경되었습니다");
+    } catch (err: any) {
+      console.error("Failed to update username:", err);
+      alert(err?.message ?? "아이디 변경에 실패했습니다");
+    } finally {
+      setUpdatingUsername(false);
+    }
+  };
+
+  const handleUpdatePassword = async () => {
+    if (!userId) {
+      alert("로그인이 필요합니다");
+      return;
+    }
+
+    if (!currentPassword) {
+      alert("현재 비밀번호를 입력해주세요");
+      return;
+    }
+
+    if (!newPassword || newPassword.length < 6) {
+      alert("새 비밀번호는 6자 이상이어야 합니다");
+      return;
+    }
+
+    if (newPassword !== newPasswordConfirm) {
+      alert("새 비밀번호가 일치하지 않습니다");
+      return;
+    }
+
+    try {
+      setUpdatingPassword(true);
+      await authService.updatePassword(currentPassword, newPassword);
+      setCurrentPassword("");
+      setNewPassword("");
+      setNewPasswordConfirm("");
+      setShowCurrentPassword(false);
+      setShowNewPassword(false);
+      setShowNewPasswordConfirm(false);
+      alert("비밀번호가 변경되었습니다");
+    } catch (err: any) {
+      console.error("Failed to update password:", err);
+      alert(err?.message ?? "비밀번호 변경에 실패했습니다");
+    } finally {
+      setUpdatingPassword(false);
+    }
   };
 
   return (
@@ -142,69 +275,222 @@ export function SettingsTabPage() {
         </div>
       </div>
 
-      <div className="bg-white border-2 border-gray-200 rounded-xl p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="p-3 bg-yellow-100 rounded-lg">
-            <Bell className="w-6 h-6 text-yellow-600" />
-          </div>
-          <div>
-            <h2>알림</h2>
-            <p className="text-gray-600">{planName || "계획을 선택하면 설정할 수 있어요"}</p>
-          </div>
-        </div>
-
-        {!permissionGranted && (
-          <div className="p-4 bg-yellow-50 border-2 border-yellow-200 rounded-lg mb-4">
-            <p className="text-yellow-800 text-sm">알림을 받으려면 브라우저에서 알림 권한을 허용해주세요</p>
-          </div>
-        )}
-
-        <div className="flex items-center justify-between">
-          <div>
-            <p>매일 알림 받기</p>
-            <p className="text-sm text-gray-600">설정한 시간에 읽기 알림을 받습니다</p>
-          </div>
-          <label className="relative inline-block w-12 h-6">
-            <input
-              type="checkbox"
-              checked={enabled}
-              onChange={(e) => setEnabled(e.target.checked)}
-              className="sr-only peer"
-            />
-            <span className="absolute inset-0 bg-gray-300 rounded-full peer-checked:bg-blue-500 transition-colors cursor-pointer"></span>
-            <span className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-6"></span>
-          </label>
-        </div>
-
-        {enabled && (
-          <div className="mt-4">
-            <label className="block text-gray-700 mb-2">알림 시간</label>
-            <input
-              type="time"
-              value={time}
-              onChange={(e) => setTime(e.target.value)}
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
-            />
-          </div>
-        )}
-
-        <div className="mt-6 flex gap-3">
-          <button
-            type="button"
-            onClick={handleTestNotification}
-            className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            테스트 알림
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            className="flex-1 px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-          >
-            저장
-          </button>
-        </div>
+      <div className="bg-white border-2 border-gray-200 rounded-xl p-2 flex gap-2">
+        <button
+          type="button"
+          onClick={() => setActiveTab("profile")}
+          className={`flex-1 px-4 py-2 rounded-lg transition-colors ${
+            activeTab === "profile" ? "bg-blue-500 text-white" : "text-gray-700 hover:bg-gray-50"
+          }`}
+        >
+          프로필
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("notifications")}
+          className={`flex-1 px-4 py-2 rounded-lg transition-colors ${
+            activeTab === "notifications" ? "bg-blue-500 text-white" : "text-gray-700 hover:bg-gray-50"
+          }`}
+        >
+          알림
+        </button>
       </div>
+
+      {activeTab === "profile" && (
+        <>
+          <div className="bg-white border-2 border-gray-200 rounded-xl p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 bg-blue-100 rounded-lg">
+                <User className="w-6 h-6 text-blue-600" />
+              </div>
+              <div>
+                <h2>프로필</h2>
+                <p className="text-gray-600">
+                  {profileLoading ? "불러오는 중..." : `${profileUsername || "-"} / ${profileEmail || "-"}`}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-gray-700 mb-2">아이디 변경</label>
+                <input
+                  type="text"
+                  value={newUsername}
+                  onChange={(e) => setNewUsername(e.target.value)}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
+                  placeholder="새 아이디"
+                  minLength={3}
+                  maxLength={20}
+                />
+                <p className="mt-1 text-xs text-gray-500">3-20자, 영문자/숫자/밑줄(_)만 사용 가능</p>
+                <button
+                  type="button"
+                  onClick={handleUpdateUsername}
+                  disabled={updatingUsername}
+                  className="mt-3 w-full px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {updatingUsername ? "변경 중..." : "아이디 변경"}
+                </button>
+              </div>
+
+              <div className="border-t-2 border-gray-100 pt-4">
+                <label className="block text-gray-700 mb-2">비밀번호 변경</label>
+
+                <div className="space-y-3">
+                  <div className="relative">
+                    <input
+                      type={showCurrentPassword ? "text" : "password"}
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      className="w-full px-4 py-3 pr-12 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
+                      placeholder="현재 비밀번호"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCurrentPassword((v) => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      aria-label={showCurrentPassword ? "현재 비밀번호 숨기기" : "현재 비밀번호 보기"}
+                      aria-pressed={showCurrentPassword}
+                    >
+                      {showCurrentPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+
+                  <div className="relative">
+                    <input
+                      type={showNewPassword ? "text" : "password"}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="w-full px-4 py-3 pr-12 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
+                      placeholder="새 비밀번호 (6자 이상)"
+                      minLength={6}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword((v) => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      aria-label={showNewPassword ? "새 비밀번호 숨기기" : "새 비밀번호 보기"}
+                      aria-pressed={showNewPassword}
+                    >
+                      {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+
+                  <div className="relative">
+                    <input
+                      type={showNewPasswordConfirm ? "text" : "password"}
+                      value={newPasswordConfirm}
+                      onChange={(e) => setNewPasswordConfirm(e.target.value)}
+                      className="w-full px-4 py-3 pr-12 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
+                      placeholder="새 비밀번호 확인"
+                      minLength={6}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPasswordConfirm((v) => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      aria-label={showNewPasswordConfirm ? "새 비밀번호 확인 숨기기" : "새 비밀번호 확인 보기"}
+                      aria-pressed={showNewPasswordConfirm}
+                    >
+                      {showNewPasswordConfirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleUpdatePassword}
+                  disabled={updatingPassword}
+                  className="mt-3 w-full px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {updatingPassword ? "변경 중..." : "비밀번호 변경"}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white border-2 border-red-200 rounded-xl p-6">
+            <p className="text-sm text-gray-600 mb-4">
+              회원 탈퇴 시 모든 데이터가 영구적으로 삭제되며 복구할 수 없습니다.
+            </p>
+            <button
+              type="button"
+              onClick={handleDeleteAccount}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-50 text-red-600 border-2 border-red-200 hover:bg-red-100 rounded-lg transition-colors"
+            >
+              <UserX className="w-5 h-5" />
+              회원 탈퇴
+            </button>
+          </div>
+        </>
+      )}
+
+      {activeTab === "notifications" && (
+        <div className="bg-white border-2 border-gray-200 rounded-xl p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-3 bg-yellow-100 rounded-lg">
+              <Bell className="w-6 h-6 text-yellow-600" />
+            </div>
+            <div>
+              <h2>알림</h2>
+              <p className="text-gray-600">{planName || "계획을 선택하면 설정할 수 있어요"}</p>
+            </div>
+          </div>
+
+          {!permissionGranted && (
+            <div className="p-4 bg-yellow-50 border-2 border-yellow-200 rounded-lg mb-4">
+              <p className="text-yellow-800 text-sm">알림을 받으려면 브라우저에서 알림 권한을 허용해주세요</p>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between">
+            <div>
+              <p>매일 알림 받기</p>
+              <p className="text-sm text-gray-600">설정한 시간에 읽기 알림을 받습니다</p>
+            </div>
+            <label className="relative inline-block w-12 h-6">
+              <input
+                type="checkbox"
+                checked={enabled}
+                onChange={(e) => setEnabled(e.target.checked)}
+                className="sr-only peer"
+              />
+              <span className="absolute inset-0 bg-gray-300 rounded-full peer-checked:bg-blue-500 transition-colors cursor-pointer"></span>
+              <span className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-6"></span>
+            </label>
+          </div>
+
+          {enabled && (
+            <div className="mt-4">
+              <label className="block text-gray-700 mb-2">알림 시간</label>
+              <input
+                type="time"
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
+              />
+            </div>
+          )}
+
+          <div className="mt-6 flex gap-3">
+            <button
+              type="button"
+              onClick={handleTestNotification}
+              className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              테스트 알림
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              className="flex-1 px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              저장
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="bg-white border-2 border-gray-200 rounded-xl p-6">
         <button

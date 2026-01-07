@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { BookOpen, Mail, Lock, User } from "lucide-react";
-import * as api from "../utils/api";
+import { BookOpen, Mail, Lock, User, Eye, EyeOff } from "lucide-react";
+import * as authService from "../../services/authService";
 
 interface AuthProps {
   onAuthSuccess: () => void;
@@ -10,7 +10,9 @@ export function Auth({ onAuthSuccess }: AuthProps) {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState("");
+  const [username, setUsername] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -21,11 +23,12 @@ export function Auth({ onAuthSuccess }: AuthProps) {
 
     try {
       if (isSignUp) {
-        await api.signUp(email, password, name);
-        // 회원가입 후 자동 로그인
-        await api.signIn(email, password);
+        await authService.signUp({ email, password, name, username });
+        // 회원가입 후 자동 로그인 (username 사용)
+        await authService.signIn({ username, password });
       } else {
-        await api.signIn(email, password);
+        // 로그인은 username으로
+        await authService.signIn({ username, password });
       }
       onAuthSuccess();
     } catch (err: any) {
@@ -41,7 +44,7 @@ export function Auth({ onAuthSuccess }: AuthProps) {
     setLoading(true);
     
     try {
-      await api.signInWithGoogle();
+      await authService.signInWithGoogle();
       // OAuth 리다이렉트가 발생하므로 onAuthSuccess는 리다이렉트 후에 호출됩니다
     } catch (err: any) {
       console.error("Google sign in error:", err);
@@ -66,35 +69,63 @@ export function Auth({ onAuthSuccess }: AuthProps) {
         <div className="bg-white rounded-xl border-2 border-gray-200 p-8">
           <form onSubmit={handleSubmit} className="space-y-4">
             {isSignUp && (
-              <div>
-                <label className="block text-gray-700 mb-2">이름</label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
-                    placeholder="홍길동"
-                    required
-                  />
+              <>
+                <div>
+                  <label className="block text-gray-700 mb-2">이름</label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
+                      placeholder="홍길동"
+                      required
+                    />
+                  </div>
                 </div>
-              </div>
+
+                <div>
+                  <label className="block text-gray-700 mb-2">이메일</label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
+                      placeholder="email@example.com"
+                      required
+                    />
+                  </div>
+                </div>
+              </>
             )}
 
             <div>
-              <label className="block text-gray-700 mb-2">이메일</label>
+              <label className="block text-gray-700 mb-2">
+                {isSignUp ? "아이디" : "아이디"}
+              </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
-                  placeholder="email@example.com"
+                  placeholder={isSignUp ? "아이디를 입력하세요" : "아이디"}
                   required
+                  minLength={3}
+                  maxLength={20}
+                  pattern="[a-zA-Z0-9_]+"
+                  title="영문자, 숫자, 밑줄(_)만 사용 가능합니다"
                 />
               </div>
+              {isSignUp && (
+                <p className="mt-1 text-xs text-gray-500">
+                  3-20자, 영문자/숫자/밑줄(_)만 사용 가능
+                </p>
+              )}
             </div>
 
             <div>
@@ -102,14 +133,27 @@ export function Auth({ onAuthSuccess }: AuthProps) {
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
+                  className="w-full pl-10 pr-20 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
                   placeholder="••••••••"
                   required
                   minLength={6}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 보기"}
+                  aria-pressed={showPassword}
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
+                </button>
               </div>
             </div>
 
@@ -170,6 +214,7 @@ export function Auth({ onAuthSuccess }: AuthProps) {
               onClick={() => {
                 setIsSignUp(!isSignUp);
                 setError("");
+                setShowPassword(false);
               }}
               className="text-blue-500 hover:text-blue-600"
             >

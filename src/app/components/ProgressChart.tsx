@@ -1,13 +1,4 @@
 import { TrendingUp } from "lucide-react";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
 
 interface ProgressChartProps {
   totalDays: number;
@@ -18,7 +9,6 @@ interface ProgressChartProps {
 export function ProgressChart({
   totalDays,
   completedDays,
-  chartData,
 }: ProgressChartProps) {
   const percentage = Math.round((completedDays / totalDays) * 100);
 
@@ -45,34 +35,6 @@ export function ProgressChart({
           />
         </div>
       </div>
-
-      {chartData.length > 1 && (
-        <div className="h-48 mt-6">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis
-                dataKey="day"
-                label={{ value: "일", position: "insideBottomRight", offset: -5 }}
-              />
-              <YAxis
-                label={{ value: "완료", angle: -90, position: "insideLeft" }}
-              />
-              <Tooltip
-                formatter={(value: number) => [`${value}일`, "완료"]}
-                labelFormatter={(label) => `Day ${label}`}
-              />
-              <Line
-                type="monotone"
-                dataKey="completed"
-                stroke="#3b82f6"
-                strokeWidth={2}
-                dot={{ fill: "#3b82f6" }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      )}
     </div>
   );
 }

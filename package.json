@@ -5,7 +5,12 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
-    "dev": "vite"
+    "dev": "vite",
+    "populate-presets": "node scripts/populate-preset-schedules.js",
+    "test:supabase-flow": "node scripts/test-supabase-flow.mjs",
+    "test:multi-reading-progress": "node scripts/test-multi-reading-progress.mjs",
+    "test:share-plan": "node scripts/test-share-plan.mjs",
+    "deploy:functions": "supabase functions deploy make-server-7fb946f4 --no-verify-jwt"
   },
   "dependencies": {
     "@bibletags/bibletags-versification": "^2.1.0",
@@ -71,6 +76,7 @@
   "devDependencies": {
     "@tailwindcss/vite": "4.1.12",
     "@vitejs/plugin-react": "4.7.0",
+    "supabase": "^2.70.5",
     "tailwindcss": "4.1.12",
     "vite": "6.3.5",
     "vite-plugin-pwa": "^0.21.2"

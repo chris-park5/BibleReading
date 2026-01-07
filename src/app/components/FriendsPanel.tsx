@@ -22,7 +22,7 @@ interface FriendsPanelProps {
 
 export function FriendsPanel({ onClose, currentPlanId }: FriendsPanelProps) {
   const [friends, setFriends] = useState<Friend[]>([]);
-  const [friendEmail, setFriendEmail] = useState("");
+  const [friendIdentifier, setFriendIdentifier] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [selectedFriend, setSelectedFriend] = useState<string | null>(null);
@@ -49,8 +49,8 @@ export function FriendsPanel({ onClose, currentPlanId }: FriendsPanelProps) {
     setLoading(true);
 
     try {
-      await api.addFriend(friendEmail);
-      setFriendEmail("");
+      await api.addFriend(friendIdentifier);
+      setFriendIdentifier("");
       await loadFriends();
     } catch (err: any) {
       setError(err.message || "친구 추가에 실패했습니다");
@@ -104,11 +104,11 @@ export function FriendsPanel({ onClose, currentPlanId }: FriendsPanelProps) {
             <h3 className="mb-3">친구 추가</h3>
             <form onSubmit={handleAddFriend} className="flex gap-2">
               <input
-                type="email"
-                value={friendEmail}
-                onChange={(e) => setFriendEmail(e.target.value)}
+                type="text"
+                value={friendIdentifier}
+                onChange={(e) => setFriendIdentifier(e.target.value)}
                 className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
-                placeholder="친구의 이메일 입력"
+                placeholder="친구의 이메일 또는 아이디 입력"
                 required
               />
               <button

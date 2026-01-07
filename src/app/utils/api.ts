@@ -1,91 +1,68 @@
+/**
+ * API Client
+ * 
+ * 백엔드 API와 통신하는 클라이언트
+ */
+
 import { projectId, publicAnonKey } from "../../../utils/supabase/info";
 import { createClient } from "@supabase/supabase-js";
 import type { Plan, Progress } from "../../types/domain";
 
-const API_BASE = `https://${projectId}.supabase.co/functions/v1/make-server-7fb946f4`;
+// ============================================================================
+// Configuration
+// ============================================================================
 
-const USE_MOCK_API = import.meta.env.VITE_USE_MOCK_API === "true";
+const SUPABASE_URL_RAW =
+  (import.meta.env.VITE_SUPABASE_URL as string | undefined) ??
+  `https://${projectId}.supabase.co`;
 
-type MockUser = {
-  id: string;
-  email: string;
-  user_metadata?: { name?: string };
-};
+const SUPABASE_URL = SUPABASE_URL_RAW.replace(/\/+$/, "");
 
-type MockSession = {
-  user: MockUser;
-  access_token: string;
-};
+const SUPABASE_ANON_KEY =
+  (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ?? publicAnonKey;
 
-const MOCK_STORAGE_KEYS = {
-  user: "mock_auth_user",
-  plans: "mock_plans",
-  progressByPlanId: "mock_progress_by_plan_id",
-  developerPresetPlans: "developer_preset_plans",
-} as const;
+const FUNCTIONS_BASE_RAW =
+  (import.meta.env.VITE_SUPABASE_FUNCTIONS_BASE as string | undefined) ??
+  `${SUPABASE_URL}/functions/v1/make-server-7fb946f4`;
 
-export type DeveloperPresetPlan = {
-  id: string;
-  title: string;
-  description?: string;
-  duration?: string;
-  totalDays: number;
-  schedule: Array<{ day: number; readings: Array<{ book: string; chapters: string }> }>;
-};
+const FUNCTIONS_BASE = FUNCTIONS_BASE_RAW.replace(/\/+$/, "");
 
-export function getDeveloperPresetPlans(): DeveloperPresetPlan[] {
-  return loadJson<DeveloperPresetPlan[]>(MOCK_STORAGE_KEYS.developerPresetPlans, []);
-}
-
-export function addDeveloperPresetPlan(plan: DeveloperPresetPlan) {
-  const plans = getDeveloperPresetPlans();
-  plans.unshift(plan);
-  saveJson(MOCK_STORAGE_KEYS.developerPresetPlans, plans);
-}
-
-export function removeDeveloperPresetPlan(planId: string) {
-  const plans = getDeveloperPresetPlans().filter((p) => p.id !== planId);
-  saveJson(MOCK_STORAGE_KEYS.developerPresetPlans, plans);
-}
-
-function loadJson<T>(key: string, fallback: T): T {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return fallback;
-    return JSON.parse(raw) as T;
-  } catch {
-    return fallback;
-  }
-}
-
-function saveJson(key: string, value: unknown) {
-  localStorage.setItem(key, JSON.stringify(value));
-}
-
-function getMockSession(): MockSession | null {
-  const user = loadJson<MockUser | null>(MOCK_STORAGE_KEYS.user, null);
-  if (!user) return null;
-  return { user, access_token: "mock-access-token" };
-}
-
-function setMockUser(user: MockUser | null) {
-  if (!user) {
-    localStorage.removeItem(MOCK_STORAGE_KEYS.user);
-    return;
-  }
-  saveJson(MOCK_STORAGE_KEYS.user, user);
-}
-
-function ensurePlanName(plan: any): string {
-  return plan?.name ?? plan?.title ?? "(제목 없음)";
-}
-
-export const supabase = createClient(
-  `https://${projectId}.supabase.co`,
-  publicAnonKey
-);
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let accessToken: string | null = null;
+
+const DEFAULT_API_TIMEOUT_MS = 10_000;
+const SESSION_RECOVERY_TIMEOUT_MS = 1_500;
+
+function sleep(ms: number) {
+  return new Promise<void>((resolve) => setTimeout(resolve, ms));
+}
+
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {
+  return Promise.race([
+    promise,
+    (async () => {
+      await sleep(timeoutMs);
+      throw new Error(message);
+    })(),
+  ]);
+}
+
+async function tryRecoverSessionToken(): Promise<void> {
+  if (accessToken) return;
+  try {
+    const { data } = await withTimeout(
+      supabase.auth.getSession(),
+      SESSION_RECOVERY_TIMEOUT_MS,
+      "세션 확인 시간이 초과되었습니다"
+    );
+    if (data.session?.access_token) {
+      accessToken = data.session.access_token;
+    }
+  } catch {
+    // ignore: proceed without session token (server may reject and we'll surface the error)
+  }
+}
 
 export function setAccessToken(token: string | null) {
   accessToken = token;
@@ -95,34 +72,96 @@ export function getAccessToken() {
   return accessToken;
 }
 
+// ============================================================================
+// Developer Preset Plans (localStorage 저장)
+// ============================================================================
+
+const DEVELOPER_PLANS_KEY = 'bible-reading-dev-plans';
+
+export function getDeveloperPresetPlans(): any[] {
+  try {
+    const stored = localStorage.getItem(DEVELOPER_PLANS_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function addDeveloperPresetPlan(plan: any): void {
+  const plans = getDeveloperPresetPlans();
+  plans.push(plan);
+  localStorage.setItem(DEVELOPER_PLANS_KEY, JSON.stringify(plans));
+}
+
+export function removeDeveloperPresetPlan(planId: string): void {
+  const plans = getDeveloperPresetPlans();
+  const filtered = plans.filter((p) => p.id !== planId);
+  localStorage.setItem(DEVELOPER_PLANS_KEY, JSON.stringify(filtered));
+}
+
+// ============================================================================
+// HTTP Client
+// ============================================================================
+
 async function fetchAPI(
   endpoint: string,
   options: RequestInit = {},
   useAuth = true
 ) {
-  if (USE_MOCK_API) {
-    throw new Error(
-      "Mock API 모드에서는 fetchAPI를 직접 호출하지 않습니다. api.ts의 개별 함수를 사용하세요."
-    );
-  }
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
+    apikey: SUPABASE_ANON_KEY,
     ...(options.headers as Record<string, string> | undefined),
   };
 
-  if (useAuth && accessToken) {
-    headers["Authorization"] = `Bearer ${accessToken}`;
-  } else if (useAuth) {
-    headers["Authorization"] = `Bearer ${publicAnonKey}`;
+  // Supabase Functions는 보통 JWT 검증이 켜져 있으므로
+  // apikey + Authorization(Bearer JWT)를 함께 보내는 것이 안전합니다.
+  // 로그인 상태면 access token, 아니면 anon key(JWT)를 사용합니다.
+
+  // 토큰이 없으면 세션에서 복구 시도 (무한 대기 방지: 타임아웃 적용)
+  await tryRecoverSessionToken();
+
+  const bearer = useAuth && accessToken ? accessToken : SUPABASE_ANON_KEY;
+  headers["Authorization"] = `Bearer ${bearer}`;
+
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), DEFAULT_API_TIMEOUT_MS);
+
+  // If caller provided a signal, respect it as well.
+  const externalSignal = options.signal;
+  if (externalSignal) {
+    if (externalSignal.aborted) controller.abort();
+    else externalSignal.addEventListener("abort", () => controller.abort(), { once: true });
   }
 
-  const response = await fetch(`${API_BASE}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${FUNCTIONS_BASE}${endpoint}`, {
+      ...options,
+      headers,
+      signal: controller.signal,
+    });
+  } catch (err: any) {
+    window.clearTimeout(timeout);
+    if (err?.name === "AbortError") {
+      throw new Error("요청 시간이 초과되었습니다");
+    }
+    throw err;
+  } finally {
+    window.clearTimeout(timeout);
+  }
 
-  const data = await response.json();
+  let data: any;
+  try {
+    data = await response.json();
+  } catch {
+    // If the response isn't JSON, surface a generic error.
+    if (!response.ok) {
+      throw new Error("API request failed");
+    }
+    data = null;
+  }
 
   if (!response.ok) {
     throw new Error(data.error || "API request failed");
@@ -131,42 +170,43 @@ async function fetchAPI(
   return data;
 }
 
+// ============================================================================
 // Auth APIs
-export async function signUp(email: string, password: string, name: string) {
-  if (USE_MOCK_API) {
-    // Mock 모드에서는 회원가입을 로컬 사용자 생성으로 처리
-    const user: MockUser = {
-      id: crypto.randomUUID(),
-      email,
-      user_metadata: { name },
-    };
-    setMockUser(user);
-    setAccessToken("mock-access-token");
-    return { success: true, user };
-  }
+// ============================================================================
 
+export async function signUp(
+  email: string,
+  password: string,
+  name: string,
+  username: string
+) {
   return fetchAPI(
     "/signup",
     {
       method: "POST",
-      body: JSON.stringify({ email, password, name }),
+      body: JSON.stringify({ email, password, name, username }),
     },
     false
   );
 }
 
-export async function signIn(email: string, password: string) {
-  if (USE_MOCK_API) {
-    // 어떤 이메일/비밀번호든 허용 (UI 확인용)
-    const user: MockUser = {
-      id: crypto.randomUUID(),
-      email,
-      user_metadata: { name: email.split("@")[0] || "사용자" },
-    };
-    setMockUser(user);
-    setAccessToken("mock-access-token");
-    const session: MockSession = { user, access_token: "mock-access-token" };
-    return { session };
+export async function getUsernameEmail(username: string) {
+  return fetchAPI(
+    "/get-username-email",
+    {
+      method: "POST",
+      body: JSON.stringify({ username }),
+    },
+    false
+  );
+}
+
+export async function signIn(username: string, password: string) {
+  // username으로 이메일 조회
+  const { success, email } = await getUsernameEmail(username);
+
+  if (!success || !email) {
+    throw new Error("사용자를 찾을 수 없습니다");
   }
 
   const {
@@ -186,12 +226,12 @@ export async function signIn(email: string, password: string) {
   return { session };
 }
 
-// Google OAuth Sign In
-// IMPORTANT: You must complete setup at https://supabase.com/docs/guides/auth/social-login/auth-google
-// Otherwise you will get a "provider is not enabled" error
+/**
+ * Google OAuth Sign In
+ */
 export async function signInWithGoogle() {
   const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
+    provider: "google",
     options: {
       redirectTo: window.location.origin,
     },
@@ -203,29 +243,19 @@ export async function signInWithGoogle() {
 }
 
 export async function signOut() {
-  if (USE_MOCK_API) {
-    setMockUser(null);
-    setAccessToken(null);
-    return;
-  }
-
   await supabase.auth.signOut();
   setAccessToken(null);
 }
 
 export async function getSession() {
-  if (USE_MOCK_API) {
-    const session = getMockSession();
-    if (session?.access_token) {
-      setAccessToken(session.access_token);
-    }
-    return { session, error: null };
-  }
-
   const {
     data: { session },
     error,
-  } = await supabase.auth.getSession();
+  } = await withTimeout(
+    supabase.auth.getSession(),
+    SESSION_RECOVERY_TIMEOUT_MS,
+    "세션 확인 시간이 초과되었습니다"
+  );
 
   if (session?.access_token) {
     setAccessToken(session.access_token);
@@ -234,69 +264,189 @@ export async function getSession() {
   return { session, error };
 }
 
+export async function getMyProfile(): Promise<{
+  success: true;
+  profile: { id: string; email: string; name: string; username: string };
+}> {
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError) throw userError;
+  if (!user) throw new Error("로그인이 필요합니다");
+
+  const { data: profileRow, error: profileError } = await supabase
+    .from("users")
+    .select("id, email, name, username")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (profileError) throw profileError;
+  if (!profileRow) throw new Error("프로필 정보를 찾을 수 없습니다");
+
+  return {
+    success: true,
+    profile: {
+      id: profileRow.id,
+      email: profileRow.email ?? user.email ?? "",
+      name: profileRow.name ?? "",
+      username: profileRow.username ?? "",
+    },
+  };
+}
+
+export async function updateUsername(newUsername: string): Promise<{ success: true }> {
+  const username = String(newUsername ?? "").trim();
+  if (username.length < 3 || username.length > 20) {
+    throw new Error("아이디는 3-20자여야 합니다");
+  }
+  if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+    throw new Error("아이디는 영문자/숫자/밑줄(_)만 사용할 수 있습니다");
+  }
+
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError) throw userError;
+  if (!user) throw new Error("로그인이 필요합니다");
+
+  const { error } = await supabase
+    .from("users")
+    .update({ username })
+    .eq("id", user.id);
+
+  if (error) {
+    // Unique violation 등은 메시지가 환경마다 다를 수 있어, 사용자 메시지는 일반화
+    if ((error as any).code === "23505") {
+      throw new Error("이미 사용 중인 아이디입니다");
+    }
+    throw error;
+  }
+
+  return { success: true };
+}
+
+export async function updatePassword(
+  currentPassword: string,
+  newPassword: string
+): Promise<{ success: true }> {
+  const current = String(currentPassword ?? "");
+  const next = String(newPassword ?? "");
+
+  if (!current) throw new Error("현재 비밀번호를 입력해주세요");
+  if (next.length < 6) throw new Error("새 비밀번호는 6자 이상이어야 합니다");
+
+  const {
+    data: { session },
+    error: sessionError,
+  } = await withTimeout(
+    supabase.auth.getSession(),
+    SESSION_RECOVERY_TIMEOUT_MS,
+    "세션 확인 시간이 초과되었습니다"
+  );
+
+  if (sessionError) throw sessionError;
+  const email = session?.user?.email;
+  if (!email) {
+    throw new Error("이 계정의 이메일 정보를 찾을 수 없습니다");
+  }
+
+  // 기존 비밀번호 확인(재로그인)
+  const { error: verifyError } = await supabase.auth.signInWithPassword({
+    email,
+    password: current,
+  });
+
+  if (verifyError) {
+    throw new Error("현재 비밀번호가 올바르지 않습니다");
+  }
+
+  const { error: updateError } = await supabase.auth.updateUser({
+    password: next,
+  });
+
+  if (updateError) throw updateError;
+
+  // accessToken을 최신 세션으로 동기화
+  const { data } = await withTimeout(
+    supabase.auth.getSession(),
+    SESSION_RECOVERY_TIMEOUT_MS,
+    "세션 확인 시간이 초과되었습니다"
+  );
+  if (data.session?.access_token) {
+    setAccessToken(data.session.access_token);
+  }
+
+  return { success: true };
+}
+
+// ============================================================================
 // Plan APIs
+// ============================================================================
+
 export async function createPlan(planData: {
   name: string;
   startDate: string;
   endDate?: string;
   totalDays: number;
-  schedule: Array<{ day: number; readings: Array<{ book: string; chapters: string }> }>;
+  schedule: Array<{
+    day: number;
+    readings: Array<{ book: string; chapters: string }>;
+  }>;
   isCustom: boolean;
+  presetId?: string;
 }): Promise<{ success: boolean; plan: Plan }> {
-  if (USE_MOCK_API) {
-    const session = getMockSession();
-    if (!session) throw new Error("Mock 모드: 로그인 상태가 아닙니다");
-
-    const plans = loadJson<Plan[]>(MOCK_STORAGE_KEYS.plans, []);
-    const plan: Plan = {
-      id: crypto.randomUUID(),
-      userId: session.user.id,
-      name: ensurePlanName(planData),
-      startDate: planData.startDate,
-      endDate: planData.endDate,
-      totalDays: planData.totalDays,
-      schedule: planData.schedule,
-      isCustom: planData.isCustom,
-      createdAt: new Date().toISOString(),
-    };
-
-    plans.unshift(plan);
-    saveJson(MOCK_STORAGE_KEYS.plans, plans);
-
-    // progress 초기화
-    const progressByPlanId = loadJson<Record<string, Progress>>(
-      MOCK_STORAGE_KEYS.progressByPlanId,
-      {}
-    );
-    progressByPlanId[plan.id] = {
-      userId: session.user.id,
-      planId: plan.id,
-      completedDays: [],
-      lastUpdated: new Date().toISOString(),
-    };
-    saveJson(MOCK_STORAGE_KEYS.progressByPlanId, progressByPlanId);
-
-    return { success: true, plan };
-  }
-
   return fetchAPI("/plans", {
     method: "POST",
     body: JSON.stringify(planData),
   });
 }
 
-export async function getPlans(): Promise<{ success: boolean; plans: Plan[] }> {
-  if (USE_MOCK_API) {
-    const session = getMockSession();
-    if (!session) return { success: true, plans: [] };
-    const plans = loadJson<Plan[]>(MOCK_STORAGE_KEYS.plans, []).filter(
-      (p) => !p.userId || p.userId === session.user.id
-    );
-    return { success: true, plans };
-  }
-
+export async function getPlans(): Promise<{
+  success: boolean;
+  plans: Plan[];
+}> {
   return fetchAPI("/plans");
 }
+
+export async function seedPresetSchedules(
+  presetId: string,
+  schedule: Array<{
+    day: number;
+    readings: Array<{ book: string; chapters: string }>;
+  }>
+): Promise<{ success: boolean; seeded: boolean }> {
+  return fetchAPI("/preset-schedules/seed", {
+    method: "POST",
+    body: JSON.stringify({ presetId, schedule }),
+  });
+}
+
+export async function deletePlan(planId: string): Promise<{
+  success: boolean;
+}> {
+  if (!planId) throw new Error("Plan ID is required");
+
+  return fetchAPI(`/plans/${planId}`, { method: "DELETE" });
+}
+
+export async function updatePlanOrder(planId: string, newOrder: number): Promise<{
+  success: boolean;
+}> {
+  if (!planId) throw new Error("Plan ID is required");
+
+  return fetchAPI("/plans/order", {
+    method: "PATCH",
+    body: JSON.stringify({ planId, newOrder }),
+  });
+}
+
+// ============================================================================
+// Progress APIs
+// ============================================================================
 
 export async function updateReadingProgress(
   planId: string,
@@ -309,177 +459,38 @@ export async function updateReadingProgress(
   if (!Number.isFinite(day)) throw new Error("day is required");
   if (!Number.isFinite(readingIndex)) throw new Error("readingIndex is required");
 
-  if (USE_MOCK_API) {
-    const session = getMockSession();
-    if (!session) throw new Error("Mock 모드: 로그인 상태가 아닙니다");
-
-    const progressByPlanId = loadJson<Record<string, Progress>>(
-      MOCK_STORAGE_KEYS.progressByPlanId,
-      {}
-    );
-
-    const existing: Progress =
-      progressByPlanId[planId] ||
-      ({
-        userId: session.user.id,
-        planId,
-        completedDays: [],
-        completedReadingsByDay: {},
-        lastUpdated: new Date().toISOString(),
-      } as Progress);
-
-    const completedReadingsByDay = { ...(existing.completedReadingsByDay || {}) };
-    const key = String(day);
-    const current = new Set<number>(completedReadingsByDay[key] || []);
-    if (completed) current.add(readingIndex);
-    else current.delete(readingIndex);
-    completedReadingsByDay[key] = Array.from(current).sort((a, b) => a - b);
-
-    // readingCount를 기준으로 day 완료 여부를 계산
-    const completedDaysSet = new Set<number>(existing.completedDays || []);
-    const isDayCompleted =
-      Number.isFinite(readingCount) && readingCount > 0
-        ? (completedReadingsByDay[key]?.length || 0) >= readingCount
-        : false;
-
-    if (isDayCompleted) completedDaysSet.add(day);
-    else completedDaysSet.delete(day);
-
-    const progress: Progress = {
-      ...existing,
-      completedReadingsByDay,
-      completedDays: Array.from(completedDaysSet).sort((a, b) => a - b),
-      lastUpdated: new Date().toISOString(),
-    };
-
-    progressByPlanId[planId] = progress;
-    saveJson(MOCK_STORAGE_KEYS.progressByPlanId, progressByPlanId);
-
-    return { success: true, progress };
-  }
-
   return fetchAPI("/progress", {
     method: "POST",
     body: JSON.stringify({ planId, day, readingIndex, completed, readingCount }),
   });
 }
 
-export async function deletePlan(planId: string): Promise<{ success: boolean }> {
-  if (!planId) throw new Error("Plan ID is required");
-
-  if (USE_MOCK_API) {
-    const session = getMockSession();
-    if (!session) throw new Error("Mock 모드: 로그인 상태가 아닙니다");
-
-    const plans = loadJson<Plan[]>(MOCK_STORAGE_KEYS.plans, []);
-    const nextPlans = plans.filter((p) => p.id !== planId);
-    saveJson(MOCK_STORAGE_KEYS.plans, nextPlans);
-
-    const progressByPlanId = loadJson<Record<string, Progress>>(
-      MOCK_STORAGE_KEYS.progressByPlanId,
-      {}
-    );
-    delete progressByPlanId[planId];
-    saveJson(MOCK_STORAGE_KEYS.progressByPlanId, progressByPlanId);
-
-    return { success: true };
-  }
-
-  return fetchAPI(`/plans/${planId}`, { method: "DELETE" });
-}
-
-// Progress APIs
 export async function updateProgress(
   planId: string,
   day: number,
   completed: boolean
 ): Promise<{ success: boolean; progress: Progress }> {
-  if (USE_MOCK_API) {
-    const session = getMockSession();
-    if (!session) throw new Error("Mock 모드: 로그인 상태가 아닙니다");
-
-    const progressByPlanId = loadJson<Record<string, Progress>>(
-      MOCK_STORAGE_KEYS.progressByPlanId,
-      {}
-    );
-
-    const existing: Progress =
-      progressByPlanId[planId] ||
-      ({
-        userId: session.user.id,
-        planId,
-        completedDays: [],
-        lastUpdated: new Date().toISOString(),
-      } as Progress);
-
-    const set = new Set(existing.completedDays);
-    if (completed) set.add(day);
-    else set.delete(day);
-
-    const progress: Progress = {
-      ...existing,
-      completedDays: Array.from(set).sort((a, b) => a - b),
-      lastUpdated: new Date().toISOString(),
-    };
-
-    progressByPlanId[planId] = progress;
-    saveJson(MOCK_STORAGE_KEYS.progressByPlanId, progressByPlanId);
-
-    return { success: true, progress };
-  }
-
   return fetchAPI("/progress", {
     method: "POST",
     body: JSON.stringify({ planId, day, completed }),
   });
 }
 
-export async function getProgress(planId: string): Promise<{ success: boolean; progress: Progress }> {
-  if (USE_MOCK_API) {
-    const session = getMockSession();
-    if (!session) {
-      return {
-        success: true,
-        progress: {
-          userId: "",
-          planId,
-          completedDays: [],
-          lastUpdated: new Date().toISOString(),
-        },
-      };
-    }
-
-    const progressByPlanId = loadJson<Record<string, Progress>>(
-      MOCK_STORAGE_KEYS.progressByPlanId,
-      {}
-    );
-
-    const progress =
-      progressByPlanId[planId] ||
-      ({
-        userId: session.user.id,
-        planId,
-        completedDays: [],
-        completedReadingsByDay: {},
-        lastUpdated: new Date().toISOString(),
-      } as Progress);
-
-    // 오래된 데이터(필드 없음) 호환
-    if (!progress.completedReadingsByDay) {
-      progress.completedReadingsByDay = {};
-    }
-
-    return { success: true, progress: progress as Progress };
-  }
-
+export async function getProgress(planId: string): Promise<{
+  success: boolean;
+  progress: Progress;
+}> {
   return fetchAPI(`/progress?planId=${planId}`);
 }
 
+// ============================================================================
 // Friend APIs
-export async function addFriend(friendEmail: string) {
+// ============================================================================
+
+export async function addFriend(friendIdentifier: string) {
   return fetchAPI("/friends", {
     method: "POST",
-    body: JSON.stringify({ friendEmail }),
+    body: JSON.stringify({ friendIdentifier }),
   });
 }
 
@@ -488,10 +499,52 @@ export async function getFriends() {
 }
 
 export async function getFriendProgress(friendUserId: string, planId: string) {
-  return fetchAPI(`/friend-progress?friendUserId=${friendUserId}&planId=${planId}`);
+  return fetchAPI(
+    `/friend-progress?friendUserId=${friendUserId}&planId=${planId}`
+  );
 }
 
+export async function deleteFriend(friendUserId: string) {
+  return fetchAPI(`/friends/${friendUserId}`, { method: "DELETE" });
+}
+
+// ============================================================================
+// Share Plan APIs
+// ============================================================================
+
+export async function getSharePlan(): Promise<{ success: boolean; sharedPlanId: string | null }> {
+  return fetchAPI("/share-plan");
+}
+
+export async function setSharePlan(planId: string | null): Promise<{ success: boolean }> {
+  return fetchAPI("/share-plan", {
+    method: "POST",
+    body: JSON.stringify({ planId }),
+  });
+}
+
+export async function respondFriendRequest(requestId: string, action: "accept" | "decline") {
+  return fetchAPI("/friend-requests/respond", {
+    method: "POST",
+    body: JSON.stringify({ requestId, action }),
+  });
+}
+
+export async function cancelFriendRequest(requestId: string) {
+  return fetchAPI("/friend-requests/cancel", {
+    method: "POST",
+    body: JSON.stringify({ requestId }),
+  });
+}
+
+export async function getFriendStatus(friendUserId: string) {
+  return fetchAPI(`/friend-status?friendUserId=${friendUserId}`);
+}
+
+// ============================================================================
 // Notification APIs
+// ============================================================================
+
 export async function saveNotification(
   planId: string,
   time: string,
@@ -505,4 +558,8 @@ export async function saveNotification(
 
 export async function getNotifications() {
   return fetchAPI("/notifications");
+}
+
+export async function deleteAccount(): Promise<{ success: boolean }> {
+  return fetchAPI("/account", { method: "DELETE" });
 }

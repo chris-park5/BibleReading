@@ -1,7 +1,8 @@
-import { Calendar, CheckCircle, Circle } from "lucide-react";
+import { Calendar, CheckCircle, Circle, CircleDashed } from "lucide-react";
 
 interface ReadingHistoryProps {
   completedDays: Set<number>;
+  partialDays: Set<number>; // 일부만 읽은 날짜
   currentDay: number;
   onDayClick: (day: number) => void;
   totalDays: number;
@@ -9,6 +10,7 @@ interface ReadingHistoryProps {
 
 export function ReadingHistory({
   completedDays,
+  partialDays,
   currentDay,
   onDayClick,
   totalDays,
@@ -31,6 +33,7 @@ export function ReadingHistory({
       <div className="grid grid-cols-7 gap-2">
         {days.map((day) => {
           const isCompleted = completedDays.has(day);
+          const isPartial = partialDays.has(day);
           const isCurrent = day === currentDay;
 
           return (
@@ -42,6 +45,8 @@ export function ReadingHistory({
                   ? "border-blue-500 bg-blue-50"
                   : isCompleted
                   ? "border-green-200 bg-green-50"
+                  : isPartial
+                  ? "border-yellow-200 bg-yellow-50"
                   : "border-gray-200 bg-white hover:border-gray-300"
               }`}
             >
@@ -51,6 +56,8 @@ export function ReadingHistory({
                     ? "text-blue-600"
                     : isCompleted
                     ? "text-green-600"
+                    : isPartial
+                    ? "text-yellow-600"
                     : "text-gray-600"
                 }`}
               >
@@ -58,6 +65,8 @@ export function ReadingHistory({
               </span>
               {isCompleted ? (
                 <CheckCircle className="w-4 h-4 text-green-500" />
+              ) : isPartial ? (
+                <CircleDashed className="w-4 h-4 text-yellow-500" />
               ) : (
                 <Circle className="w-4 h-4 text-gray-300" />
               )}
@@ -66,10 +75,14 @@ export function ReadingHistory({
         })}
       </div>
 
-      <div className="mt-6 flex items-center gap-6 justify-center text-sm">
+      <div className="mt-6 flex items-center gap-4 justify-center text-sm flex-wrap">
         <div className="flex items-center gap-2">
           <CheckCircle className="w-4 h-4 text-green-500" />
           <span className="text-gray-600">완료</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <CircleDashed className="w-4 h-4 text-yellow-500" />
+          <span className="text-gray-600">일부 완료</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 border-2 border-blue-500 rounded bg-blue-50" />

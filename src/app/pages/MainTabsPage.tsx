@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { BarChart3, Home, PlusSquare, Settings, UsersRound } from "lucide-react";
-import { useMutation, useQueries, useQueryClient } from "@tanstack/react-query";
+import { BarChart3, ChevronLeft, ChevronRight, Home, PlusSquare, Settings, UsersRound } from "lucide-react";
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRef } from "react";
 import { usePlanStore } from "../../stores/plan.store";
 import { usePlan, usePlans } from "../../hooks/usePlans";
 import { useProgress } from "../../hooks/useProgress";
@@ -11,7 +12,10 @@ import { TodayReading } from "../components/TodayReading";
 import { ProgressChart } from "../components/ProgressChart";
 import { ReadingHistory } from "../components/ReadingHistory";
 import type { Plan } from "../../types/domain";
-import * as api from "../utils/api";
+import * as progressService from "../../services/progressService";
+import { useAuthStore } from "../../stores/auth.store";
+import * as friendService from "../../services/friendService";
+import { enqueueReadingToggle, isOfflineLikeError, OfflineError } from "../utils/offlineProgressQueue";
 
 type TabKey = "home" | "progress" | "add" | "friends" | "settings";
 
@@ -144,39 +148,67 @@ export function MainTabsPage() {
 
 function HomeTab() {
   const { plans } = usePlans();
+  const userId = useAuthStore((s) => s.user?.id ?? null);
+  const { data: friendsData } = useQuery({
+    queryKey: ["friends", userId],
+    queryFn: friendService.getFriends,
+    enabled: !!userId,
+  });
+  const incomingRequestsCount = friendsData?.incomingRequests?.length ?? 0;
   const today = useMemo(() => startOfTodayLocal(), []);
-  const todayLabel = useMemo(() => {
+  const globalViewDate = usePlanStore((s) => s.viewDate);
+  const setGlobalViewDate = usePlanStore((s) => s.setViewDate);
+  const [viewDate, setViewDateLocal] = useState<Date>(() => startOfTodayLocal());
+  
+  // 전역 viewDate가 설정되면 로컬 상태 업데이트
+  useEffect(() => {
+    if (globalViewDate) {
+      setViewDateLocal(globalViewDate);
+      setGlobalViewDate(null); // 사용 후 초기화
+    }
+  }, [globalViewDate, setGlobalViewDate]);
+  
+  const setViewDate = (date: Date) => {
+    setViewDateLocal(date);
+  };
+  
+  const viewDateLabel = useMemo(() => {
     return new Intl.DateTimeFormat("ko-KR", {
       year: "numeric",
       month: "long",
       day: "numeric",
       weekday: "short",
-    }).format(today);
-  }, [today]);
+    }).format(viewDate);
+  }, [viewDate]);
+
+  const isToday = useMemo(() => {
+    return viewDate.getTime() === today.getTime();
+  }, [viewDate, today]);
 
   const queryClient = useQueryClient();
+  const progressMutationSeqByPlanRef = useRef(new Map<string, number>());
 
-  const todayPlans = useMemo(() => {
+  const viewPlans = useMemo(() => {
     return plans
-      .map((p) => ({ plan: p, day: computeTodayDay(p, today) }))
+      .map((p) => ({ plan: p, day: computeTodayDay(p, viewDate) }))
       .filter(({ plan, day }) => day >= 1 && day <= plan.totalDays);
-  }, [plans, today]);
+  }, [plans, viewDate]);
 
   const progressQueries = useQueries({
-    queries: todayPlans.map(({ plan }) => ({
-      queryKey: ["progress", plan.id],
-      queryFn: () => api.getProgress(plan.id),
-      enabled: true,
+    queries: viewPlans.map(({ plan }) => ({
+      queryKey: ["progress", userId, plan.id],
+      queryFn: () => progressService.getProgress(plan.id),
+      enabled: !!userId,
     })),
   });
 
   const progressByPlanId = useMemo(() => {
     const map = new Map<string, any>();
-    for (let i = 0; i < todayPlans.length; i++) {
-      map.set(todayPlans[i].plan.id, progressQueries[i].data?.progress ?? null);
+    for (let i = 0; i < viewPlans.length; i++) {
+      map.set(viewPlans[i].plan.id, progressQueries[i].data?.progress ?? null);
     }
     return map;
-  }, [progressQueries, todayPlans]);
+  }, [progressQueries, viewPlans]);
 
   const updateReadingMutation = useMutation({
     mutationFn: (vars: {
@@ -185,27 +217,106 @@ function HomeTab() {
       readingIndex: number;
       completed: boolean;
       readingCount: number;
-    }) =>
-      api.updateReadingProgress(
+    }) => {
+      if (typeof navigator !== "undefined" && navigator && navigator.onLine === false) {
+        throw new OfflineError();
+      }
+      return progressService.updateReadingProgress(
         vars.planId,
         vars.day,
         vars.readingIndex,
         vars.completed,
         vars.readingCount
-      ),
-    onSuccess: (_data, vars) => {
-      queryClient.invalidateQueries({ queryKey: ["progress", vars.planId] });
+      );
+    },
+    onMutate: (vars) => {
+      const key = ["progress", userId, vars.planId] as const;
+
+      const prevSeq = progressMutationSeqByPlanRef.current.get(vars.planId) ?? 0;
+      const seq = prevSeq + 1;
+      progressMutationSeqByPlanRef.current.set(vars.planId, seq);
+
+      // Do not await here; we want the UI to update immediately.
+      void queryClient.cancelQueries({ queryKey: key });
+
+      const previous = queryClient.getQueryData<any>(key);
+
+      queryClient.setQueryData<any>(key, (current) => {
+        if (!current?.progress) return current;
+
+        const prevProgress = current.progress;
+        const dayKey = String(vars.day);
+        const prevMap = prevProgress.completedReadingsByDay ?? {};
+        const prevList = Array.isArray(prevMap[dayKey]) ? prevMap[dayKey] : [];
+
+        const nextSet = new Set<number>(prevList);
+        if (vars.completed) nextSet.add(vars.readingIndex);
+        else nextSet.delete(vars.readingIndex);
+
+        const nextList = Array.from(nextSet).sort((a, b) => a - b);
+        const nextCompletedReadingsByDay = {
+          ...prevMap,
+          [dayKey]: nextList,
+        };
+
+        const nextCompletedDays = new Set<number>(prevProgress.completedDays ?? []);
+        const isDayCompleted = vars.readingCount > 0 && nextList.length >= vars.readingCount;
+        if (isDayCompleted) nextCompletedDays.add(vars.day);
+        else nextCompletedDays.delete(vars.day);
+
+        return {
+          ...current,
+          progress: {
+            ...prevProgress,
+            completedReadingsByDay: nextCompletedReadingsByDay,
+            completedDays: Array.from(nextCompletedDays),
+            lastUpdated: new Date().toISOString(),
+          },
+        };
+      });
+
+      return { key, previous, planId: vars.planId, seq };
+    },
+    onError: (err, vars, ctx) => {
+      if (!ctx) return;
+      const latest = progressMutationSeqByPlanRef.current.get(ctx.planId) ?? 0;
+      if (ctx.seq !== latest) return;
+
+      // 오프라인/네트워크 문제면 롤백하지 않고 큐에 저장 (온라인 복구 시 자동 동기화)
+      if (isOfflineLikeError(err)) {
+        void enqueueReadingToggle({
+          planId: vars.planId,
+          day: vars.day,
+          readingIndex: vars.readingIndex,
+          completed: vars.completed,
+          readingCount: vars.readingCount,
+        });
+        return;
+      }
+
+      if (ctx.previous) {
+        queryClient.setQueryData(ctx.key, ctx.previous);
+      }
+    },
+    onSuccess: (data, _vars, ctx) => {
+      if (!ctx?.key) return;
+      const latest = progressMutationSeqByPlanRef.current.get(ctx.planId) ?? 0;
+      if (ctx.seq !== latest) return;
+
+      // 서버 응답으로 캐시를 확정 (invalidate 없이도 UI 안정)
+      queryClient.setQueryData(ctx.key, data);
     },
   });
 
   const combined: CombinedReading[] = useMemo(() => {
     const rows: CombinedReading[] = [];
 
-    for (const { plan, day } of todayPlans) {
+    for (const { plan, day } of viewPlans) {
       const reading = plan.schedule.find((s) => s.day === day);
       if (!reading) continue;
 
       const progress = progressByPlanId.get(plan.id);
+      const isDayCompleted = progress?.completedDays?.includes(day) ?? false;
       const completedIndices = progress?.completedReadingsByDay?.[String(day)] ?? [];
       const completedSet = new Set<number>(completedIndices);
       const readingCount = reading.readings.length;
@@ -220,13 +331,13 @@ function HomeTab() {
           readingCount,
           book: `${plan.name} · ${r.book}`,
           chapters: r.chapters,
-          completed: completedSet.has(readingIndex),
+          completed: isDayCompleted || completedSet.has(readingIndex),
         });
       }
     }
 
     return rows;
-  }, [progressByPlanId, todayPlans]);
+  }, [progressByPlanId, viewPlans]);
 
   const readings = useMemo(
     () => combined.map((c) => ({ book: c.book, chapters: c.chapters })),
@@ -237,13 +348,29 @@ function HomeTab() {
   if (!plans.length) {
     return (
       <div className="max-w-4xl mx-auto p-6">
+        {incomingRequestsCount > 0 && (
+          <div className="bg-white border-2 border-gray-200 rounded-xl p-4 mb-4 flex items-center justify-between gap-4">
+            <div>
+              <p>새 친구 요청이 있습니다</p>
+              <p className="text-sm text-gray-600">{incomingRequestsCount}개</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setHashTab("friends")}
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              확인하기
+            </button>
+          </div>
+        )}
+
         <div className="bg-white border-2 border-gray-200 rounded-xl p-6 text-center">
           <p className="text-gray-700">현재 진행 중인 계획이 없습니다.</p>
-          <p className="text-gray-500 text-sm mt-1">아래 탭에서 계획을 추가해주세요.</p>
+          <p className="text-gray-500 text-sm mt-1">계획을 추가하면 홈에서 오늘 읽을 분량을 볼 수 있습니다.</p>
           <button
             type="button"
             onClick={() => setHashTab("add")}
-            className="mt-4 px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
           >
             계획 추가로 이동
           </button>
@@ -252,12 +379,76 @@ function HomeTab() {
     );
   }
 
-  if (!todayPlans.length) {
+  const handlePrevDay = () => {
+    const newDate = new Date(viewDate);
+    newDate.setDate(newDate.getDate() - 1);
+    setViewDate(newDate);
+  };
+
+  const handleNextDay = () => {
+    const newDate = new Date(viewDate);
+    newDate.setDate(newDate.getDate() + 1);
+    setViewDate(newDate);
+  };
+
+  const handleToday = () => {
+    setViewDate(startOfTodayLocal());
+  };
+
+  if (!viewPlans.length) {
     return (
-      <div className="max-w-4xl mx-auto p-6">
+      <div className="max-w-4xl mx-auto p-6 space-y-4">
+        {incomingRequestsCount > 0 && (
+          <div className="bg-white border-2 border-gray-200 rounded-xl p-4 flex items-center justify-between gap-4">
+            <div>
+              <p>새 친구 요청이 있습니다</p>
+              <p className="text-sm text-gray-600">{incomingRequestsCount}개</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setHashTab("friends")}
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              확인하기
+            </button>
+          </div>
+        )}
+        <div className="bg-white border-2 border-gray-200 rounded-xl p-4">
+          <div className="flex items-center justify-between gap-2">
+            <button
+              type="button"
+              onClick={handlePrevDay}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              title="이전 날"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <div className="flex-1 text-center">
+              <p className="text-sm text-gray-600">{isToday ? "오늘" : "선택한 날짜"}</p>
+              <p className="text-lg">{viewDateLabel}</p>
+            </div>
+            <button
+              type="button"
+              onClick={handleNextDay}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              title="다음 날"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
+          {!isToday && (
+            <button
+              type="button"
+              onClick={handleToday}
+              className="w-full mt-2 px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+            >
+              오늘로 돌아가기
+            </button>
+          )}
+        </div>
         <div className="bg-white border-2 border-gray-200 rounded-xl p-6 text-center">
-          <p className="text-gray-700">오늘 읽을 계획이 없습니다.</p>
-          <p className="text-gray-500 text-sm mt-1">계획의 시작일/기간을 확인해주세요.</p>
+          <p className="text-gray-700">이 날짜에 읽을 계획이 없습니다.</p>
+          <p className="text-gray-500 text-sm mt-1">다른 날짜를 선택하거나 계획을 추가해주세요.</p>
         </div>
       </div>
     );
@@ -265,9 +456,53 @@ function HomeTab() {
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-4">
+      {incomingRequestsCount > 0 && (
+        <div className="bg-white border-2 border-gray-200 rounded-xl p-4 flex items-center justify-between gap-4">
+          <div>
+            <p>새 친구 요청이 있습니다</p>
+            <p className="text-sm text-gray-600">{incomingRequestsCount}개</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setHashTab("friends")}
+            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+          >
+            확인하기
+          </button>
+        </div>
+      )}
       <div className="bg-white border-2 border-gray-200 rounded-xl p-4">
-        <p className="text-sm text-gray-600">오늘</p>
-        <p className="text-lg">{todayLabel}</p>
+        <div className="flex items-center justify-between gap-2">
+          <button
+            type="button"
+            onClick={handlePrevDay}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            title="이전 날"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <div className="flex-1 text-center">
+            <p className="text-sm text-gray-600">{isToday ? "오늘" : "선택한 날짜"}</p>
+            <p className="text-lg">{viewDateLabel}</p>
+          </div>
+          <button
+            type="button"
+            onClick={handleNextDay}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            title="다음 날"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        </div>
+        {!isToday && (
+          <button
+            type="button"
+            onClick={handleToday}
+            className="w-full mt-2 px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+          >
+            오늘로 돌아가기
+          </button>
+        )}
       </div>
 
       <TodayReading
@@ -292,17 +527,20 @@ function HomeTab() {
 function ProgressTab() {
   const { plans } = usePlans();
   const selectedPlanId = usePlanStore((s) => s.selectedPlanId);
-  const { selectPlan, currentDay, setCurrentDay } = usePlanStore();
-  const plan = usePlan(selectedPlanId);
-  const { progress } = useProgress(selectedPlanId);
+  const { selectPlan, currentDay, setCurrentDay, setViewDate } = usePlanStore();
+  
+  // 계획이 있으면 자동으로 첫 번째 계획 선택 (selectedPlanId가 없을 때)
+  const activePlanId = selectedPlanId || (plans.length > 0 ? plans[0].id : null);
+  const plan = usePlan(activePlanId);
+  const { progress } = useProgress(activePlanId);
   const [showHistory, setShowHistory] = useState(false);
 
-  if (!selectedPlanId || !plan || !progress) {
+  if (!activePlanId || !plan || !progress) {
     return (
       <div className="max-w-4xl mx-auto p-6">
         <div className="bg-white border-2 border-gray-200 rounded-xl p-6 text-center">
           <p className="text-gray-700">진도율을 보려면 계획을 선택해주세요.</p>
-          <p className="text-gray-500 text-sm mt-1">계획 추가는 홈 탭에서 진행할 수 있습니다.</p>
+          <p className="text-gray-500 text-sm mt-1">계획 추가 탭에서 계획을 추가할 수 있습니다.</p>
         </div>
       </div>
     );
@@ -343,7 +581,7 @@ function ProgressTab() {
               type="button"
               onClick={() => selectPlan(p.id)}
               className={`shrink-0 px-3 py-2 rounded-lg border-2 text-sm transition-colors ${
-                p.id === selectedPlanId
+                p.id === activePlanId
                   ? "border-blue-500 bg-blue-50 text-blue-700"
                   : "border-gray-200 bg-white text-gray-700"
               }`}
@@ -382,9 +620,59 @@ function ProgressTab() {
 
       {showHistory && (
         <ReadingHistory
-          completedDays={new Set(progress.completedDays)}
+          completedDays={(() => {
+            // 모든 reading이 완료된 날만 포함
+            const completed = new Set<number>();
+            const completedReadingsByDay = progress.completedReadingsByDay || {};
+            
+            for (let day = 1; day <= plan.totalDays; day++) {
+              const reading = plan.schedule.find((s) => s.day === day);
+              if (!reading) continue;
+              
+              const totalReadings = reading.readings.length;
+              const completedIndices = completedReadingsByDay[String(day)] || [];
+              const completedCount = completedIndices.length;
+              
+              // 모든 reading이 완료된 경우
+              if (completedCount === totalReadings && totalReadings > 0) {
+                completed.add(day);
+              }
+            }
+            
+            return completed;
+          })()}
+          partialDays={(() => {
+            // 일부만 완료된 날 포함
+            const partial = new Set<number>();
+            const completedReadingsByDay = progress.completedReadingsByDay || {};
+            
+            for (let day = 1; day <= plan.totalDays; day++) {
+              const reading = plan.schedule.find((s) => s.day === day);
+              if (!reading) continue;
+              
+              const totalReadings = reading.readings.length;
+              const completedIndices = completedReadingsByDay[String(day)] || [];
+              const completedCount = completedIndices.length;
+              
+              // 일부만 완료된 경우 (0 < completedCount < totalReadings)
+              if (completedCount > 0 && completedCount < totalReadings) {
+                partial.add(day);
+              }
+            }
+            
+            return partial;
+          })()}
           currentDay={currentDay}
-          onDayClick={setCurrentDay}
+          onDayClick={(day) => {
+            // 계획 시작일로부터 day일 후의 날짜 계산
+            const startDate = parseYYYYMMDDLocal(plan.startDate);
+            const targetDate = new Date(startDate);
+            targetDate.setDate(targetDate.getDate() + (day - 1));
+            
+            // 전역 viewDate 설정 및 홈 탭으로 이동
+            setViewDate(targetDate);
+            setHashTab('home');
+          }}
           totalDays={plan.totalDays}
         />
       )}

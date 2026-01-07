@@ -1,6 +1,7 @@
 export interface Plan {
   id: string;
   userId?: string;
+  presetId?: string;  // Reference to preset_plans table
   name: string;
   startDate: string;
   endDate?: string;
@@ -10,6 +11,7 @@ export interface Plan {
     readings: Array<{ book: string; chapters: string }>;
   }>;
   isCustom: boolean;
+  displayOrder?: number;
   createdAt?: string;
 }
 
