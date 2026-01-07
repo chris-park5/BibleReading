@@ -89,7 +89,7 @@ export function NotificationSettings({
     setTimeout(() => {
       if (Notification.permission === "granted") {
         new Notification("성경 읽기 알림", {
-          body: `${planName} - 오늘의 읽기를 시작하세요!`,
+          body: "오늘 말씀을 읽을 시간이에요. 앱을 열어 오늘의 읽기를 확인하세요.",
           icon: "/icon.svg",
         });
       }
@@ -99,7 +99,7 @@ export function NotificationSettings({
   const handleTestNotification = () => {
     if (Notification.permission === "granted") {
       new Notification("테스트 알림", {
-        body: `${planName} - 알림이 정상적으로 작동합니다!`,
+        body: "오늘 말씀을 읽을 시간이에요. 알림이 정상적으로 작동합니다!",
         icon: "/icon.svg",
       });
     } else {
@@ -118,7 +118,7 @@ export function NotificationSettings({
               </div>
               <div>
                 <h2>알림 설정</h2>
-                <p className="text-gray-600">{planName}</p>
+                <p className="text-gray-600">오늘 말씀 알림</p>
               </div>
             </div>
             <button

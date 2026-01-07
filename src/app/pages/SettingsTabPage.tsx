@@ -2,13 +2,15 @@ import { useEffect, useMemo, useState } from "react";
 import { Bell, Eye, EyeOff, LogOut, Settings, User, UserX } from "lucide-react";
 import { useAuthStore } from "../../stores/auth.store";
 import { usePlanStore } from "../../stores/plan.store";
-import { usePlan } from "../../hooks/usePlans";
+import { usePlans } from "../../hooks/usePlans";
 import * as authService from "../../services/authService";
 import * as notificationService from "../../services/notificationService";
 
 export function SettingsTabPage() {
   const selectedPlanId = usePlanStore((s) => s.selectedPlanId);
-  const plan = usePlan(selectedPlanId);
+  const { plans } = usePlans();
+  const activePlanId = selectedPlanId || (plans.length > 0 ? plans[0].id : null);
+  const plan = useMemo(() => plans.find((p) => p.id === activePlanId) ?? null, [plans, activePlanId]);
   const logout = useAuthStore((s) => s.logout);
   const userId = useAuthStore((s) => s.user?.id ?? null);
 
@@ -47,7 +49,7 @@ export function SettingsTabPage() {
   useEffect(() => {
     void loadSettings();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedPlanId]);
+  }, [activePlanId]);
 
   const checkNotificationPermission = async () => {
     if ("Notification" in window) {
@@ -61,12 +63,12 @@ export function SettingsTabPage() {
   };
 
   const loadSettings = async () => {
-    if (!selectedPlanId) return;
+    if (!activePlanId) return;
 
     try {
       const result = await notificationService.getNotifications();
       const notification = result.notifications.find(
-        (n: any) => n.planId === selectedPlanId
+        (n: any) => n.planId === activePlanId
       );
       if (notification) {
         setEnabled(notification.enabled);
@@ -96,8 +98,6 @@ export function SettingsTabPage() {
   };
 
   const scheduleNotification = () => {
-    if (!planName) return;
-
     const [hours, minutes] = time.split(":");
     const now = new Date();
     const scheduledTime = new Date(
@@ -117,7 +117,7 @@ export function SettingsTabPage() {
     setTimeout(() => {
       if (Notification.permission === "granted") {
         new Notification("성경 읽기 알림", {
-          body: `${planName} - 오늘의 읽기를 시작하세요!`,
+          body: "오늘 말씀을 읽을 시간이에요. 앱을 열어 오늘의 읽기를 확인하세요.",
           icon: "/icon.svg",
         });
       }
@@ -125,14 +125,14 @@ export function SettingsTabPage() {
   };
 
   const handleTestNotification = () => {
-    if (!planName) {
+    if (!activePlanId) {
       alert("먼저 계획을 선택해주세요");
       return;
     }
 
     if (Notification.permission === "granted") {
       new Notification("테스트 알림", {
-        body: `${planName} - 알림이 정상적으로 작동합니다!`,
+        body: "오늘 말씀을 읽을 시간이에요. 알림이 정상적으로 작동합니다!",
         icon: "/icon.svg",
       });
     } else {
@@ -141,7 +141,7 @@ export function SettingsTabPage() {
   };
 
   const handleSave = async () => {
-    if (!selectedPlanId) {
+    if (!activePlanId) {
       alert("먼저 계획을 선택해주세요");
       return;
     }
@@ -152,7 +152,7 @@ export function SettingsTabPage() {
     }
 
     try {
-      await notificationService.saveNotification(selectedPlanId, time, enabled);
+      await notificationService.saveNotification(activePlanId, time, enabled);
 
       if (enabled) {
         scheduleNotification();
