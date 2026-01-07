@@ -102,6 +102,32 @@ export default defineConfig({
           if (pkg === 'react-dnd' || pkg === 'react-dnd-html5-backend' || pkg === 'dnd-core') return 'vendor-dnd';
           if (pkg === 'motion') return 'vendor-motion';
 
+          // React 생태계 패키지가 일반 vendor에 섞이면
+          // vendor -> vendor-react, vendor-react -> vendor 순환 의존이 생길 수 있어
+          // (특히 PWA/캐시가 섞일 때) 런타임 초기화 순서 이슈로 이어질 수 있습니다.
+          // React 의존 패키지는 별도 청크로 빼서 순환을 끊습니다.
+          const reactEcosystemPkgs = new Set([
+            'lucide-react',
+            'react-hook-form',
+            'sonner',
+            'next-themes',
+            'react-day-picker',
+            'react-popper',
+            'react-resizable-panels',
+            'react-responsive-masonry',
+            'react-slick',
+            'embla-carousel-react',
+            'input-otp',
+            'vaul',
+            'cmdk',
+            'zustand',
+            // React hook shims (can end up in generic vendor and create chunk cycles)
+            'use-sync-external-store',
+            'use-sync-external-store-shim',
+          ]);
+          if (reactEcosystemPkgs.has(pkg)) return 'vendor-react-ecosystem';
+          if (pkg.startsWith('react-') || pkg.endsWith('-react')) return 'vendor-react-ecosystem';
+
           // 나머지는 하나의 vendor로 묶되, 너무 비대해지면 위 규칙을 추가해 분리합니다.
           return 'vendor';
         },
