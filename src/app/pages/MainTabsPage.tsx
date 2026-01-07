@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { BarChart3, ChevronLeft, ChevronRight, Home, PlusSquare, Settings, UsersRound } from "lucide-react";
 import { PlanSelectorPage } from "./PlanSelectorPage";
 import { FriendsTabPage } from "./FriendsTabPage";
@@ -11,6 +11,13 @@ import { parseTabFromHash, setHashTab } from "./mainTabs/tabHash";
 export function MainTabsPage() {
   const defaultTab: TabKey = "home";
   const [tab, setTab] = useState<TabKey>(() => parseTabFromHash(window.location.hash) ?? defaultTab);
+
+  const swipeStateRef = useRef<{
+    startX: number;
+    startY: number;
+    startAt: number;
+    active: boolean;
+  }>({ startX: 0, startY: 0, startAt: 0, active: false });
 
   useEffect(() => {
     // 요구사항: 앱이 열릴 때 기본 탭은 항상 홈
@@ -48,9 +55,66 @@ export function MainTabsPage() {
     []
   );
 
+  const tabOrder = useMemo(() => tabs.map((t) => t.key), [tabs]);
+
+  const isInteractiveTarget = (target: EventTarget | null) => {
+    if (!(target instanceof HTMLElement)) return false;
+    if (target.isContentEditable) return true;
+    const tag = target.tagName.toLowerCase();
+    if (tag === "input" || tag === "textarea" || tag === "select" || tag === "button") return true;
+    // If the user swipes inside a control, do not change tabs.
+    if (target.closest("input, textarea, select, button, a, [role='button']")) return true;
+    return false;
+  };
+
+  const moveTabBy = (delta: number) => {
+    const idx = tabOrder.indexOf(tab);
+    if (idx < 0) return;
+    const nextIdx = idx + delta;
+    if (nextIdx < 0 || nextIdx >= tabOrder.length) return;
+    setHashTab(tabOrder[nextIdx]);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
-      <main className="pb-20">
+      <main
+        className="pb-20"
+        onTouchStart={(e) => {
+          if (e.touches.length !== 1) return;
+          if (isInteractiveTarget(e.target)) return;
+          const t = e.touches[0];
+          swipeStateRef.current = {
+            startX: t.clientX,
+            startY: t.clientY,
+            startAt: Date.now(),
+            active: true,
+          };
+        }}
+        onTouchEnd={(e) => {
+          const state = swipeStateRef.current;
+          if (!state.active) return;
+          swipeStateRef.current.active = false;
+
+          // TouchEnd touches is empty; use changedTouches.
+          const t = e.changedTouches[0];
+          if (!t) return;
+
+          const dx = t.clientX - state.startX;
+          const dy = t.clientY - state.startY;
+          const dt = Date.now() - state.startAt;
+
+          const absX = Math.abs(dx);
+          const absY = Math.abs(dy);
+
+          // Horizontal swipe only: avoid interfering with vertical scroll.
+          const isHorizontal = absX > 60 && absX > absY * 1.5;
+          const isQuickEnough = dt < 700;
+          if (!isHorizontal || !isQuickEnough) return;
+
+          if (dx < 0) moveTabBy(1); // swipe left -> next tab
+          else moveTabBy(-1); // swipe right -> prev tab
+        }}
+      >
         {tab === "home" && <HomeTab />}
         {tab === "progress" && <ProgressTab />}
         {tab === "add" && <PlanSelectorPage embedded />}
