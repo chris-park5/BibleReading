@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useRef, useState } from "react";
+import { Component, Suspense, lazy, useEffect, useRef, useState } from "react";
 import { useIsFetching, useIsMutating } from "@tanstack/react-query";
 import { useAuthStore } from "../stores/auth.store";
 import { usePlanStore } from "../stores/plan.store";
@@ -14,6 +14,47 @@ const DeveloperPlansPage = lazy(async () => {
   const mod = await import("./pages/DeveloperPlansPage");
   return { default: mod.DeveloperPlansPage };
 });
+
+class LazyRouteErrorBoundary extends Component<
+  { children: React.ReactNode },
+  { error: unknown }
+> {
+  state = { error: null as unknown };
+
+  static getDerivedStateFromError(error: unknown) {
+    return { error };
+  }
+
+  render() {
+    if (this.state.error) {
+      const message =
+        this.state.error instanceof Error
+          ? this.state.error.message
+          : String(this.state.error);
+
+      return (
+        <div className="min-h-screen bg-white p-6">
+          <div className="max-w-md mx-auto">
+            <h1 className="text-lg font-semibold mb-2">화면을 불러오지 못했습니다</h1>
+            <p className="text-sm text-gray-700 mb-4">
+              네트워크 상태 또는 캐시 문제로 페이지 로딩이 실패할 수 있습니다. 새로고침 후 다시 시도해주세요.
+            </p>
+            <pre className="text-xs text-gray-600 whitespace-pre-wrap break-words border border-gray-200 rounded-md p-3 mb-4">
+              {message}
+            </pre>
+            <button
+              className="px-4 py-2 rounded-md bg-blue-600 text-white"
+              onClick={() => window.location.reload()}
+            >
+              새로고침
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 export default function App() {
   const { isAuthenticated, setUser } = useAuthStore();
@@ -168,9 +209,11 @@ export default function App() {
     return (
       <>
         <OfflineBanner visible={!isOnline} />
-        <Suspense fallback={<RouteLoadingOverlay visible={true} />}>
-          <AuthPage />
-        </Suspense>
+        <LazyRouteErrorBoundary>
+          <Suspense fallback={<RouteLoadingOverlay visible={true} />}>
+            <AuthPage />
+          </Suspense>
+        </LazyRouteErrorBoundary>
       </>
     );
   }
@@ -179,13 +222,15 @@ export default function App() {
     return (
       <>
         <OfflineBanner visible={!isOnline} />
-        <Suspense fallback={<RouteLoadingOverlay visible={true} />}>
-          <DeveloperPlansPage
-            onClose={() => {
-              window.location.hash = "";
-            }}
-          />
-        </Suspense>
+        <LazyRouteErrorBoundary>
+          <Suspense fallback={<RouteLoadingOverlay visible={true} />}>
+            <DeveloperPlansPage
+              onClose={() => {
+                window.location.hash = "";
+              }}
+            />
+          </Suspense>
+        </LazyRouteErrorBoundary>
       </>
     );
   }
