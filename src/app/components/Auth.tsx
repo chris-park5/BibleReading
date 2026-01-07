@@ -223,22 +223,6 @@ export function Auth({ onAuthSuccess }: AuthProps) {
                 : "계정이 없으신가요? 회원가입"}
             </button>
           </div>
-
-          {/* Setup Notice */}
-          <div className="mt-6 p-3 bg-blue-50 border-2 border-blue-200 rounded-lg">
-            <p className="text-blue-700 text-sm">
-              <strong>참고:</strong> 구글 로그인을 사용하려면{" "}
-              <a
-                href="https://supabase.com/docs/guides/auth/social-login/auth-google"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline hover:text-blue-800"
-              >
-                Supabase 설정
-              </a>
-              을 완료해야 합니다.
-            </p>
-          </div>
         </div>
       </div>
     </div>

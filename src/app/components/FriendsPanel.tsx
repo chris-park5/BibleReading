@@ -24,6 +24,7 @@ export function FriendsPanel({ onClose, currentPlanId }: FriendsPanelProps) {
   const [friends, setFriends] = useState<Friend[]>([]);
   const [friendIdentifier, setFriendIdentifier] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingFriends, setLoadingFriends] = useState(true);
   const [error, setError] = useState("");
   const [selectedFriend, setSelectedFriend] = useState<string | null>(null);
   const [friendProgress, setFriendProgress] = useState<FriendProgress | null>(
@@ -35,11 +36,14 @@ export function FriendsPanel({ onClose, currentPlanId }: FriendsPanelProps) {
   }, []);
 
   const loadFriends = async () => {
+    setLoadingFriends(true);
     try {
       const result = await api.getFriends();
       setFriends(result.friends || []);
     } catch (err: any) {
       console.error("Failed to load friends:", err);
+    } finally {
+      setLoadingFriends(false);
     }
   };
 
@@ -127,8 +131,12 @@ export function FriendsPanel({ onClose, currentPlanId }: FriendsPanelProps) {
 
           {/* 친구 목록 */}
           <div>
-            <h3 className="mb-3">친구 목록 ({friends.length})</h3>
-            {friends.length === 0 ? (
+            <h3 className="mb-3">
+              친구 목록 ({loadingFriends ? "불러오는 중" : friends.length})
+            </h3>
+            {loadingFriends ? (
+              <div className="text-center py-8 text-gray-500">불러오는 중...</div>
+            ) : friends.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 아직 추가된 친구가 없습니다
               </div>

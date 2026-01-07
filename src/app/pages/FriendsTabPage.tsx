@@ -8,6 +8,7 @@ export function FriendsTabPage() {
   const [outgoingRequests, setOutgoingRequests] = useState<friendService.OutgoingFriendRequest[]>([]);
   const [friendUsername, setFriendUsername] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingFriends, setLoadingFriends] = useState(true);
   const [respondingRequestId, setRespondingRequestId] = useState<string | null>(null);
   const [deletingFriendId, setDeletingFriendId] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -19,6 +20,7 @@ export function FriendsTabPage() {
   }, []);
 
   const loadFriends = async () => {
+    setLoadingFriends(true);
     try {
       const result = await friendService.getFriends();
       setFriends(result.friends || []);
@@ -26,6 +28,8 @@ export function FriendsTabPage() {
       setOutgoingRequests(result.outgoingRequests || []);
     } catch (err: any) {
       console.error("Failed to load friends:", err);
+    } finally {
+      setLoadingFriends(false);
     }
   };
 
@@ -139,7 +143,12 @@ export function FriendsTabPage() {
         </div>
       </div>
 
-      {incomingRequests.length > 0 && (
+      {loadingFriends ? (
+        <div className="bg-white border-2 border-gray-200 rounded-xl p-6">
+          <h2 className="mb-3">받은 친구 요청 (불러오는 중)</h2>
+          <div className="text-center py-8 text-gray-500">불러오는 중...</div>
+        </div>
+      ) : incomingRequests.length > 0 ? (
         <div className="bg-white border-2 border-gray-200 rounded-xl p-6">
           <h2 className="mb-3">받은 친구 요청 ({incomingRequests.length})</h2>
           <div className="space-y-2">
@@ -183,9 +192,14 @@ export function FriendsTabPage() {
             ))}
           </div>
         </div>
-      )}
+      ) : null}
 
-      {outgoingRequests.length > 0 && (
+      {loadingFriends ? (
+        <div className="bg-white border-2 border-gray-200 rounded-xl p-6">
+          <h2 className="mb-3">내가 보낸 요청 (불러오는 중)</h2>
+          <div className="text-center py-8 text-gray-500">불러오는 중...</div>
+        </div>
+      ) : outgoingRequests.length > 0 ? (
         <div className="bg-white border-2 border-gray-200 rounded-xl p-6">
           <h2 className="mb-3">내가 보낸 요청 ({outgoingRequests.length})</h2>
           <div className="space-y-2">
@@ -218,7 +232,7 @@ export function FriendsTabPage() {
             ))}
           </div>
         </div>
-      )}
+      ) : null}
 
       <div className="bg-white border-2 border-gray-200 rounded-xl p-6">
         <h2 className="mb-3">친구 요청 보내기</h2>
@@ -244,8 +258,10 @@ export function FriendsTabPage() {
       </div>
 
       <div className="bg-white border-2 border-gray-200 rounded-xl p-6">
-        <h2 className="mb-3">친구 목록 ({friends.length})</h2>
-        {friends.length === 0 ? (
+        <h2 className="mb-3">친구 목록 ({loadingFriends ? "불러오는 중" : friends.length})</h2>
+        {loadingFriends ? (
+          <div className="text-center py-8 text-gray-500">불러오는 중...</div>
+        ) : friends.length === 0 ? (
           <div className="text-center py-8 text-gray-500">아직 추가된 친구가 없습니다</div>
         ) : (
           <div className="space-y-2">
