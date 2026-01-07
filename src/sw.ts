@@ -2,6 +2,8 @@
 
 import { clientsClaim } from 'workbox-core';
 import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching';
+import { registerRoute } from 'workbox-routing';
+import { NetworkFirst } from 'workbox-strategies';
 
 declare const self: ServiceWorkerGlobalScope & {
   __WB_MANIFEST: any;
@@ -11,6 +13,16 @@ self.skipWaiting();
 clientsClaim();
 cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST);
+
+// 배포 후 하얀 화면(구버전 index.html 캐시로 인해 새 hashed asset을 못 찾는 문제)을 줄이기 위해
+// HTML(navigation) 요청은 네트워크 우선으로 가져오고, 오프라인 시에만 캐시를 사용합니다.
+registerRoute(
+  ({ request }) => request.mode === 'navigate',
+  new NetworkFirst({
+    cacheName: 'html',
+    networkTimeoutSeconds: 3,
+  })
+);
 
 self.addEventListener('push', (event: PushEvent) => {
   const fallback = {

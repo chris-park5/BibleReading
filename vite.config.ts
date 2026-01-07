@@ -76,6 +76,10 @@ export default defineConfig({
       // Alias @ to the src directory
       '@': path.resolve(__dirname, './src'),
     },
+    // React가 중복으로 번들/로드되면 런타임에서 React 객체가 예상과 달라져
+    // 'Cannot set properties of undefined (setting "Children")' 같은 오류가 날 수 있습니다.
+    // (특히 링크드 패키지/중복 의존성/번들 캐시가 섞일 때)
+    dedupe: ['react', 'react-dom'],
   },
 
   build: {
