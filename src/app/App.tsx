@@ -8,6 +8,108 @@ import { queryClient } from "../queryClient";
 import { RouteLoadingOverlay } from "./components/RouteLoadingOverlay";
 import { clearOfflineQueueForUser, flushOfflineProgressQueue } from "./utils/offlineProgressQueue";
 import { OfflineBanner } from "./components/OfflineBanner";
+import { Button } from "./components/ui/button";
+
+type BeforeInstallPromptEvent = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
+};
+
+function isRunningStandalone() {
+  if (typeof window === "undefined") return false;
+
+  // Chrome/Edge/Android
+  const displayModeStandalone = window.matchMedia?.("(display-mode: standalone)")?.matches;
+
+  // iOS Safari
+  const iosStandalone = Boolean((navigator as unknown as { standalone?: boolean }).standalone);
+
+  return Boolean(displayModeStandalone || iosStandalone);
+}
+
+function InstallAppBanner() {
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [dismissed, setDismissed] = useState(false);
+  const [installed, setInstalled] = useState(() => isRunningStandalone());
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const DISMISS_KEY = "pwa-install-dismissed-at";
+    const DISMISS_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+
+    const dismissedAtRaw = window.localStorage.getItem(DISMISS_KEY);
+    const dismissedAt = dismissedAtRaw ? Number(dismissedAtRaw) : 0;
+    const now = Date.now();
+    const isDismissed = dismissedAt > 0 && now - dismissedAt < DISMISS_WINDOW_MS;
+    if (isDismissed) setDismissed(true);
+
+    const onBeforeInstallPrompt = (e: Event) => {
+      // default mini-infobar(안드로이드)을 막고, 우리가 버튼으로 트리거
+      e.preventDefault?.();
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
+    };
+
+    const onAppInstalled = () => {
+      setInstalled(true);
+      setDeferredPrompt(null);
+      window.localStorage.removeItem(DISMISS_KEY);
+    };
+
+    window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+    window.addEventListener("appinstalled", onAppInstalled);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+      window.removeEventListener("appinstalled", onAppInstalled);
+    };
+  }, []);
+
+  if (installed || isRunningStandalone()) return null;
+  if (dismissed) return null;
+  if (!deferredPrompt) return null;
+
+  const onInstall = async () => {
+    try {
+      await deferredPrompt.prompt();
+      const choice = await deferredPrompt.userChoice;
+      // 사용자가 거절하면 재노출이 제한될 수 있어서, 여기서는 배너만 닫습니다.
+      if (choice.outcome !== "accepted") {
+        window.localStorage.setItem("pwa-install-dismissed-at", String(Date.now()));
+        setDismissed(true);
+      }
+      setDeferredPrompt(null);
+    } catch {
+      // prompt 실패 시 배너를 닫아 UX 깨짐 방지
+      window.localStorage.setItem("pwa-install-dismissed-at", String(Date.now()));
+      setDismissed(true);
+      setDeferredPrompt(null);
+    }
+  };
+
+  const onDismiss = () => {
+    window.localStorage.setItem("pwa-install-dismissed-at", String(Date.now()));
+    setDismissed(true);
+  };
+
+  return (
+    <div className="fixed inset-x-0 bottom-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+      <div className="mx-auto flex max-w-md items-center justify-between gap-3 px-4 py-3">
+        <div className="min-w-0">
+          <p className="text-sm font-medium">앱으로 설치할 수 있어요</p>
+          <p className="text-xs text-muted-foreground">홈 화면에 추가해서 더 빠르게 사용하세요.</p>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <Button variant="outline" size="sm" onClick={onDismiss}>
+            닫기
+          </Button>
+          <Button size="sm" onClick={onInstall}>
+            설치
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const AuthPage = lazy(() => import("./pages/AuthPage"));
 const DeveloperPlansPage = lazy(async () => {
@@ -208,6 +310,7 @@ export default function App() {
   if (!isAuthenticated) {
     return (
       <>
+        <InstallAppBanner />
         <OfflineBanner visible={!isOnline} />
         <LazyRouteErrorBoundary>
           <Suspense fallback={<RouteLoadingOverlay visible={true} />}>
@@ -238,6 +341,7 @@ export default function App() {
   // 모바일 PWA 탭 기반 메인 화면
   return (
     <>
+      <InstallAppBanner />
       <OfflineBanner visible={!isOnline} />
       <RouteLoadingOverlay visible={showLoadingOverlay} />
       <MainTabsPage />
