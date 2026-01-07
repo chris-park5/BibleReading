@@ -49,7 +49,7 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let accessToken: string | null = null;
 
 const DEFAULT_API_TIMEOUT_MS = 10_000;
-const SESSION_RECOVERY_TIMEOUT_MS = 1_500;
+const SESSION_RECOVERY_TIMEOUT_MS = 8_000;
 
 function sleep(ms: number) {
   return new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -68,17 +68,22 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: s
 async function tryRecoverSessionToken(): Promise<void> {
   if (accessToken) return;
   try {
-    const { data } = await withTimeout(
-      supabase.auth.getSession(),
-      SESSION_RECOVERY_TIMEOUT_MS,
-      "세션 확인 시간이 초과되었습니다"
-    );
-    if (data.session?.access_token) {
-      accessToken = data.session.access_token;
-    }
+    const { data } = await supabase.auth.getSession();
+    if (data.session?.access_token) accessToken = data.session.access_token;
   } catch {
     // ignore: proceed without session token (server may reject and we'll surface the error)
   }
+}
+
+async function getBearerTokenOrThrow(useAuth: boolean): Promise<string | null> {
+  if (!useAuth) return null;
+
+  // Ensure we have a valid session token even after browser restart.
+  await tryRecoverSessionToken();
+  if (accessToken) return accessToken;
+
+  // Do not fall back to anon key for Authorization; the Edge Function verifies JWT.
+  throw new Error("로그인이 필요합니다. 다시 로그인해주세요.");
 }
 
 export function setAccessToken(token: string | null) {
@@ -136,11 +141,10 @@ async function fetchAPI(
   // apikey + Authorization(Bearer JWT)를 함께 보내는 것이 안전합니다.
   // 로그인 상태면 access token, 아니면 anon key(JWT)를 사용합니다.
 
-  // 토큰이 없으면 세션에서 복구 시도 (무한 대기 방지: 타임아웃 적용)
-  await tryRecoverSessionToken();
-
-  const bearer = useAuth && accessToken ? accessToken : SUPABASE_ANON_KEY;
-  headers["Authorization"] = `Bearer ${bearer}`;
+  const bearer = await getBearerTokenOrThrow(useAuth);
+  if (bearer) {
+    headers["Authorization"] = `Bearer ${bearer}`;
+  }
 
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), DEFAULT_API_TIMEOUT_MS);
@@ -247,14 +251,35 @@ export async function signIn(username: string, password: string) {
  * Google OAuth Sign In
  */
 export async function signInWithGoogle() {
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  // Use origin only to minimize Supabase Redirect URL mismatches across routes.
+  const redirectTo = origin;
+
+  // Supabase OAuth requires an absolute http(s) redirect URL.
+  // If the app is opened via file:// (origin === "null"), Supabase returns a vague "request path" error.
+  if (!redirectTo.startsWith("http://") && !redirectTo.startsWith("https://")) {
+    throw new Error("구글 로그인을 사용하려면 http(s)로 실행해야 합니다. (예: npm run dev로 실행 후 접속)");
+  }
+
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: window.location.origin,
+      // Use origin+pathname (no query/hash) so it works even when hosted under a sub-path.
+      // Note: Redirect URL must be allow-listed in Supabase Auth settings.
+      redirectTo,
     },
   });
 
-  if (error) throw error;
+  if (error) {
+    const msg = (error as any)?.message ? String((error as any).message) : "";
+    const normalized = msg.toLowerCase();
+    if (normalized.includes("request path") && normalized.includes("invalid")) {
+      throw new Error(
+        `구글 로그인 설정 오류: Supabase Dashboard → Authentication → URL Configuration의 Redirect URLs에 현재 도메인을 추가해야 합니다. (현재: ${redirectTo})`
+      );
+    }
+    throw error;
+  }
 
   return { data };
 }
@@ -285,6 +310,37 @@ export async function signOut() {
 }
 
 export async function getSession() {
+  // If we are returning from an OAuth provider, the URL may contain an auth code.
+  // Supabase can usually detect/exchange automatically, but explicit handling makes it more reliable.
+  if (typeof window !== "undefined") {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get("code");
+      const oauthError = params.get("error");
+      const oauthErrorDescription = params.get("error_description");
+
+      if (oauthError) {
+        throw new Error(oauthErrorDescription || oauthError);
+      }
+
+      if (code) {
+        await withTimeout(
+          supabase.auth.exchangeCodeForSession(code),
+          20_000,
+          "OAuth 세션 교환 시간이 초과되었습니다"
+        );
+
+        // Remove query params to prevent re-processing the auth code on refresh.
+        // Keep the hash route if present.
+        window.history.replaceState({}, document.title, `${window.location.pathname}${window.location.hash}`);
+      }
+    } catch (e) {
+      // Surface a useful error for UI/console; session may still be recovered via storage.
+      // eslint-disable-next-line no-console
+      console.error("OAuth callback handling failed:", e);
+    }
+  }
+
   const {
     data: { session },
     error,

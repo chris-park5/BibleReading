@@ -21,6 +21,35 @@ export function SettingsTabPage() {
   const [enabled, setEnabled] = useState(false);
   const [time, setTime] = useState("09:00");
   const [permissionGranted, setPermissionGranted] = useState(false);
+  const [notificationSyncWarning, setNotificationSyncWarning] = useState<string | null>(null);
+
+  const NOTIFICATION_CACHE_KEY = "bible-reading:notification-settings-cache:v1";
+
+  const readCachedNotificationSetting = (planId: string): { enabled: boolean; time: string } | null => {
+    try {
+      const raw = localStorage.getItem(NOTIFICATION_CACHE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as Record<string, any>;
+      const item = parsed?.[planId];
+      if (!item) return null;
+      if (typeof item.enabled !== "boolean") return null;
+      if (typeof item.time !== "string") return null;
+      return { enabled: item.enabled, time: item.time };
+    } catch {
+      return null;
+    }
+  };
+
+  const writeCachedNotificationSetting = (planId: string, next: { enabled: boolean; time: string }) => {
+    try {
+      const raw = localStorage.getItem(NOTIFICATION_CACHE_KEY);
+      const parsed = (raw ? JSON.parse(raw) : {}) as Record<string, any>;
+      parsed[planId] = { enabled: next.enabled, time: next.time, updatedAt: Date.now() };
+      localStorage.setItem(NOTIFICATION_CACHE_KEY, JSON.stringify(parsed));
+    } catch {
+      // ignore cache failures
+    }
+  };
 
   const [activeTab, setActiveTab] = useState<"profile" | "notifications">("notifications");
 
@@ -110,6 +139,15 @@ export function SettingsTabPage() {
   const loadSettings = async () => {
     if (!activePlanId) return;
 
+    setNotificationSyncWarning(null);
+
+    // Show last known setting immediately to avoid "reset" 느낌 (e.g., when auth/session is still recovering).
+    const cached = readCachedNotificationSetting(activePlanId);
+    if (cached) {
+      setEnabled(cached.enabled);
+      setTime(cached.time);
+    }
+
     try {
       const result = await notificationService.getNotifications();
       const notification = result.notifications.find(
@@ -118,12 +156,21 @@ export function SettingsTabPage() {
       if (notification) {
         setEnabled(notification.enabled);
         setTime(notification.time);
+        writeCachedNotificationSetting(activePlanId, { enabled: notification.enabled, time: notification.time });
       } else {
+        // No server-side setting: fall back to defaults, and cache it.
         setEnabled(false);
         setTime("09:00");
+        writeCachedNotificationSetting(activePlanId, { enabled: false, time: "09:00" });
       }
     } catch (err) {
       console.error("Failed to load notification settings:", err);
+
+      const message = typeof (err as any)?.message === "string" ? (err as any).message : "";
+      const status = (err as any)?.status;
+      if (status === 401 || message.includes("로그인이 필요")) {
+        setNotificationSyncWarning("서버에서 알림 설정을 불러오려면 로그인이 필요합니다");
+      }
     }
   };
 
@@ -216,12 +263,20 @@ export function SettingsTabPage() {
     try {
       await notificationService.saveNotification(activePlanId, time, enabled);
 
+      // Persist UI state locally as well to survive browser restarts / temporary auth issues.
+      writeCachedNotificationSetting(activePlanId, { enabled, time });
+
       if (enabled) {
         scheduleNotification();
       }
 
       alert("알림 설정이 저장되었습니다");
     } catch (err) {
+      const message = typeof (err as any)?.message === "string" ? (err as any).message : "";
+      const status = (err as any)?.status;
+      if (status === 401 || message.includes("로그인이 필요")) {
+        setNotificationSyncWarning("서버에 저장하려면 로그인이 필요합니다");
+      }
       alert("알림 설정 저장에 실패했습니다");
     }
   };
@@ -333,7 +388,7 @@ export function SettingsTabPage() {
         </div>
         <div>
           <h1>설정</h1>
-          <p className="text-gray-600">알림 설정을 관리합니다</p>
+          <p className="text-gray-600">프로필과 알림 설정을 관리합니다</p>
         </div>
       </div>
 
@@ -503,6 +558,12 @@ export function SettingsTabPage() {
           {!permissionGranted && (
             <div className="p-4 bg-yellow-50 border-2 border-yellow-200 rounded-lg mb-4">
               <p className="text-yellow-800 text-sm">알림을 받으려면 브라우저에서 알림 권한을 허용해주세요</p>
+            </div>
+          )}
+
+          {notificationSyncWarning && (
+            <div className="p-4 bg-gray-50 border-2 border-gray-200 rounded-lg mb-4">
+              <p className="text-gray-700 text-sm">{notificationSyncWarning}</p>
             </div>
           )}
 

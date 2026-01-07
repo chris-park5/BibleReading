@@ -18,10 +18,38 @@ export function NotificationSettings({
   const [time, setTime] = useState("09:00");
   const [permissionGranted, setPermissionGranted] = useState(false);
 
+  const NOTIFICATION_CACHE_KEY = "bible-reading:notification-settings-cache:v1";
+
+  const readCachedNotificationSetting = (id: string): { enabled: boolean; time: string } | null => {
+    try {
+      const raw = localStorage.getItem(NOTIFICATION_CACHE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as Record<string, any>;
+      const item = parsed?.[id];
+      if (!item) return null;
+      if (typeof item.enabled !== "boolean") return null;
+      if (typeof item.time !== "string") return null;
+      return { enabled: item.enabled, time: item.time };
+    } catch {
+      return null;
+    }
+  };
+
+  const writeCachedNotificationSetting = (id: string, next: { enabled: boolean; time: string }) => {
+    try {
+      const raw = localStorage.getItem(NOTIFICATION_CACHE_KEY);
+      const parsed = (raw ? JSON.parse(raw) : {}) as Record<string, any>;
+      parsed[id] = { enabled: next.enabled, time: next.time, updatedAt: Date.now() };
+      localStorage.setItem(NOTIFICATION_CACHE_KEY, JSON.stringify(parsed));
+    } catch {
+      // ignore cache failures
+    }
+  };
+
   useEffect(() => {
     checkNotificationPermission();
     loadSettings();
-  }, []);
+  }, [planId]);
 
   const checkNotificationPermission = async () => {
     if ("Notification" in window) {
@@ -75,6 +103,12 @@ export function NotificationSettings({
   };
 
   const loadSettings = async () => {
+    const cached = readCachedNotificationSetting(planId);
+    if (cached) {
+      setEnabled(cached.enabled);
+      setTime(cached.time);
+    }
+
     try {
       const result = await api.getNotifications();
       const notification = result.notifications.find(
@@ -83,6 +117,11 @@ export function NotificationSettings({
       if (notification) {
         setEnabled(notification.enabled);
         setTime(notification.time);
+        writeCachedNotificationSetting(planId, { enabled: notification.enabled, time: notification.time });
+      } else {
+        setEnabled(false);
+        setTime("09:00");
+        writeCachedNotificationSetting(planId, { enabled: false, time: "09:00" });
       }
     } catch (err) {
       console.error("Failed to load notification settings:", err);
@@ -100,6 +139,8 @@ export function NotificationSettings({
 
     try {
       await api.saveNotification(planId, time, enabled);
+
+      writeCachedNotificationSetting(planId, { enabled, time });
 
       if (enabled) {
         scheduleNotification();
