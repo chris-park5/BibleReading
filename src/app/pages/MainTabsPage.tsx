@@ -586,7 +586,9 @@ function ProgressTab() {
                   : "border-gray-200 bg-white text-gray-700"
               }`}
             >
-              {p.name}
+              <span className="block max-w-[10rem] text-center text-xs leading-snug whitespace-normal break-words line-clamp-2">
+                {p.name}
+              </span>
             </button>
           ))}
         </div>
