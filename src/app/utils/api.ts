@@ -12,18 +12,35 @@ import type { Plan, Progress } from "../../types/domain";
 // Configuration
 // ============================================================================
 
-const SUPABASE_URL_RAW =
-  (import.meta.env.VITE_SUPABASE_URL as string | undefined) ??
-  `https://${projectId}.supabase.co`;
+const HOSTNAME = typeof window !== "undefined" ? window.location.hostname : "";
+const IS_LOCALHOST = HOSTNAME === "localhost" || HOSTNAME === "127.0.0.1";
+
+const SUPABASE_URL_RAW = (() => {
+  const fromEnv = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+  if (fromEnv) return fromEnv;
+  if (IS_LOCALHOST) return `https://${projectId}.supabase.co`;
+  throw new Error(
+    "배포 환경 설정 오류: VITE_SUPABASE_URL이 설정되어 있지 않습니다. (Vercel Environment Variables에 Supabase Project URL을 추가하세요)"
+  );
+})();
 
 const SUPABASE_URL = SUPABASE_URL_RAW.replace(/\/+$/, "");
 
-const SUPABASE_ANON_KEY =
-  (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ?? publicAnonKey;
+const SUPABASE_ANON_KEY = (() => {
+  const fromEnv = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+  if (fromEnv) return fromEnv;
+  if (IS_LOCALHOST) return publicAnonKey;
+  throw new Error(
+    "배포 환경 설정 오류: VITE_SUPABASE_ANON_KEY가 설정되어 있지 않습니다. (Vercel Environment Variables에 Supabase anon key를 추가하세요)"
+  );
+})();
 
-const FUNCTIONS_BASE_RAW =
-  (import.meta.env.VITE_SUPABASE_FUNCTIONS_BASE as string | undefined) ??
-  `${SUPABASE_URL}/functions/v1/make-server-7fb946f4`;
+const FUNCTIONS_BASE_RAW = (() => {
+  const fromEnv = import.meta.env.VITE_SUPABASE_FUNCTIONS_BASE as string | undefined;
+  if (fromEnv) return fromEnv;
+  // Safe default: same Supabase project as SUPABASE_URL
+  return `${SUPABASE_URL}/functions/v1/make-server-7fb946f4`;
+})();
 
 const FUNCTIONS_BASE = FUNCTIONS_BASE_RAW.replace(/\/+$/, "");
 
