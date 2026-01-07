@@ -1,15 +1,19 @@
-import { useEffect, useRef, useState } from "react";
+import { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { useIsFetching, useIsMutating } from "@tanstack/react-query";
 import { useAuthStore } from "../stores/auth.store";
 import { usePlanStore } from "../stores/plan.store";
-import { AuthPage } from "./pages/AuthPage";
 import { MainTabsPage } from "./pages/MainTabsPage";
-import { DeveloperPlansPage } from "./pages/DeveloperPlansPage";
 import * as authService from "../services/authService";
 import { queryClient } from "../queryClient";
 import { RouteLoadingOverlay } from "./components/RouteLoadingOverlay";
 import { clearOfflineQueueForUser, flushOfflineProgressQueue } from "./utils/offlineProgressQueue";
 import { OfflineBanner } from "./components/OfflineBanner";
+
+const AuthPage = lazy(() => import("./pages/AuthPage"));
+const DeveloperPlansPage = lazy(async () => {
+  const mod = await import("./pages/DeveloperPlansPage");
+  return { default: mod.DeveloperPlansPage };
+});
 
 export default function App() {
   const { isAuthenticated, setUser } = useAuthStore();
@@ -164,8 +168,9 @@ export default function App() {
     return (
       <>
         <OfflineBanner visible={!isOnline} />
-        <RouteLoadingOverlay visible={showLoadingOverlay} />
-        <AuthPage />
+        <Suspense fallback={<RouteLoadingOverlay visible={true} />}>
+          <AuthPage />
+        </Suspense>
       </>
     );
   }
@@ -174,12 +179,13 @@ export default function App() {
     return (
       <>
         <OfflineBanner visible={!isOnline} />
-        <RouteLoadingOverlay visible={showLoadingOverlay} />
-        <DeveloperPlansPage
-          onClose={() => {
-            window.location.hash = "";
-          }}
-        />
+        <Suspense fallback={<RouteLoadingOverlay visible={true} />}>
+          <DeveloperPlansPage
+            onClose={() => {
+              window.location.hash = "";
+            }}
+          />
+        </Suspense>
       </>
     );
   }
