@@ -11,8 +11,8 @@ export function FriendsTabPage() {
   const [respondingRequestId, setRespondingRequestId] = useState<string | null>(null);
   const [deletingFriendId, setDeletingFriendId] = useState<string | null>(null);
   const [error, setError] = useState("");
-  const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
-  const [friendStatus, setFriendStatus] = useState<friendService.FriendStatus | null>(null);
+  const [expandedFriendIds, setExpandedFriendIds] = useState<Set<string>>(() => new Set());
+  const [friendStatusById, setFriendStatusById] = useState<Record<string, friendService.FriendStatus>>({});
 
   useEffect(() => {
     void loadFriends();
@@ -46,10 +46,30 @@ export function FriendsTabPage() {
   };
 
   const handleViewStatus = async (friend: friendService.Friend) => {
+    const isExpanded = expandedFriendIds.has(friend.userId);
+    if (isExpanded) {
+      setExpandedFriendIds((prev) => {
+        const next = new Set(prev);
+        next.delete(friend.userId);
+        return next;
+      });
+      return;
+    }
+
+    // Open first (optimistic), then fetch status if needed.
+    setExpandedFriendIds((prev) => {
+      const next = new Set(prev);
+      next.add(friend.userId);
+      return next;
+    });
+
+    if (friendStatusById[friend.userId]) return;
+
     try {
       const result = await friendService.getFriendStatus(friend.userId);
-      setFriendStatus(result.friendStatus);
-      setSelectedFriendId(friend.userId);
+      if (result?.friendStatus) {
+        setFriendStatusById((prev) => ({ ...prev, [friend.userId]: result.friendStatus }));
+      }
     } catch (err: any) {
       alert("친구 정보를 불러올 수 없습니다");
       console.error(err);
@@ -63,10 +83,16 @@ export function FriendsTabPage() {
     setDeletingFriendId(friend.userId);
     try {
       await friendService.deleteFriend(friend.userId);
-      if (selectedFriendId === friend.userId) {
-        setSelectedFriendId(null);
-        setFriendStatus(null);
-      }
+      setExpandedFriendIds((prev) => {
+        const next = new Set(prev);
+        next.delete(friend.userId);
+        return next;
+      });
+      setFriendStatusById((prev) => {
+        if (!prev[friend.userId]) return prev;
+        const { [friend.userId]: _removed, ...rest } = prev;
+        return rest;
+      });
       await loadFriends();
     } catch (err: any) {
       setError(err.message || "친구 삭제에 실패했습니다");
@@ -236,20 +262,20 @@ export function FriendsTabPage() {
                       {friend.email}
                     </p>
                   </div>
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
+                  <div className="flex flex-row flex-wrap sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
                     <button
                       type="button"
                       onClick={() => handleViewStatus(friend)}
-                      className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors w-full sm:w-auto"
+                      className="flex items-center justify-center gap-2 px-3 py-1.5 text-sm bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors w-auto"
                     >
                       <TrendingUp className="w-4 h-4" />
-                      보기
+                      {expandedFriendIds.has(friend.userId) ? "닫기" : "보기"}
                     </button>
                     <button
                       type="button"
                       disabled={deletingFriendId === friend.userId}
                       onClick={() => handleDeleteFriend(friend)}
-                      className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors w-full sm:w-auto"
+                      className="flex items-center justify-center gap-2 px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors w-auto"
                       title="친구 삭제"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -257,41 +283,61 @@ export function FriendsTabPage() {
                     </button>
                   </div>
                 </div>
+
+                {expandedFriendIds.has(friend.userId) && (
+                  <div className="mt-4 bg-white border-2 border-purple-200 rounded-xl p-4">
+                    <div className="flex items-center justify-between gap-3 mb-3">
+                      <h2>{friend.name}님</h2>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setExpandedFriendIds((prev) => {
+                            const next = new Set(prev);
+                            next.delete(friend.userId);
+                            return next;
+                          });
+                        }}
+                        className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                      >
+                        닫기
+                      </button>
+                    </div>
+
+                    {friendStatusById[friend.userId] ? (
+                      <div className="space-y-3">
+                        <div>
+                          <p className="text-sm text-gray-600">계획</p>
+                          <p>{friendStatusById[friend.userId].plan?.name ?? "공유된 계획이 없습니다"}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600">달성률</p>
+                          <div className="flex items-center gap-3">
+                            <div className="flex-1 bg-gray-200 rounded-full h-3">
+                              <div
+                                className="bg-purple-500 h-3 rounded-full transition-all"
+                                style={{
+                                  width: `${Math.max(0, Math.min(100, friendStatusById[friend.userId].achievementRate))}%`,
+                                }}
+                              />
+                            </div>
+                            <span>
+                              {friendStatusById[friend.userId].totalDays > 0
+                                ? `${friendStatusById[friend.userId].completedDays}/${friendStatusById[friend.userId].totalDays}`
+                                : "0/0"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-600">불러오는 중...</p>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
           </div>
         )}
       </div>
-
-      {selectedFriendId && friendStatus && (
-        <div className="bg-white border-2 border-purple-200 rounded-xl p-6">
-          <h2 className="mb-4">{friendStatus.user.name}님</h2>
-          <div className="space-y-3">
-            <div>
-              <p className="text-sm text-gray-600">계획</p>
-              <p>{friendStatus.plan?.name ?? "공유된 계획이 없습니다"}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">달성률</p>
-              <div className="flex items-center gap-3">
-                <div className="flex-1 bg-gray-200 rounded-full h-3">
-                  <div
-                    className="bg-purple-500 h-3 rounded-full transition-all"
-                    style={{
-                      width: `${Math.max(0, Math.min(100, friendStatus.achievementRate))}%`,
-                    }}
-                  />
-                </div>
-                <span>
-                  {friendStatus.totalDays > 0
-                    ? `${friendStatus.completedDays}/${friendStatus.totalDays}`
-                    : "0/0"}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
