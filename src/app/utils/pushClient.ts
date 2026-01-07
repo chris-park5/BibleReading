@@ -42,9 +42,24 @@ export async function ensurePushSubscriptionRegistered(): Promise<boolean> {
     return false;
   }
 
-  const vapidPublicKey = (import.meta as any).env?.VITE_VAPID_PUBLIC_KEY as string | undefined;
+  let vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined;
   if (!vapidPublicKey) {
-    alert('푸시 알림 키(VITE_VAPID_PUBLIC_KEY)가 설정되지 않았습니다');
+    try {
+      const res = await api.getVapidPublicKey();
+      vapidPublicKey = res.publicKey;
+    } catch {
+      // ignore
+    }
+  }
+
+  if (!vapidPublicKey) {
+    alert(
+      `푸시 알림 키가 설정되지 않았습니다.\n\n` +
+        `- 로컬 개발: .env.local의 VITE_VAPID_PUBLIC_KEY 확인\n` +
+        `- 배포 환경: Vercel 등에 VITE_VAPID_PUBLIC_KEY 설정 후 재배포\n` +
+        `- 또는: 서버(Edge Function) VAPID_PUBLIC_KEY 설정 확인\n\n` +
+        `현재 접속: ${window.location.origin}`
+    );
     return false;
   }
 

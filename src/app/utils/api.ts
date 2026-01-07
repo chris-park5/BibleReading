@@ -259,6 +259,26 @@ export async function signInWithGoogle() {
   return { data };
 }
 
+// ============================================================================
+// Web Push (public)
+// ============================================================================
+
+export async function getVapidPublicKey(): Promise<{ publicKey: string }> {
+  const result = await fetchAPI(
+    "/push/public-key",
+    {
+      method: "GET",
+    },
+    false
+  );
+
+  if (!result?.publicKey || typeof result.publicKey !== "string") {
+    throw new Error("VAPID public key를 가져오지 못했습니다");
+  }
+
+  return { publicKey: result.publicKey };
+}
+
 export async function signOut() {
   await supabase.auth.signOut();
   setAccessToken(null);

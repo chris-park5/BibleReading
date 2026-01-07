@@ -1398,3 +1398,15 @@ export async function sendTestPush(c: Context) {
     return c.json(handleError(error, "Failed to send test push"), 500);
   }
 }
+
+export async function getVapidPublicKey(c: Context) {
+  try {
+    const publicKey = Deno.env.get("VAPID_PUBLIC_KEY");
+    if (!publicKey) {
+      return c.json({ error: "Missing VAPID_PUBLIC_KEY env" }, 500);
+    }
+    return c.json({ success: true, publicKey });
+  } catch (error) {
+    return c.json(handleError(error, "Failed to get VAPID public key"), 500);
+  }
+}

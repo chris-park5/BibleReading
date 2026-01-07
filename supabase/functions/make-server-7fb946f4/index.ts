@@ -63,6 +63,7 @@ api.get("/notifications", routes.requireAuth, routes.getNotifications);
 
 api.post("/push/subscribe", routes.requireAuth, routes.savePushSubscription);
 api.post("/push/test", routes.requireAuth, routes.sendTestPush);
+api.get("/push/public-key", routes.getVapidPublicKey);
 
 // Scheduled/cron trigger (protect with a shared secret header).
 api.post("/cron/send-notifications", routes.sendScheduledNotifications);
