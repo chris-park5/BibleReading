@@ -12,53 +12,17 @@ import type { Plan, Progress } from "../../types/domain";
 // Configuration
 // ============================================================================
 
-const IS_PROD = Boolean(import.meta.env.PROD);
-
-function getEnvString(name: string): string | undefined {
-  const raw = (import.meta.env as any)?.[name];
-  return typeof raw === "string" && raw.trim().length > 0 ? raw.trim() : undefined;
-}
-
-function assertNotPlaceholder(name: string, value: string) {
-  // Guard against accidentally deploying with .env.example placeholder values.
-  if (value.includes("<") || value.includes(">")) {
-    throw new Error(`${name} 가 placeholder 값입니다. 배포 환경변수로 실제 값을 설정하세요.`);
-  }
-}
-
-const ENV_SUPABASE_URL = getEnvString("VITE_SUPABASE_URL");
-const ENV_SUPABASE_ANON_KEY = getEnvString("VITE_SUPABASE_ANON_KEY");
-const ENV_FUNCTIONS_BASE = getEnvString("VITE_SUPABASE_FUNCTIONS_BASE");
-
-if (IS_PROD) {
-  if (!ENV_SUPABASE_URL) {
-    throw new Error(
-      "배포 환경에서 VITE_SUPABASE_URL 이 설정되어야 합니다 (호스팅 환경변수/CI secrets)."
-    );
-  }
-  if (!ENV_SUPABASE_ANON_KEY) {
-    throw new Error(
-      "배포 환경에서 VITE_SUPABASE_ANON_KEY 이 설정되어야 합니다 (호스팅 환경변수/CI secrets)."
-    );
-  }
-  assertNotPlaceholder("VITE_SUPABASE_URL", ENV_SUPABASE_URL);
-  assertNotPlaceholder("VITE_SUPABASE_ANON_KEY", ENV_SUPABASE_ANON_KEY);
-  if (ENV_FUNCTIONS_BASE) {
-    assertNotPlaceholder("VITE_SUPABASE_FUNCTIONS_BASE", ENV_FUNCTIONS_BASE);
-  }
-}
-
 const SUPABASE_URL_RAW =
-  ENV_SUPABASE_URL ??
+  (import.meta.env.VITE_SUPABASE_URL as string | undefined) ??
   `https://${projectId}.supabase.co`;
 
 const SUPABASE_URL = SUPABASE_URL_RAW.replace(/\/+$/, "");
 
 const SUPABASE_ANON_KEY =
-  ENV_SUPABASE_ANON_KEY ?? publicAnonKey;
+  (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ?? publicAnonKey;
 
 const FUNCTIONS_BASE_RAW =
-  ENV_FUNCTIONS_BASE ??
+  (import.meta.env.VITE_SUPABASE_FUNCTIONS_BASE as string | undefined) ??
   `${SUPABASE_URL}/functions/v1/make-server-7fb946f4`;
 
 const FUNCTIONS_BASE = FUNCTIONS_BASE_RAW.replace(/\/+$/, "");

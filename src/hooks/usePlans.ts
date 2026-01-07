@@ -11,6 +11,13 @@ export function usePlans() {
   const userId = useAuthStore((s) => s.user?.id ?? null);
 
   const plansQueryKey = ['plans', userId] as const;
+
+  const makeOptimisticId = () => {
+    const g: any = globalThis as any;
+    const uuid = g?.crypto?.randomUUID?.();
+    if (typeof uuid === 'string' && uuid.length > 0) return uuid;
+    return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  };
   
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: plansQueryKey,
@@ -55,7 +62,7 @@ export function usePlans() {
       const previous = queryClient.getQueryData<any>(plansQueryKey);
 
       const optimisticPlan: Plan = {
-        id: `optimistic-${crypto.randomUUID()}`,
+        id: `optimistic-${makeOptimisticId()}`,
         name: vars?.name ?? '새 계획',
         startDate: vars?.startDate ?? new Date().toISOString().split('T')[0],
         totalDays: Number(vars?.totalDays ?? 0),
