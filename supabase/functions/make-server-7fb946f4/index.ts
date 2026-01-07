@@ -19,12 +19,14 @@ api.use("*", logger());
 api.use(
   "/*",
   cors({
-    origin: ["http://localhost:5173", "http://127.0.0.1:5173", "*"],
+    // This API is token-based (Authorization header) and does not rely on cookies.
+    // Avoid the invalid CORS combination: credentials=true with Access-Control-Allow-Origin='*'.
+    origin: "*",
     allowHeaders: ["Content-Type", "Authorization", "apikey"],
     allowMethods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     exposeHeaders: ["Content-Length"],
     maxAge: 600,
-    credentials: true,
+    credentials: false,
   })
 );
 
