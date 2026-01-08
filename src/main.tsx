@@ -19,31 +19,68 @@ if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
     window.location.reload();
   });
 
-  void navigator.serviceWorker.getRegistration().then((reg) => {
-    if (!reg) return;
-
-    // 최신 SW 체크
-    void reg.update();
-
-    // 이미 waiting이면 즉시 교체
-    if (reg.waiting) {
-      reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+  const tryUpdate = async (reg: ServiceWorkerRegistration) => {
+    // 오프라인일 때 update()가 실패하며 전역 unhandledrejection을 유발할 수 있어
+    // 온라인일 때만 갱신을 시도합니다.
+    if (!navigator.onLine) return;
+    try {
+      await reg.update();
+    } catch {
+      // ignore: offline/일시 네트워크 오류는 치명적이지 않음
     }
+  };
 
-    // updatefound 이후 waiting이 생기면 즉시 교체
-    reg.addEventListener('updatefound', () => {
-      const installing = reg.installing;
-      if (!installing) return;
-      installing.addEventListener('statechange', () => {
-        if (installing.state === 'installed' && reg.waiting) {
+  void navigator.serviceWorker
+    .getRegistration()
+    .then((reg) => {
+      if (!reg) return;
+
+      // 최신 SW 체크(온라인일 때만)
+      void tryUpdate(reg);
+
+      // 온라인으로 돌아오면 다시 한번 갱신 시도
+      const onOnline = () => void tryUpdate(reg);
+      window.addEventListener('online', onOnline);
+
+      // 이미 waiting이면 즉시 교체
+      if (reg.waiting) {
+        try {
           reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+        } catch {
+          // ignore
         }
+      }
+
+      // updatefound 이후 waiting이 생기면 즉시 교체
+      reg.addEventListener('updatefound', () => {
+        const installing = reg.installing;
+        if (!installing) return;
+        installing.addEventListener('statechange', () => {
+          if (installing.state === 'installed' && reg.waiting) {
+            try {
+              reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+            } catch {
+              // ignore
+            }
+          }
+        });
       });
+
+      // cleanup
+      window.addEventListener('beforeunload', () => {
+        window.removeEventListener('online', onOnline);
+      });
+    })
+    .catch(() => {
+      // ignore
     });
-  });
 }
 
-createRoot(document.getElementById("root")!).render(
+const rootEl = document.getElementById("root")!;
+// index.html의 전역 에러 핸들러가 React DOM을 덮어쓰지 않도록 표시
+rootEl.setAttribute('data-react-mounted', '1');
+
+createRoot(rootEl).render(
   <QueryClientProvider client={queryClient}>
     <App />
     <SpeedInsights />

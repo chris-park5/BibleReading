@@ -32,25 +32,72 @@
             var root = document.getElementById("root");
             if (!root) return;
             var msg = detail ? String(detail) : "";
-            root.innerHTML =
-              '<div style="padding:16px; font-family:system-ui, -apple-system, Segoe UI, Roboto, sans-serif;">' +
-              '<h2 style="margin:0 0 8px 0; font-size:16px;">' +
-              escapeHtml(title) +
-              "</h2>" +
-              '<pre style="margin:0; white-space:pre-wrap; word-break:break-word;">' +
-              escapeHtml(msg) +
-              "</pre>" +
-              "</div>";
+
+            // React가 이미 마운트된 이후에는 root DOM을 덮어쓰면
+            // React 커밋 단계에서 removeChild 오류가 날 수 있어, 별도 오버레이로 표시합니다.
+            var reactMounted = root.getAttribute("data-react-mounted") === "1";
+
+            if (reactMounted) {
+              var overlay = document.getElementById("fatal-error-overlay");
+              if (!overlay) {
+                overlay = document.createElement("div");
+                overlay.id = "fatal-error-overlay";
+                overlay.style.position = "fixed";
+                overlay.style.inset = "0";
+                overlay.style.zIndex = "2147483647";
+                overlay.style.background = "rgba(255,255,255,0.96)";
+                overlay.style.backdropFilter = "blur(6px)";
+                overlay.style.webkitBackdropFilter = "blur(6px)";
+                overlay.style.overflow = "auto";
+                document.body.appendChild(overlay);
+              }
+
+              overlay.innerHTML =
+                '<div style="padding:16px; max-width:520px; margin:0 auto; font-family:system-ui, -apple-system, Segoe UI, Roboto, sans-serif;">' +
+                '<h2 style="margin:0 0 8px 0; font-size:16px;">' +
+                escapeHtml(title) +
+                "</h2>" +
+                '<pre style="margin:0; white-space:pre-wrap; word-break:break-word;">' +
+                escapeHtml(msg) +
+                "</pre>" +
+                "</div>";
+            } else {
+              root.innerHTML =
+                '<div style="padding:16px; font-family:system-ui, -apple-system, Segoe UI, Roboto, sans-serif;">' +
+                '<h2 style="margin:0 0 8px 0; font-size:16px;">' +
+                escapeHtml(title) +
+                "</h2>" +
+                '<pre style="margin:0; white-space:pre-wrap; word-break:break-word;">' +
+                escapeHtml(msg) +
+                "</pre>" +
+                "</div>";
+            }
           }
 
           window.addEventListener("error", function (e) {
             // Script load errors: e.message may be empty.
             var detail = (e && (e.error && (e.error.stack || e.error.message))) || (e && e.message) || String(e);
+
+            // 오프라인에서 SW 업데이트 실패는 치명적이지 않으므로, 전역 오류 화면을 띄우지 않습니다.
+            try {
+              if (navigator && navigator.onLine === false) {
+                if (String(detail).indexOf("Failed to update a ServiceWorker") >= 0) return;
+              }
+            } catch (ignore) {}
+
             renderError("앱 로딩 중 오류가 발생했습니다", detail);
           });
 
           window.addEventListener("unhandledrejection", function (e) {
             var reason = (e && e.reason && (e.reason.stack || e.reason.message)) || (e && e.reason) || String(e);
+
+            // 오프라인에서 SW 업데이트 실패는 치명적이지 않으므로, 전역 오류 화면을 띄우지 않습니다.
+            try {
+              if (navigator && navigator.onLine === false) {
+                if (String(reason).indexOf("Failed to update a ServiceWorker") >= 0) return;
+              }
+            } catch (ignore) {}
+
             renderError("앱 로딩 중 오류가 발생했습니다", reason);
           });
         })();
