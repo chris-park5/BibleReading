@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { BookOpen, Check, Trash2, ChevronUp, ChevronDown } from "lucide-react";
 
 interface ReadingPlanCardProps {
@@ -7,6 +8,9 @@ interface ReadingPlanCardProps {
   duration: string;
   isSelected: boolean;
   onSelect: () => void;
+  clickable?: boolean;
+  headerAction?: ReactNode;
+  footer?: ReactNode;
   canDelete?: boolean;
   onDelete?: () => void;
   disabled?: boolean;
@@ -23,6 +27,9 @@ export function ReadingPlanCard({
   duration,
   isSelected,
   onSelect,
+  clickable = true,
+  headerAction,
+  footer,
   canDelete = false,
   onDelete,
   disabled = false,
@@ -34,17 +41,18 @@ export function ReadingPlanCard({
 }: ReadingPlanCardProps) {
   const isBusy = !!busyLabel;
   const isDisabled = disabled || isBusy;
+  const isClickable = clickable && !isDisabled;
 
   const showStatusBadge = isBusy || disabled;
   const statusBadgeText = isBusy ? busyLabel : disabled ? "추가됨" : null;
 
   return (
     <div
-      role="button"
-      tabIndex={isDisabled ? -1 : 0}
-      onClick={isDisabled ? undefined : onSelect}
+      role={isClickable ? "button" : undefined}
+      tabIndex={isClickable ? 0 : undefined}
+      onClick={isClickable ? onSelect : undefined}
       onKeyDown={(e) => {
-        if (isDisabled) return;
+        if (!isClickable) return;
         if (e.key === "Enter" || e.key === " ") onSelect();
       }}
       className={`w-full p-6 rounded-xl border-2 text-left transition-all ${
@@ -52,7 +60,9 @@ export function ReadingPlanCard({
           ? "border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed"
           : isSelected
           ? "border-blue-500 bg-blue-50"
-          : "border-gray-200 bg-white hover:border-blue-300 cursor-pointer"
+          : isClickable
+          ? "border-gray-200 bg-white hover:border-blue-300 cursor-pointer"
+          : "border-gray-200 bg-white"
       }`}
     >
       <div className="flex items-start gap-4">
@@ -72,6 +82,8 @@ export function ReadingPlanCard({
             <h3 className="mb-1 flex-1 min-w-0 break-words">{title}</h3>
 
             <div className="flex items-center gap-1 shrink-0">
+              {headerAction && <div className="mr-1">{headerAction}</div>}
+
               {isSelected && !showStatusBadge && (
                 <Check className="w-6 h-6 text-blue-500" />
               )}
@@ -131,6 +143,8 @@ export function ReadingPlanCard({
 
           <p className="text-gray-600 mb-2">{description}</p>
           <p className="text-blue-600">{duration}</p>
+
+          {footer && <div className="mt-4">{footer}</div>}
         </div>
       </div>
     </div>

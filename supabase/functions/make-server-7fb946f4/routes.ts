@@ -21,6 +21,18 @@ import type {
 
 const supabase = getSupabaseClient();
 
+const MAX_PLAN_TOTAL_DAYS = 3650; // ~10 years
+const MAX_SCHEDULE_ROWS = 20000; // total (day x readings) rows
+
+function chunkArray<T>(items: T[], chunkSize: number): T[][] {
+  if (chunkSize <= 0) return [items];
+  const chunks: T[][] = [];
+  for (let i = 0; i < items.length; i += chunkSize) {
+    chunks.push(items.slice(i, i + chunkSize));
+  }
+  return chunks;
+}
+
 function timeHHMM(value: string) {
   // Accept 'HH:MM' or 'HH:MM:SS'
   const parts = String(value || "").split(":");
@@ -315,6 +327,22 @@ export async function createPlan(c: Context) {
       return c.json({ error: "Name, start date, and total days are required" }, 400);
     }
 
+    if (Number(totalDays) > MAX_PLAN_TOTAL_DAYS) {
+      return c.json({ error: `Plan is too long. Max ${MAX_PLAN_TOTAL_DAYS} days.` }, 400);
+    }
+
+    if (Array.isArray(schedule) && schedule.length > 0) {
+      let rows = 0;
+      for (const d of schedule) {
+        const readings = (d as any)?.readings;
+        if (Array.isArray(readings)) rows += readings.length;
+        if (rows > MAX_SCHEDULE_ROWS) break;
+      }
+      if (rows > MAX_SCHEDULE_ROWS) {
+        return c.json({ error: `Plan schedule is too large. Max ${MAX_SCHEDULE_ROWS} rows.` }, 413);
+      }
+    }
+
     if (isCustom && !schedule) {
       return c.json({ error: "Schedule required for custom plans" }, 400);
     }
@@ -410,12 +438,17 @@ export async function createPlan(c: Context) {
         );
 
         if (presetRows.length > 0) {
-          const { error: presetSeedError } = await supabase
-            .from("preset_schedules")
-            .insert(presetRows);
+          // Insert in chunks to avoid row/request limits.
+          const chunks = chunkArray(presetRows, 500);
+          for (const chunk of chunks) {
+            const { error: presetSeedError } = await supabase
+              .from("preset_schedules")
+              .insert(chunk);
 
-          if (presetSeedError) {
-            console.error("Failed to seed preset_schedules:", presetSeedError);
+            if (presetSeedError) {
+              console.error("Failed to seed preset_schedules:", presetSeedError);
+              break;
+            }
           }
         }
       }
@@ -432,14 +465,18 @@ export async function createPlan(c: Context) {
         }))
       );
 
-      const { error: scheduleError } = await supabase
-        .from("plan_schedules")
-        .insert(scheduleRows);
+      // Insert in chunks to avoid row/request limits.
+      const chunks = chunkArray(scheduleRows, 500);
+      for (const chunk of chunks) {
+        const { error: scheduleError } = await supabase
+          .from("plan_schedules")
+          .insert(chunk);
 
-      if (scheduleError) {
-        // Rollback
-        await supabase.from("plans").delete().eq("id", plan.id);
-        throw scheduleError;
+        if (scheduleError) {
+          // Rollback
+          await supabase.from("plans").delete().eq("id", plan.id);
+          throw scheduleError;
+        }
       }
     }
 

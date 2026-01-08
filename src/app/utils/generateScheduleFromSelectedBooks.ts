@@ -36,16 +36,19 @@ function formatVerseRange(chapter: number, startVerse: number, endVerse: number)
   return `${chapter}장 ${startVerse}-${endVerse}절`;
 }
 
-function normalizeSelectedBooks(selectedBooks: string[]): string[] {
-  const uniq = Array.from(new Set(selectedBooks.map((s) => s.trim()).filter(Boolean)));
-  const order = new Map(BIBLE_BOOKS.map((b, i) => [b.name, i] as const));
+function normalizeSelectedBooksKeepOrder(selectedBooks: string[]): string[] {
+  // IMPORTANT:
+  // - allow duplicates (e.g., 2독)
+  // - preserve user-defined order
+  const cleaned = selectedBooks.map((s) => s.trim()).filter(Boolean);
+  const known = new Set(BIBLE_BOOKS.map((b) => b.name));
 
-  const unknown = uniq.filter((b) => !order.has(b));
+  const unknown = cleaned.filter((b) => !known.has(b));
   if (unknown.length > 0) {
-    throw new Error(`알 수 없는 책 이름: ${unknown.join(", ")}`);
+    throw new Error(`알 수 없는 책 이름: ${Array.from(new Set(unknown)).join(", ")}`);
   }
 
-  return uniq.sort((a, b) => (order.get(a)! - order.get(b)!));
+  return cleaned;
 }
 
 export function generateScheduleFromSelectedBooks(params: GenerateParams): {
@@ -55,14 +58,21 @@ export function generateScheduleFromSelectedBooks(params: GenerateParams): {
   const { startDate, endDate } = params;
   const totalDays = diffDaysInclusive(startDate, endDate);
 
+  // Hard cap to keep the app responsive for extremely large date ranges.
+  // The UI/server also enforce limits, but this avoids heavy computation.
+  if (totalDays > 3650) {
+    throw new Error("계획 기간이 너무 깁니다. 날짜 범위를 줄여주세요.");
+  }
+
   if (!startDate || !endDate) throw new Error("시작/종료 날짜가 필요합니다");
   if (totalDays <= 0) throw new Error("종료 날짜는 시작 날짜 이후여야 합니다");
 
-  const selectedBooks = normalizeSelectedBooks(params.selectedBooks);
+  const selectedBooks = normalizeSelectedBooksKeepOrder(params.selectedBooks);
   if (selectedBooks.length === 0) throw new Error("선택된 책이 없습니다");
 
+  const bookByName = new Map(BIBLE_BOOKS.map((b) => [b.name, b] as const));
   const selectedBookObjs = selectedBooks.map((name) => {
-    const book = BIBLE_BOOKS.find((b) => b.name === name);
+    const book = bookByName.get(name);
     if (!book) throw new Error(`알 수 없는 책 이름: ${name}`);
     return book;
   });
@@ -112,7 +122,15 @@ export function generateScheduleFromSelectedBooks(params: GenerateParams): {
   }
 
   // 2) 장 수가 날짜보다 적으면: 절 단위 분배
-  const verseCountsByBook = selectedBookObjs.map((b) => ({ book: b.name, verses: getVerseCounts(b.name) }));
+  const verseCountsCache = new Map<string, number[]>();
+  const verseCountsByBook = selectedBookObjs.map((b) => {
+    let verses = verseCountsCache.get(b.name);
+    if (!verses) {
+      verses = getVerseCounts(b.name);
+      verseCountsCache.set(b.name, verses);
+    }
+    return { book: b.name, verses };
+  });
   const totalVerses = verseCountsByBook.reduce((acc, b) => acc + sum(b.verses), 0);
 
   if (totalDays > totalVerses) {

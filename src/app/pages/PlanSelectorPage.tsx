@@ -22,6 +22,7 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
   const [isSavingSharedPlan, setIsSavingSharedPlan] = useState(false);
   const [addingPresetId, setAddingPresetId] = useState<string | null>(null);
   const [deletingPlanId, setDeletingPlanId] = useState<string | null>(null);
+  const [presetStartDates, setPresetStartDates] = useState<Record<string, string>>({});
 
   const devPageEnabled = import.meta.env.VITE_ENABLE_DEV_PAGE === 'true';
 
@@ -58,34 +59,38 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
     logout();
   };
 
-  const handleSelectPlan = async (planId: string, isPreset: boolean) => {
-    if (isPreset) {
-      // 프리셋 계획을 사용자 계획으로 저장
-      const presetPlan = presetPlans.find((p) => p.id === planId);
-      if (presetPlan) {
-        try {
-          setAddingPresetId(planId);
-          const normalizedSchedule = normalizeSchedule(presetPlan.schedule || []);
+  const handleSelectPlan = async (planId: string) => {
+    selectPlan(planId);
+  };
 
-          const result = await createPlanAsync({
-            name: presetPlan.title,
-            startDate: new Date().toISOString().split('T')[0],
-            totalDays: presetPlan.totalDays,
-            schedule: normalizedSchedule,
-            isCustom: false,
-            presetId: presetPlan.id,  // Pass presetId for Master-Instance structure
-          });
-          selectPlan(result.plan.id);
-        } catch (err: any) {
-          console.error('Failed to create plan from preset:', err);
-          const errorMessage = err.message || '계획 생성에 실패했습니다';
-          alert(errorMessage);
-        } finally {
-          setAddingPresetId(null);
-        }
-      }
-    } else {
-      selectPlan(planId);
+  const handleAddPresetPlan = async (presetId: string, startDate: string) => {
+    const presetPlan = presetPlans.find((p) => p.id === presetId);
+    if (!presetPlan) return;
+
+    if (!startDate) {
+      alert('시작 날짜를 선택해주세요');
+      return;
+    }
+
+    try {
+      setAddingPresetId(presetId);
+      const normalizedSchedule = normalizeSchedule(presetPlan.schedule || []);
+
+      const result = await createPlanAsync({
+        name: presetPlan.title,
+        startDate,
+        totalDays: presetPlan.totalDays,
+        schedule: normalizedSchedule,
+        isCustom: false,
+        presetId: presetPlan.id,
+      });
+      selectPlan(result.plan.id);
+    } catch (err: any) {
+      console.error('Failed to create plan from preset:', err);
+      const errorMessage = err.message || '계획 생성에 실패했습니다';
+      alert(errorMessage);
+    } finally {
+      setAddingPresetId(null);
     }
   };
 
@@ -273,6 +278,10 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
             {presetPlans.map((plan: any) => {
               // 이미 추가된 계획인지 확인
               const isAlreadyAdded = plans.some(p => p.name === plan.title);
+              const today = new Date().toISOString().split('T')[0];
+              const startDate = presetStartDates[plan.id] ?? today;
+              const isBusy = addingPresetId === plan.id;
+              const isDisabled = isAlreadyAdded || isCreating || isBusy;
               
               return (
                 <ReadingPlanCard
@@ -282,15 +291,47 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
                   description={plan.description}
                   duration={plan.duration}
                   isSelected={false}
-                  onSelect={() => {
-                    if (isAlreadyAdded) {
-                      alert(`"${plan.title}" 계획이 이미 추가되어 있습니다.`);
-                      return;
-                    }
-                    handleSelectPlan(plan.id, true);
-                  }}
+                  clickable={false}
+                  onSelect={() => {}}
                   disabled={isAlreadyAdded || isCreating}
-                  busyLabel={addingPresetId === plan.id ? '추가중' : undefined}
+                  busyLabel={isBusy ? '추가중' : undefined}
+                  headerAction={
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (isAlreadyAdded) {
+                          alert(`"${plan.title}" 계획이 이미 추가되어 있습니다.`);
+                          return;
+                        }
+                        void handleAddPresetPlan(plan.id, startDate);
+                      }}
+                      disabled={isDisabled}
+                      className="p-2 rounded-lg border-2 border-gray-200 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                      title="추가"
+                    >
+                      <Plus className="w-5 h-5 text-blue-500" />
+                    </button>
+                  }
+                  footer={
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => e.stopPropagation()}
+                      className="flex items-center gap-3"
+                    >
+                      <label className="text-sm text-gray-600 shrink-0">시작 날짜</label>
+                      <input
+                        type="date"
+                        value={startDate}
+                        disabled={isDisabled}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setPresetStartDates((prev) => ({ ...prev, [plan.id]: v }));
+                        }}
+                        className="flex-1 px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none bg-white disabled:bg-gray-100"
+                      />
+                    </div>
+                  }
                 />
               );
             })}

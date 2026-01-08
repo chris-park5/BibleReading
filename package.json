@@ -7,6 +7,9 @@
     "prebuild": "node scripts/generate-pwa-icons.mjs",
     "build": "node ./node_modules/vite/bin/vite.js build",
     "dev": "node ./node_modules/vite/bin/vite.js",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "lint:strict": "eslint src --max-warnings=0",
     "populate-presets": "node scripts/populate-preset-schedules.js",
     "test:supabase-flow": "node scripts/test-supabase-flow.mjs",
     "test:multi-reading-progress": "node scripts/test-multi-reading-progress.mjs",
@@ -78,12 +81,16 @@
     "zustand": "^4.5.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.2",
     "@tailwindcss/vite": "4.1.12",
     "@vitejs/plugin-react": "4.7.0",
+    "eslint": "^9.39.2",
+    "eslint-plugin-react-hooks": "^7.0.1",
     "jsdom": "^27.4.0",
     "sharp": "^0.34.3",
     "supabase": "^2.70.5",
     "tailwindcss": "4.1.12",
+    "typescript-eslint": "^8.52.0",
     "vite": "6.3.5",
     "vite-plugin-pwa": "^0.21.2",
     "vitest": "^4.0.16"

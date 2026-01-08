@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { X, BookPlus } from "lucide-react";
+import { X, BookPlus, ChevronUp, ChevronDown, Trash2 } from "lucide-react";
 import { BIBLE_BOOKS } from "../data/bibleBooks";
 import { generateScheduleFromSelectedBooks } from "../utils/generateScheduleFromSelectedBooks";
 
@@ -25,12 +25,51 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
   const [startDate, setStartDate] = useState(
     new Date().toISOString().split("T")[0]
   );
+  const MAX_PLAN_NAME_LENGTH = 255;
+  // Hard limits to keep the app/server stable for very large plans.
+  // These are conservative and can be tuned later.
+  const MAX_TOTAL_DAYS = 3650; // ~10 years
+  const MAX_SCHEDULE_ROWS = 20000; // total (day x readings) rows
   const [endDate, setEndDate] = useState(
     new Date().toISOString().split("T")[0]
   );
 
+  const parseDate = (dateStr: string): Date => {
+    const [y, m, d] = dateStr.split("-").map((n) => Number(n));
+    return new Date(y, (m || 1) - 1, d || 1);
+  };
+
+  const formatDateYMD = (date: Date): string => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  };
+
+  const computedTotalDays = useMemo(() => {
+    if (!startDate || !endDate) return null;
+    const start = parseDate(startDate);
+    const end = parseDate(endDate);
+    const ms = end.getTime() - start.getTime();
+    const days = Math.floor(ms / (1000 * 60 * 60 * 24)) + 1;
+    return Number.isFinite(days) ? days : null;
+  }, [startDate, endDate]);
+
+  const maxEndDate = useMemo(() => {
+    if (!startDate) return "";
+    const start = parseDate(startDate);
+    const max = new Date(start);
+    max.setDate(max.getDate() + (MAX_TOTAL_DAYS - 1));
+    return formatDateYMD(max);
+  }, [startDate]);
+
+  const isDateRangeInvalid =
+    computedTotalDays === null || computedTotalDays <= 0 || computedTotalDays > MAX_TOTAL_DAYS;
+
   type Testament = "OT" | "NT";
   const [activeTestament, setActiveTestament] = useState<Testament>("OT");
+  // NOTE: duplicates are allowed (e.g., 성경 2독).
+  // Order in this array is the reading order.
   const [selectedBooks, setSelectedBooks] = useState<string[]>([]);
 
   const otBooks = useMemo(() => BIBLE_BOOKS.slice(0, 39).map((b) => b.name), []);
@@ -38,22 +77,88 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
 
   const visibleBooks = activeTestament === "OT" ? otBooks : ntBooks;
 
-  const selectedLabel = useMemo(() => {
-    if (selectedBooks.length === 0) return "(선택된 책 없음)";
-    return `(${selectedBooks.join(", ")})`;
+  const countsByBook = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const b of selectedBooks) {
+      map.set(b, (map.get(b) ?? 0) + 1);
+    }
+    return map;
   }, [selectedBooks]);
 
-  const toggleBook = (bookName: string) => {
-    setSelectedBooks((prev) => {
-      if (prev.includes(bookName)) {
-        return prev.filter((b) => b !== bookName);
+  const selectedLabel = useMemo(() => {
+    if (selectedBooks.length === 0) return "(선택된 책 없음)";
+    const first = selectedBooks[0];
+    const last = selectedBooks[selectedBooks.length - 1];
+    return selectedBooks.length === 1 ? `(${first})` : `(${first} ~ ${last}, 총 ${selectedBooks.length}항목)`;
+  }, [selectedBooks]);
+
+  const autoPlanName = useMemo(() => {
+    if (selectedBooks.length === 0) return "";
+
+    const allBooks = BIBLE_BOOKS.map((b) => b.name);
+    const allSet = new Set(allBooks);
+    const otSet = new Set(BIBLE_BOOKS.slice(0, 39).map((b) => b.name));
+    const ntSet = new Set(BIBLE_BOOKS.slice(39).map((b) => b.name));
+
+    const counts = new Map<string, number>();
+    for (const b of selectedBooks) counts.set(b, (counts.get(b) ?? 0) + 1);
+
+    const uniformReadCount = (set: Set<string>) => {
+      let n: number | null = null;
+      for (const b of set) {
+        const c = counts.get(b) ?? 0;
+        if (c === 0) return null;
+        if (n === null) n = c;
+        else if (n !== c) return null;
       }
-      // UI 표시도 성경 순서대로 보여주기 위해 index 기준 정렬
-      const next = [...prev, bookName];
-      const order = new Map(BIBLE_BOOKS.map((b, i) => [b.name, i] as const));
-      next.sort((a, b) => (order.get(a)! - order.get(b)!));
+      for (const [b] of counts) {
+        if (!set.has(b)) return null;
+      }
+      return n;
+    };
+
+    const allN = uniformReadCount(allSet);
+    if (allN) return allN === 1 ? `성경 전체 (66권)` : `성경 전체 ${allN}독`;
+
+    const otN = uniformReadCount(otSet);
+    if (otN) return otN === 1 ? `구약 전체 (39권)` : `구약 전체 ${otN}독`;
+
+    const ntN = uniformReadCount(ntSet);
+    if (ntN) return ntN === 1 ? `신약 전체 (27권)` : `신약 전체 ${ntN}독`;
+
+    if (selectedBooks.length === 1) return selectedBooks[0];
+    const first = selectedBooks[0];
+    const last = selectedBooks[selectedBooks.length - 1];
+    return `${first} ~ ${last} (${selectedBooks.length}항목)`;
+  }, [selectedBooks]);
+
+  const addBook = (bookName: string) => {
+    setSelectedBooks((prev) => [...prev, bookName]);
+  };
+
+  const removeSelectedAt = (index: number) => {
+    setSelectedBooks((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const moveSelected = (from: number, to: number) => {
+    setSelectedBooks((prev) => {
+      if (from < 0 || from >= prev.length) return prev;
+      if (to < 0 || to >= prev.length) return prev;
+      const next = [...prev];
+      const [item] = next.splice(from, 1);
+      next.splice(to, 0, item);
       return next;
     });
+  };
+
+  const addAll = (testament: "OT" | "NT" | "ALL") => {
+    const books =
+      testament === "OT"
+        ? BIBLE_BOOKS.slice(0, 39).map((b) => b.name)
+        : testament === "NT"
+          ? BIBLE_BOOKS.slice(39).map((b) => b.name)
+          : BIBLE_BOOKS.map((b) => b.name);
+    setSelectedBooks((prev) => [...prev, ...books]);
   };
 
   const handleSave = () => {
@@ -74,8 +179,30 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
         selectedBooks,
       });
 
-      const autoName = `(${selectedBooks.join(", ")})`;
-      const finalName = name.trim() || autoName;
+      if (totalDays > MAX_TOTAL_DAYS) {
+        alert(`계획 기간이 너무 깁니다. 최대 ${MAX_TOTAL_DAYS}일까지 가능합니다.`);
+        return;
+      }
+
+      const scheduleRows = schedule.reduce((acc, d) => acc + (d.readings?.length ?? 0), 0);
+      if (scheduleRows > MAX_SCHEDULE_ROWS) {
+        alert(
+          `계획이 너무 큽니다. (읽기 항목 ${scheduleRows}개) 최대 ${MAX_SCHEDULE_ROWS}개까지 가능합니다.\n\n날짜 범위를 줄이거나, 하루에 읽기 항목이 너무 많이 생기지 않도록 책/순서를 조정해주세요.`
+        );
+        return;
+      }
+
+      const finalName = name.trim() || autoPlanName;
+
+      if (!finalName) {
+        alert("계획 이름을 입력해주세요");
+        return;
+      }
+
+      if (finalName.length > MAX_PLAN_NAME_LENGTH) {
+        alert(`계획 이름이 너무 깁니다. (최대 ${MAX_PLAN_NAME_LENGTH}자)`);
+        return;
+      }
 
       onSave({
         name: finalName,
@@ -123,6 +250,7 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                maxLength={MAX_PLAN_NAME_LENGTH}
                 className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
                 placeholder="비워두면 (책 범위)로 자동 생성"
               />
@@ -134,7 +262,26 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
                 <input
                   type="date"
                   value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
+                  onChange={(e) => {
+                    const nextStart = e.target.value;
+                    setStartDate(nextStart);
+
+                    // Keep endDate within [startDate, startDate + MAX_TOTAL_DAYS - 1]
+                    if (!nextStart) return;
+                    const max = (() => {
+                      const s = parseDate(nextStart);
+                      const m = new Date(s);
+                      m.setDate(m.getDate() + (MAX_TOTAL_DAYS - 1));
+                      return formatDateYMD(m);
+                    })();
+
+                    setEndDate((prevEnd) => {
+                      if (!prevEnd) return nextStart;
+                      if (prevEnd < nextStart) return nextStart;
+                      if (prevEnd > max) return max;
+                      return prevEnd;
+                    });
+                  }}
                   className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
                 />
               </div>
@@ -143,10 +290,45 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
                 <input
                   type="date"
                   value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
+                  min={startDate}
+                  max={maxEndDate}
+                  onChange={(e) => {
+                    const nextEnd = e.target.value;
+                    if (!nextEnd) {
+                      setEndDate(nextEnd);
+                      return;
+                    }
+
+                    if (startDate && nextEnd < startDate) {
+                      setEndDate(startDate);
+                      return;
+                    }
+
+                    if (maxEndDate && nextEnd > maxEndDate) {
+                      setEndDate(maxEndDate);
+                      return;
+                    }
+
+                    setEndDate(nextEnd);
+                  }}
                   className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
                 />
               </div>
+            </div>
+
+            <div className="text-sm text-gray-500">
+              날짜 범위는 최대 {MAX_TOTAL_DAYS}일(약 10년)까지 가능합니다.
+              {computedTotalDays !== null && (
+                <span className="ml-2">(현재 {computedTotalDays}일)</span>
+              )}
+              {computedTotalDays !== null && computedTotalDays > MAX_TOTAL_DAYS && (
+                <div className="mt-1 text-red-600">
+                  기간이 너무 깁니다. 종료 날짜를 줄여주세요.
+                </div>
+              )}
+              {computedTotalDays !== null && computedTotalDays <= 0 && (
+                <div className="mt-1 text-red-600">종료 날짜는 시작 날짜 이후여야 합니다.</div>
+              )}
             </div>
 
             <div className="flex items-center justify-between gap-3">
@@ -185,29 +367,105 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
               </button>
             </div>
 
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => addAll("OT")}
+                className="px-4 py-2 rounded-lg border-2 border-gray-200 hover:bg-gray-50 transition-colors"
+              >
+                구약 전체 추가
+              </button>
+              <button
+                type="button"
+                onClick={() => addAll("NT")}
+                className="px-4 py-2 rounded-lg border-2 border-gray-200 hover:bg-gray-50 transition-colors"
+              >
+                신약 전체 추가
+              </button>
+              <button
+                type="button"
+                onClick={() => addAll("ALL")}
+                className="px-4 py-2 rounded-lg border-2 border-gray-200 hover:bg-gray-50 transition-colors"
+              >
+                성경 전체 추가
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedBooks([])}
+                className="px-4 py-2 rounded-lg border-2 border-gray-200 hover:bg-gray-50 transition-colors"
+              >
+                전체 해제
+              </button>
+            </div>
+
             <div className="p-4 border-2 border-gray-200 rounded-lg">
               <div className="flex items-center justify-between mb-3">
                 <div className="text-gray-700 font-medium">선택한 책 {selectedLabel}</div>
                 <div className="text-sm text-gray-500">
-                  여러 권 선택 가능
+                  여러 권/중복 선택 가능
                 </div>
               </div>
+
+              {selectedBooks.length > 0 && (
+                <div className="mb-3 border border-gray-200 rounded-lg p-3 bg-white">
+                  <div className="text-sm text-gray-600 mb-2">읽기 순서 (위/아래로 순서 변경 가능)</div>
+                  <div className="space-y-2">
+                    {selectedBooks.map((bn, idx) => (
+                      <div key={`${bn}-${idx}`} className="flex items-center gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm text-gray-800 truncate">
+                            {idx + 1}. {bn}
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => moveSelected(idx, idx - 1)}
+                          disabled={idx === 0}
+                          className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50"
+                          title="위로"
+                        >
+                          <ChevronUp className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => moveSelected(idx, idx + 1)}
+                          disabled={idx === selectedBooks.length - 1}
+                          className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50"
+                          title="아래로"
+                        >
+                          <ChevronDown className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removeSelectedAt(idx)}
+                          className="p-2 rounded-lg border border-gray-200 hover:bg-red-50 text-red-600"
+                          title="삭제"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
                 {visibleBooks.map((bn) => {
-                  const isSelected = selectedBooks.includes(bn);
+                  const count = countsByBook.get(bn) ?? 0;
                   return (
                     <button
                       key={bn}
                       type="button"
-                      onClick={() => toggleBook(bn)}
+                      onClick={() => addBook(bn)}
                       className={`px-3 py-2 rounded-lg border-2 text-sm transition-colors ${
-                        isSelected
-                          ? "border-blue-500 bg-blue-50"
-                          : "border-gray-200 hover:bg-gray-50"
+                        count > 0 ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:bg-gray-50"
                       }`}
                       title={bn}
                     >
-                      {bn}
+                      <span className="inline-flex items-center gap-1">
+                        <span>{bn}</span>
+                        {count > 0 && <span className="text-xs text-blue-700">x{count}</span>}
+                      </span>
                     </button>
                   );
                 })}
@@ -229,7 +487,8 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
           </button>
           <button
             onClick={handleSave}
-            className="flex-1 px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            disabled={selectedBooks.length === 0 || !startDate || !endDate || isDateRangeInvalid}
+            className="flex-1 px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:hover:bg-blue-500"
           >
             계획 생성
           </button>

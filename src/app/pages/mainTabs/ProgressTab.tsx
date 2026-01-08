@@ -18,6 +18,20 @@ export function ProgressTab() {
   const { progress } = useProgress(activePlanId);
   const [showHistory, setShowHistory] = useState(false);
 
+  // NOTE: Hooks must be called unconditionally.
+  // Large plans can make plan/progress arrive a render later; keep hook order stable.
+  const chartData = useMemo(() => {
+    if (!progress) return [];
+    const completedDays = Array.isArray(progress.completedDays) ? progress.completedDays : [];
+
+    const data: Array<{ day: number; completed: number }> = [];
+    const sortedDays = [...completedDays].sort((a, b) => a - b);
+    for (let i = 0; i < sortedDays.length; i++) {
+      data.push({ day: sortedDays[i], completed: i + 1 });
+    }
+    return data;
+  }, [progress]);
+
   if (!activePlanId || !plan || !progress) {
     return (
       <div className="max-w-4xl mx-auto p-6">
@@ -28,15 +42,6 @@ export function ProgressTab() {
       </div>
     );
   }
-
-  const chartData = useMemo(() => {
-    const data: Array<{ day: number; completed: number }> = [];
-    const sortedDays = [...progress.completedDays].sort((a, b) => a - b);
-    for (let i = 0; i < sortedDays.length; i++) {
-      data.push({ day: sortedDays[i], completed: i + 1 });
-    }
-    return data;
-  }, [progress.completedDays]);
 
   const today = startOfTodayLocal();
   const rawTodayDay = computeTodayDay(plan, today);

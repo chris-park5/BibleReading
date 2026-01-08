@@ -11,6 +11,10 @@
 - 코드 블록, 테이블, 리스트를 활용하여 정보를 구조화
 - 별도의 마크다운 파일을 생성하지 말고 기존 README를 업데이트하거나 필요시 새 README 생성
 
+## 프로젝트 재발 방지 문서
+
+- 오류 재발 방지 원칙: [docs/ERROR_PREVENTION_PRINCIPLES.md](../docs/ERROR_PREVENTION_PRINCIPLES.md)
+
 <!--
 
 System Guidelines
