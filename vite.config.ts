@@ -26,7 +26,9 @@ export default defineConfig({
       srcDir: 'src',
       filename: 'sw.ts',
       registerType: 'autoUpdate',
-      injectRegister: 'auto',
+      // We register the service worker explicitly in src/main.tsx with
+      // robust error handling (especially for offline/temporary failures).
+      injectRegister: null,
       includeAssets: [
         'icon.svg',
         'maskable-icon.svg',
