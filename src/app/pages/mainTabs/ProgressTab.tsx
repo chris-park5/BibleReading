@@ -228,6 +228,7 @@ export function ProgressTab() {
                 setViewDate(targetDate);
                 setHashTab("home");
               }}
+              startDate={plan.startDate}
               totalDays={plan.totalDays}
             />
           )}

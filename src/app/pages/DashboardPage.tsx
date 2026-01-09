@@ -163,6 +163,7 @@ export function DashboardPage({ embedded = false }: { embedded?: boolean }) {
               partialDays={new Set<number>()}
               currentDay={currentDay}
               onDayClick={setCurrentDay}
+              startDate={selectedPlan.startDate}
               totalDays={selectedPlan.totalDays}
               schedule={selectedPlan.schedule}
             />
