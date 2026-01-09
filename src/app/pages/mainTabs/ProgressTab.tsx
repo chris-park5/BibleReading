@@ -1,27 +1,40 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { usePlans, usePlan } from "../../../hooks/usePlans";
 import { useProgress } from "../../../hooks/useProgress";
 import { usePlanStore } from "../../../stores/plan.store";
 import { ProgressChart } from "../../components/ProgressChart";
 import { ReadingHistory } from "../../components/ReadingHistory";
+import { TodayReading } from "../../components/TodayReading";
 import { BIBLE_BOOKS } from "../../data/bibleBooks";
-import { computeTodayDay, parseYYYYMMDDLocal, startOfTodayLocal } from "./dateUtils";
-import { setHashTab } from "./tabHash";
+import { computeTodayDay, startOfTodayLocal } from "./dateUtils";
 import { computeChaptersTotals, countChapters } from "../../utils/chaptersProgress";
 import { Search } from "lucide-react";
 
 export function ProgressTab() {
   const { plans } = usePlans();
   const selectedPlanId = usePlanStore((s) => s.selectedPlanId);
-  const { selectPlan, currentDay, setViewDate } = usePlanStore();
+  const { selectPlan, currentDay } = usePlanStore();
 
   // 계획이 있으면 자동으로 첫 번째 계획 선택 (selectedPlanId가 없을 때)
   const activePlanId = selectedPlanId || (plans.length > 0 ? plans[0].id : null);
   const plan = usePlan(activePlanId);
-  const { progress } = useProgress(activePlanId);
-  const [showHistory, setShowHistory] = useState(false);
+  const { progress, toggleReading } = useProgress(activePlanId);
   const [viewMode, setViewMode] = useState<"day" | "book">("day");
   const [bookQuery, setBookQuery] = useState("");
+  const [selectedHistoryDay, setSelectedHistoryDay] = useState<number>(currentDay);
+  const [isPinnedHistoryDay, setIsPinnedHistoryDay] = useState(false);
+  const historyDetailRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    // When plan changes, reset selection to currentDay.
+    setSelectedHistoryDay(currentDay);
+    setIsPinnedHistoryDay(false);
+  }, [activePlanId]);
+
+  useEffect(() => {
+    // If user hasn't clicked a day in this tab, keep selection synced.
+    if (!isPinnedHistoryDay) setSelectedHistoryDay(currentDay);
+  }, [currentDay, isPinnedHistoryDay]);
 
   // NOTE: Hooks must be called unconditionally.
   // Large plans can make plan/progress arrive a render later; keep hook order stable.
@@ -76,9 +89,9 @@ export function ProgressTab() {
   if (!activePlanId || !plan || !progress) {
     return (
       <div className="max-w-4xl mx-auto p-6">
-        <div className="bg-white border-2 border-gray-200 rounded-xl p-6 text-center">
-          <p className="text-gray-700">진도율을 보려면 계획을 선택해주세요.</p>
-          <p className="text-gray-500 text-sm mt-1">계획 추가 탭에서 계획을 추가할 수 있습니다.</p>
+        <div className="bg-card text-card-foreground border border-border rounded-xl p-6 text-center">
+          <p>진도율을 보려면 계획을 선택해주세요.</p>
+          <p className="text-muted-foreground text-sm mt-1">계획 추가 탭에서 계획을 추가할 수 있습니다.</p>
         </div>
       </div>
     );
@@ -115,10 +128,10 @@ export function ProgressTab() {
               key={p.id}
               type="button"
               onClick={() => selectPlan(p.id)}
-              className={`shrink-0 px-3 py-2 rounded-lg border-2 text-sm transition-colors ${
+              className={`shrink-0 px-3 py-2 rounded-lg border text-sm transition-colors ${
                 p.id === activePlanId
-                  ? "border-blue-500 bg-blue-50 text-blue-700"
-                  : "border-gray-200 bg-white text-gray-700"
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border bg-card text-muted-foreground hover:bg-accent"
               }`}
             >
               <span className="block max-w-[10rem] text-center text-xs leading-snug whitespace-normal break-words line-clamp-2">
@@ -129,28 +142,28 @@ export function ProgressTab() {
         </div>
       )}
 
-      <div className="bg-white border-2 border-gray-200 rounded-xl p-4">
-        <p className="text-sm text-gray-600">진도율</p>
+      <div className="bg-card text-card-foreground border border-border rounded-xl p-4">
+        <p className="text-sm text-muted-foreground">진도율</p>
         <p className="text-lg">{plan.name}</p>
       </div>
 
-      <div className="bg-white border-2 border-gray-200 rounded-xl p-4">
-        <p className="text-sm text-gray-600">달성률</p>
+      <div className="bg-card text-card-foreground border border-border rounded-xl p-4">
+        <p className="text-sm text-muted-foreground">달성률</p>
         <p className="text-2xl font-semibold">{completionRateElapsed}%</p>
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-sm text-muted-foreground mt-1">
           오늘까지 {elapsedChapters}장 중 {completedChaptersUpToToday}장 완료
         </p>
-        <p className="text-gray-600 mt-1">{completionMessage}</p>
+        <p className="text-muted-foreground mt-1">{completionMessage}</p>
       </div>
 
       <ProgressChart totalChapters={totalChapters} completedChapters={completedChapters} />
 
-      <div className="bg-white border-2 border-gray-200 rounded-xl p-3 flex gap-2">
+      <div className="bg-card text-card-foreground border border-border rounded-xl p-2 flex gap-2">
         <button
           type="button"
           onClick={() => setViewMode("day")}
-          className={`flex-1 px-3 py-2 rounded-lg border-2 text-sm transition-colors ${
-            viewMode === "day" ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-200 bg-white"
+          className={`flex-1 px-3 py-2 rounded-lg border text-sm transition-colors ${
+            viewMode === "day" ? "border-primary bg-primary/10 text-primary" : "border-border bg-card hover:bg-accent"
           }`}
         >
           일자별
@@ -158,8 +171,8 @@ export function ProgressTab() {
         <button
           type="button"
           onClick={() => setViewMode("book")}
-          className={`flex-1 px-3 py-2 rounded-lg border-2 text-sm transition-colors ${
-            viewMode === "book" ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-200 bg-white"
+          className={`flex-1 px-3 py-2 rounded-lg border text-sm transition-colors ${
+            viewMode === "book" ? "border-primary bg-primary/10 text-primary" : "border-border bg-card hover:bg-accent"
           }`}
         >
           성경별
@@ -168,107 +181,144 @@ export function ProgressTab() {
 
       {viewMode === "day" ? (
         <>
-          <button
-            type="button"
-            onClick={() => setShowHistory((v) => !v)}
-            className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            {showHistory ? "읽기 기록 접기" : "읽기 기록"}
-          </button>
+          <ReadingHistory
+            schedule={plan.schedule}
+            completedDays={(() => {
+              const completed = new Set<number>();
+              const completedReadingsByDay = progress.completedReadingsByDay || {};
+              const completedDaysSet = new Set(progress.completedDays || []);
 
-          {showHistory && (
-            <ReadingHistory
-              schedule={plan.schedule}
-              completedDays={(() => {
-                // 모든 reading이 완료된 날만 포함
-                const completed = new Set<number>();
-                const completedReadingsByDay = progress.completedReadingsByDay || {};
+              for (let day = 1; day <= plan.totalDays; day++) {
+                const reading = plan.schedule.find((s) => s.day === day);
+                if (!reading) continue;
 
-                for (let day = 1; day <= plan.totalDays; day++) {
-                  const reading = plan.schedule.find((s) => s.day === day);
-                  if (!reading) continue;
+                const totalReadings = reading.readings.length;
+                if (totalReadings <= 0) continue;
 
-                  const totalReadings = reading.readings.length;
-                  const completedIndices = completedReadingsByDay[String(day)] || [];
-                  const completedCount = completedIndices.length;
-
-                  if (completedCount === totalReadings && totalReadings > 0) {
-                    completed.add(day);
-                  }
+                if (completedDaysSet.has(day)) {
+                  completed.add(day);
+                  continue;
                 }
 
-                return completed;
-              })()}
-              partialDays={(() => {
-                // 일부만 완료된 날 포함
-                const partial = new Set<number>();
-                const completedReadingsByDay = progress.completedReadingsByDay || {};
+                const completedIndices = completedReadingsByDay[String(day)] || [];
+                const completedCount = completedIndices.length;
+                if (completedCount === totalReadings) completed.add(day);
+              }
 
-                for (let day = 1; day <= plan.totalDays; day++) {
-                  const reading = plan.schedule.find((s) => s.day === day);
-                  if (!reading) continue;
+              return completed;
+            })()}
+            partialDays={(() => {
+              const partial = new Set<number>();
+              const completedReadingsByDay = progress.completedReadingsByDay || {};
+              const completedDaysSet = new Set(progress.completedDays || []);
 
-                  const totalReadings = reading.readings.length;
-                  const completedIndices = completedReadingsByDay[String(day)] || [];
-                  const completedCount = completedIndices.length;
+              for (let day = 1; day <= plan.totalDays; day++) {
+                if (completedDaysSet.has(day)) continue;
 
-                  if (completedCount > 0 && completedCount < totalReadings) {
-                    partial.add(day);
-                  }
-                }
+                const reading = plan.schedule.find((s) => s.day === day);
+                if (!reading) continue;
 
-                return partial;
-              })()}
-              currentDay={currentDay}
-              onDayClick={(day) => {
-                const startDate = parseYYYYMMDDLocal(plan.startDate);
-                const targetDate = new Date(startDate);
-                targetDate.setDate(targetDate.getDate() + (day - 1));
+                const totalReadings = reading.readings.length;
+                if (totalReadings <= 0) continue;
 
-                setViewDate(targetDate);
-                setHashTab("home");
-              }}
-              startDate={plan.startDate}
-              totalDays={plan.totalDays}
-            />
-          )}
+                const completedIndices = completedReadingsByDay[String(day)] || [];
+                const completedCount = completedIndices.length;
+                if (completedCount > 0 && completedCount < totalReadings) partial.add(day);
+              }
+
+              return partial;
+            })()}
+            currentDay={currentDay}
+            selectedDay={selectedHistoryDay}
+            onDayClick={(day) => {
+              setSelectedHistoryDay(day);
+              setIsPinnedHistoryDay(true);
+
+              // Scroll to the checkbox list (TodayReading) below.
+              if (typeof window !== "undefined") {
+                window.requestAnimationFrame(() => {
+                  historyDetailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                });
+              }
+            }}
+            startDate={plan.startDate}
+            totalDays={plan.totalDays}
+          />
+
+          {(() => {
+            const day = selectedHistoryDay;
+            const entry = plan.schedule.find((s) => s.day === day);
+            const readings = entry?.readings ?? [];
+            const readingCount = readings.length;
+
+            const isDayCompleted = progress.completedDays.includes(day);
+            const completedIndices = progress.completedReadingsByDay?.[String(day)] ?? [];
+            const completedSet = new Set(completedIndices);
+
+            const completedByIndex = readings.map((_, i) => isDayCompleted || completedSet.has(i));
+
+            return (
+              <div ref={historyDetailRef} className="pt-2">
+                {readings.length === 0 ? (
+                  <div className="bg-card text-card-foreground border border-border rounded-xl p-4 text-sm text-muted-foreground">
+                    선택한 날짜에 읽기 항목이 없습니다.
+                  </div>
+                ) : (
+                  <TodayReading
+                    day={day}
+                    readings={readings}
+                    completedByIndex={completedByIndex}
+                    subtitle={null}
+                    onToggleReading={(readingIndex, completed) =>
+                      toggleReading({
+                        day,
+                        readingIndex,
+                        completed,
+                        readingCount,
+                      })
+                    }
+                  />
+                )}
+              </div>
+            );
+          })()}
         </>
       ) : (
-        <div className="bg-white border-2 border-gray-200 rounded-xl p-4">
-          <div className="text-sm text-gray-600 mb-3">책별 진행</div>
+        <div className="bg-card text-card-foreground border border-border rounded-xl p-4">
+          <div className="text-sm text-muted-foreground mb-3">책별 진행</div>
 
           <div className="mb-3 flex items-center gap-2">
             <div className="relative flex-1 min-w-0">
-              <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Search className="w-4 h-4 text-muted-foreground/60 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 value={bookQuery}
                 onChange={(e) => setBookQuery(e.target.value)}
                 placeholder="책 이름 검색 (예: 히브리서)"
-                className="w-full pl-9 pr-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none text-sm"
+                className="w-full pl-9 pr-3 py-2 border border-border rounded-lg bg-input-background text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
             </div>
             {normalizedBookQuery && (
-              <div className="text-xs text-gray-500 whitespace-nowrap">{filteredBookRows.length}권</div>
+              <div className="text-xs text-muted-foreground whitespace-nowrap">{filteredBookRows.length}권</div>
             )}
           </div>
 
           {bookProgressRows.length === 0 ? (
-            <div className="text-sm text-gray-500">표시할 데이터가 없습니다.</div>
+            <div className="text-sm text-muted-foreground">표시할 데이터가 없습니다.</div>
           ) : filteredBookRows.length === 0 ? (
-            <div className="text-sm text-gray-500">검색 결과가 없습니다.</div>
+            <div className="text-sm text-muted-foreground">검색 결과가 없습니다.</div>
           ) : (
             <div className="space-y-2">
               {filteredBookRows.map((row) => (
-                <div key={row.book} className="border border-gray-200 rounded-lg p-3">
+                <div key={row.book} className="border border-border rounded-lg p-3 bg-card">
                   <div className="flex items-center justify-between gap-3 min-w-0">
                     <div className="min-w-0">
-                      <div className="text-sm text-gray-900 truncate">{row.book}</div>
-                      <div className="text-xs text-gray-600">{row.completed}/{row.total}장</div>
+                      <div className="text-sm truncate">{row.book}</div>
+                      <div className="text-xs text-muted-foreground">{row.completed}/{row.total}장</div>
                     </div>
-                    <div className="text-sm font-medium text-gray-700 shrink-0">{row.percent}%</div>
+                    <div className="text-sm font-medium text-muted-foreground shrink-0">{row.percent}%</div>
                   </div>
-                  <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${row.percent}%` }} />
+                  <div className="mt-2 w-full bg-muted rounded-full h-2">
+                    <div className="bg-primary h-2 rounded-full" style={{ width: `${row.percent}%` }} />
                   </div>
                 </div>
               ))}

@@ -113,20 +113,20 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
   };
 
   return (
-    <div className={`${embedded ? 'p-6' : 'min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-6'}`}>
+    <div className={embedded ? "p-6" : "min-h-screen bg-muted/30 p-6"}>
       <div className="max-w-4xl mx-auto">
         {!embedded && (
           <div className="flex justify-between items-start mb-8">
             <div className="text-center flex-1">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-500 rounded-2xl mb-4">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-2xl mb-4">
                 <BookOpen className="w-8 h-8 text-white" />
               </div>
               <h1 className="mb-2">성경 읽기 계획</h1>
-              <p className="text-gray-600">읽기 계획을 선택하거나 새로 만들어보세요</p>
+              <p className="text-muted-foreground">읽기 계획을 선택하거나 새로 만들어보세요</p>
             </div>
             <button
               onClick={handleSignOut}
-              className="flex items-center gap-2 px-4 py-2 bg-white text-gray-700 border-2 border-gray-200 hover:bg-gray-50 hover:border-gray-300 rounded-lg transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-card text-muted-foreground border border-border hover:bg-accent rounded-lg transition-colors"
             >
               <LogOut className="w-5 h-5" />
               로그아웃
@@ -140,7 +140,7 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
               onClick={() => {
                 window.location.hash = '#/dev';
               }}
-              className="px-4 py-2 text-sm bg-white text-gray-700 border-2 border-gray-200 hover:bg-gray-50 hover:border-gray-300 rounded-lg transition-colors"
+              className="px-4 py-2 text-sm bg-card text-muted-foreground border border-border hover:bg-accent rounded-lg transition-colors"
             >
               개발자 계획 등록
             </button>
@@ -150,9 +150,9 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
         <div className="mb-6 flex gap-4">
           <button
             onClick={() => toggleCustomPlanCreator(true)}
-            className="flex items-center gap-2 px-6 py-3 bg-white text-gray-800 border-2 border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-colors"
+            className="flex items-center gap-2 px-6 py-3 bg-card text-card-foreground border border-border rounded-lg hover:bg-accent transition-colors"
           >
-            <Plus className="w-5 h-5 text-blue-500" />
+            <Plus className="w-5 h-5 text-primary" />
             새 계획 만들기
           </button>
         </div>
@@ -162,8 +162,8 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
           <div className="mb-8">
             <h2 className="mb-4">내 계획</h2>
 
-            <div className="mb-4 bg-white border-2 border-gray-200 rounded-xl p-4">
-              <p className="text-sm text-gray-600">친구에게 공유할 계획</p>
+            <div className="mb-4 bg-card text-card-foreground border border-border rounded-xl p-4">
+              <p className="text-sm text-muted-foreground">친구에게 공유할 계획</p>
               <div className="mt-2 flex gap-2 items-center">
                 <select
                   value={sharedPlanId ?? ''}
@@ -172,7 +172,7 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
                     void handleChangeSharedPlan(v ? v : null);
                   }}
                   disabled={isSavingSharedPlan}
-                  className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none bg-white"
+                  className="flex-1 px-4 py-3 border border-border rounded-lg bg-input-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <option value="">공유 안 함</option>
                   {plans.map((p) => (
@@ -182,7 +182,7 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
                   ))}
                 </select>
               </div>
-              <p className="text-xs text-gray-500 mt-2">선택한 계획만 친구에게 표시됩니다.</p>
+              <p className="text-xs text-muted-foreground mt-2">선택한 계획만 친구에게 표시됩니다.</p>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
@@ -272,10 +272,10 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
                         void handleAddPresetPlan(plan.id, startDate);
                       }}
                       disabled={isDisabled}
-                      className="p-2 rounded-lg border-2 border-gray-200 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                      className="p-2 rounded-lg border border-border bg-card hover:bg-accent transition-colors disabled:opacity-50"
                       title="추가"
                     >
-                      <Plus className="w-5 h-5 text-blue-500" />
+                      <Plus className="w-5 h-5 text-primary" />
                     </button>
                   }
                   footer={
@@ -284,7 +284,7 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
                       onKeyDown={(e) => e.stopPropagation()}
                       className="flex items-center gap-3"
                     >
-                      <label className="text-sm text-gray-600 shrink-0">시작 날짜</label>
+                      <label className="text-sm text-muted-foreground shrink-0">시작 날짜</label>
                       <input
                         type="date"
                         value={startDate}
@@ -293,7 +293,7 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
                           const v = e.target.value;
                           setPresetStartDates((prev) => ({ ...prev, [plan.id]: v }));
                         }}
-                        className="flex-1 px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none bg-white disabled:bg-gray-100"
+                        className="flex-1 px-3 py-2 border border-border rounded-lg bg-input-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
                       />
                     </div>
                   }

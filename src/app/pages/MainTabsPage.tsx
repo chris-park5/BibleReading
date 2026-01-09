@@ -76,9 +76,9 @@ export function MainTabsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
+    <div className="min-h-screen bg-muted/30">
       <main
-        className="pb-20"
+        className="pb-24"
         onTouchStart={(e) => {
           if (e.touches.length !== 1) return;
           if (isInteractiveTarget(e.target)) return;
@@ -122,8 +122,8 @@ export function MainTabsPage() {
         {tab === "settings" && <SettingsTabPage />}
       </main>
 
-      <nav className="fixed bottom-0 left-0 right-0 border-t-2 border-gray-200 bg-white">
-        <div className="max-w-4xl mx-auto grid grid-cols-5">
+      <nav className="fixed bottom-0 left-0 right-0 border-t border-border bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+        <div className="max-w-4xl mx-auto grid grid-cols-5 px-2 pb-[env(safe-area-inset-bottom)]">
           {tabs.map((t) => {
             const Icon = t.icon;
             const active = t.key === tab;
@@ -132,8 +132,8 @@ export function MainTabsPage() {
                 key={t.key}
                 type="button"
                 onClick={() => setHashTab(t.key)}
-                className={`py-3 flex flex-col items-center gap-1 text-sm transition-colors ${
-                  active ? "text-blue-600" : "text-gray-600"
+                className={`py-3 flex flex-col items-center gap-1 text-xs transition-colors ${
+                  active ? "text-primary" : "text-muted-foreground"
                 }`}
               >
                 <Icon className="w-5 h-5" />

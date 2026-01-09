@@ -55,25 +55,25 @@ export function ReadingPlanCard({
         if (!isClickable) return;
         if (e.key === "Enter" || e.key === " ") onSelect();
       }}
-      className={`w-full p-6 rounded-xl border-2 text-left transition-all ${
+      className={`w-full p-6 rounded-xl border text-left transition-all ${
         isDisabled
-          ? "border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed"
+          ? "border-border bg-muted/40 opacity-60 cursor-not-allowed"
           : isSelected
-          ? "border-blue-500 bg-blue-50"
+          ? "border-primary bg-primary/10"
           : isClickable
-          ? "border-gray-200 bg-white hover:border-blue-300 cursor-pointer"
-          : "border-gray-200 bg-white"
+          ? "border-border bg-card hover:bg-accent cursor-pointer"
+          : "border-border bg-card"
       }`}
     >
       <div className="flex items-start gap-4">
         <div
           className={`p-3 rounded-lg ${
-            isSelected ? "bg-blue-100" : "bg-gray-100"
+            isSelected ? "bg-primary/10" : "bg-muted"
           }`}
         >
           <BookOpen
             className={`w-6 h-6 ${
-              isSelected ? "text-blue-600" : "text-gray-600"
+              isSelected ? "text-primary" : "text-muted-foreground"
             }`}
           />
         </div>
@@ -85,11 +85,11 @@ export function ReadingPlanCard({
               {headerAction && <div className="mr-1">{headerAction}</div>}
 
               {isSelected && !showStatusBadge && (
-                <Check className="w-6 h-6 text-blue-500" />
+                <Check className="w-6 h-6 text-primary" />
               )}
 
               {showStatusBadge && statusBadgeText && (
-                <div className="px-3 py-1 bg-gray-200 text-gray-600 text-sm rounded-full">
+                <div className="px-3 py-1 bg-muted text-muted-foreground text-sm rounded-full">
                   {statusBadgeText}
                 </div>
               )}
@@ -103,7 +103,7 @@ export function ReadingPlanCard({
                         e.stopPropagation();
                         onMoveUp();
                       }}
-                      className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-600 transition-colors"
+                      className="p-1.5 rounded-lg hover:bg-accent text-primary transition-colors"
                       title="위로 이동"
                     >
                       <ChevronUp className="w-5 h-5" />
@@ -116,7 +116,7 @@ export function ReadingPlanCard({
                         e.stopPropagation();
                         onMoveDown();
                       }}
-                      className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-600 transition-colors"
+                      className="p-1.5 rounded-lg hover:bg-accent text-primary transition-colors"
                       title="아래로 이동"
                     >
                       <ChevronDown className="w-5 h-5" />
@@ -141,8 +141,8 @@ export function ReadingPlanCard({
             </div>
           </div>
 
-          <p className="text-gray-600 mb-2">{description}</p>
-          <p className="text-blue-600">{duration}</p>
+          <p className="text-muted-foreground mb-2">{description}</p>
+          <p className="text-primary">{duration}</p>
 
           {footer && <div className="mt-4">{footer}</div>}
         </div>

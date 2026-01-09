@@ -205,21 +205,21 @@ export function NotificationSettings({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-6 z-50">
-      <div className="bg-white rounded-xl max-w-md w-full">
-        <div className="border-b-2 border-gray-200 p-6">
+      <div className="bg-card text-card-foreground rounded-xl max-w-md w-full border border-border">
+        <div className="border-b border-border p-6 bg-background/80 backdrop-blur rounded-t-xl">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-3 bg-yellow-100 rounded-lg">
-                <Bell className="w-6 h-6 text-yellow-600" />
+              <div className="p-3 bg-primary/10 rounded-lg">
+                <Bell className="w-6 h-6 text-primary" />
               </div>
               <div>
                 <h2>알림 설정</h2>
-                <p className="text-gray-600">오늘 말씀 알림</p>
+                <p className="text-muted-foreground">오늘 말씀 알림</p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-accent rounded-lg transition-colors"
             >
               <X className="w-6 h-6" />
             </button>
@@ -228,7 +228,7 @@ export function NotificationSettings({
 
         <div className="p-6 space-y-6">
           {!permissionGranted && (
-            <div className="p-4 bg-yellow-50 border-2 border-yellow-200 rounded-lg">
+            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
               <p className="text-yellow-800 text-sm">
                 알림을 받으려면 브라우저에서 알림 권한을 허용해주세요
               </p>
@@ -238,7 +238,7 @@ export function NotificationSettings({
           <div className="flex items-center justify-between">
             <div>
               <p>매일 알림 받기</p>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-muted-foreground">
                 설정한 시간에 읽기 알림을 받습니다
               </p>
             </div>
@@ -249,41 +249,41 @@ export function NotificationSettings({
                 onChange={(e) => setEnabled(e.target.checked)}
                 className="sr-only peer"
               />
-              <span className="absolute inset-0 bg-gray-300 rounded-full peer-checked:bg-blue-500 transition-colors cursor-pointer"></span>
-              <span className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-6"></span>
+              <span className="absolute inset-0 bg-muted rounded-full peer-checked:bg-primary transition-colors cursor-pointer"></span>
+              <span className="absolute left-1 top-1 w-4 h-4 bg-background rounded-full transition-transform peer-checked:translate-x-6 border border-border"></span>
             </label>
           </div>
 
           {enabled && (
             <div>
-              <label className="block text-gray-700 mb-2">알림 시간</label>
+              <label className="block text-muted-foreground mb-2">알림 시간</label>
               <input
                 type="time"
                 value={time}
                 onChange={(e) => setTime(e.target.value)}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
+                className="w-full px-4 py-3 border border-border rounded-lg bg-input-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
             </div>
           )}
 
           <button
             onClick={handleTestNotification}
-            className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+            className="w-full px-4 py-3 border border-border rounded-lg bg-card hover:bg-accent transition-colors"
           >
             테스트 알림 보내기
           </button>
         </div>
 
-        <div className="border-t-2 border-gray-200 p-6 flex gap-4">
+        <div className="border-t border-border p-6 flex gap-4">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+            className="flex-1 px-4 py-3 border border-border rounded-lg bg-card hover:bg-accent transition-colors"
           >
             취소
           </button>
           <button
             onClick={handleSave}
-            className="flex-1 px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            className="flex-1 px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-colors"
           >
             저장하기
           </button>
