@@ -1,27 +1,39 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePlans, usePlan } from "../../../hooks/usePlans";
 import { useProgress } from "../../../hooks/useProgress";
 import { usePlanStore } from "../../../stores/plan.store";
 import { ProgressChart } from "../../components/ProgressChart";
 import { ReadingHistory } from "../../components/ReadingHistory";
+import { TodayReading } from "../../components/TodayReading";
 import { BIBLE_BOOKS } from "../../data/bibleBooks";
-import { computeTodayDay, parseYYYYMMDDLocal, startOfTodayLocal } from "./dateUtils";
-import { setHashTab } from "./tabHash";
+import { computeTodayDay, startOfTodayLocal } from "./dateUtils";
 import { computeChaptersTotals, countChapters } from "../../utils/chaptersProgress";
 import { Search } from "lucide-react";
 
 export function ProgressTab() {
   const { plans } = usePlans();
   const selectedPlanId = usePlanStore((s) => s.selectedPlanId);
-  const { selectPlan, currentDay, setViewDate } = usePlanStore();
+  const { selectPlan, currentDay } = usePlanStore();
 
   // 계획이 있으면 자동으로 첫 번째 계획 선택 (selectedPlanId가 없을 때)
   const activePlanId = selectedPlanId || (plans.length > 0 ? plans[0].id : null);
   const plan = usePlan(activePlanId);
-  const { progress } = useProgress(activePlanId);
-  const [showHistory, setShowHistory] = useState(false);
+  const { progress, toggleReading } = useProgress(activePlanId);
   const [viewMode, setViewMode] = useState<"day" | "book">("day");
   const [bookQuery, setBookQuery] = useState("");
+  const [selectedHistoryDay, setSelectedHistoryDay] = useState<number>(currentDay);
+  const [isPinnedHistoryDay, setIsPinnedHistoryDay] = useState(false);
+
+  useEffect(() => {
+    // When plan changes, reset selection to currentDay.
+    setSelectedHistoryDay(currentDay);
+    setIsPinnedHistoryDay(false);
+  }, [activePlanId]);
+
+  useEffect(() => {
+    // If user hasn't clicked a day in this tab, keep selection synced.
+    if (!isPinnedHistoryDay) setSelectedHistoryDay(currentDay);
+  }, [currentDay, isPinnedHistoryDay]);
 
   // NOTE: Hooks must be called unconditionally.
   // Large plans can make plan/progress arrive a render later; keep hook order stable.
@@ -168,70 +180,99 @@ export function ProgressTab() {
 
       {viewMode === "day" ? (
         <>
-          <button
-            type="button"
-            onClick={() => setShowHistory((v) => !v)}
-            className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            {showHistory ? "읽기 기록 접기" : "읽기 기록"}
-          </button>
+          <ReadingHistory
+            schedule={plan.schedule}
+            completedDays={(() => {
+              const completed = new Set<number>();
+              const completedReadingsByDay = progress.completedReadingsByDay || {};
+              const completedDaysSet = new Set(progress.completedDays || []);
 
-          {showHistory && (
-            <ReadingHistory
-              schedule={plan.schedule}
-              completedDays={(() => {
-                // 모든 reading이 완료된 날만 포함
-                const completed = new Set<number>();
-                const completedReadingsByDay = progress.completedReadingsByDay || {};
+              for (let day = 1; day <= plan.totalDays; day++) {
+                const reading = plan.schedule.find((s) => s.day === day);
+                if (!reading) continue;
 
-                for (let day = 1; day <= plan.totalDays; day++) {
-                  const reading = plan.schedule.find((s) => s.day === day);
-                  if (!reading) continue;
+                const totalReadings = reading.readings.length;
+                if (totalReadings <= 0) continue;
 
-                  const totalReadings = reading.readings.length;
-                  const completedIndices = completedReadingsByDay[String(day)] || [];
-                  const completedCount = completedIndices.length;
-
-                  if (completedCount === totalReadings && totalReadings > 0) {
-                    completed.add(day);
-                  }
+                if (completedDaysSet.has(day)) {
+                  completed.add(day);
+                  continue;
                 }
 
-                return completed;
-              })()}
-              partialDays={(() => {
-                // 일부만 완료된 날 포함
-                const partial = new Set<number>();
-                const completedReadingsByDay = progress.completedReadingsByDay || {};
+                const completedIndices = completedReadingsByDay[String(day)] || [];
+                const completedCount = completedIndices.length;
+                if (completedCount === totalReadings) completed.add(day);
+              }
 
-                for (let day = 1; day <= plan.totalDays; day++) {
-                  const reading = plan.schedule.find((s) => s.day === day);
-                  if (!reading) continue;
+              return completed;
+            })()}
+            partialDays={(() => {
+              const partial = new Set<number>();
+              const completedReadingsByDay = progress.completedReadingsByDay || {};
+              const completedDaysSet = new Set(progress.completedDays || []);
 
-                  const totalReadings = reading.readings.length;
-                  const completedIndices = completedReadingsByDay[String(day)] || [];
-                  const completedCount = completedIndices.length;
+              for (let day = 1; day <= plan.totalDays; day++) {
+                if (completedDaysSet.has(day)) continue;
 
-                  if (completedCount > 0 && completedCount < totalReadings) {
-                    partial.add(day);
-                  }
-                }
+                const reading = plan.schedule.find((s) => s.day === day);
+                if (!reading) continue;
 
-                return partial;
-              })()}
-              currentDay={currentDay}
-              onDayClick={(day) => {
-                const startDate = parseYYYYMMDDLocal(plan.startDate);
-                const targetDate = new Date(startDate);
-                targetDate.setDate(targetDate.getDate() + (day - 1));
+                const totalReadings = reading.readings.length;
+                if (totalReadings <= 0) continue;
 
-                setViewDate(targetDate);
-                setHashTab("home");
-              }}
-              startDate={plan.startDate}
-              totalDays={plan.totalDays}
-            />
-          )}
+                const completedIndices = completedReadingsByDay[String(day)] || [];
+                const completedCount = completedIndices.length;
+                if (completedCount > 0 && completedCount < totalReadings) partial.add(day);
+              }
+
+              return partial;
+            })()}
+            currentDay={currentDay}
+            onDayClick={(day) => {
+              setSelectedHistoryDay(day);
+              setIsPinnedHistoryDay(true);
+            }}
+            startDate={plan.startDate}
+            totalDays={plan.totalDays}
+          />
+
+          {(() => {
+            const day = selectedHistoryDay;
+            const entry = plan.schedule.find((s) => s.day === day);
+            const readings = entry?.readings ?? [];
+            const readingCount = readings.length;
+
+            const isDayCompleted = progress.completedDays.includes(day);
+            const completedIndices = progress.completedReadingsByDay?.[String(day)] ?? [];
+            const completedSet = new Set(completedIndices);
+
+            const completedByIndex = readings.map((_, i) => isDayCompleted || completedSet.has(i));
+
+            return (
+              <div className="pt-2">
+                {readings.length === 0 ? (
+                  <div className="bg-white border-2 border-gray-200 rounded-xl p-4 text-sm text-gray-600">
+                    선택한 날짜에 읽기 항목이 없습니다.
+                  </div>
+                ) : (
+                  <TodayReading
+                    day={day}
+                    readings={readings}
+                    completedByIndex={completedByIndex}
+                    subtitle={null}
+                    onToggleReading={(readingIndex, completed) =>
+                      toggleReading({
+                        day,
+                        readingIndex,
+                        completed,
+                        readingCount,
+                      })
+                    }
+                  />
+                )}
+              </div>
+            );
+          })()}
         </>
       ) : (
         <div className="bg-white border-2 border-gray-200 rounded-xl p-4">

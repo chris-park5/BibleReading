@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { BookOpenCheck, CheckCircle, Circle } from "lucide-react";
 
 interface Reading {
@@ -12,6 +11,7 @@ interface TodayReadingProps {
   readings: Reading[];
   completedByIndex: boolean[];
   onToggleReading: (readingIndex: number, completed: boolean) => void;
+  subtitle?: string | null;
 }
 
 export function TodayReading({
@@ -19,6 +19,7 @@ export function TodayReading({
   readings,
   completedByIndex,
   onToggleReading,
+  subtitle = "오늘의 읽기",
 }: TodayReadingProps) {
   const allCompleted = readings.length > 0 && completedByIndex.every(Boolean);
 
@@ -31,7 +32,7 @@ export function TodayReading({
           </div>
           <div>
             <h2>{typeof day === "number" ? `Day ${day}` : "오늘"}</h2>
-            <p className="text-gray-600">오늘의 읽기</p>
+            {subtitle ? <p className="text-gray-600">{subtitle}</p> : null}
           </div>
         </div>
         <div
