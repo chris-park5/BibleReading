@@ -235,7 +235,7 @@ export function FriendsTabPage() {
       ) : null}
 
       <div className="bg-card text-card-foreground border border-border rounded-xl p-6">
-        <h2 className="mb-3">친구 요청 보내기</h2>
+        <h2 className="mb-3">친구 추가</h2>
         <form onSubmit={handleSendFriendRequest} className="flex flex-col sm:flex-row gap-2">
           <input
             type="text"
