@@ -1,11 +1,13 @@
-import { Calendar, CheckCircle, Circle, CircleDashed } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Calendar, CheckCircle, Circle, CircleDashed, Search } from "lucide-react";
 
 interface ReadingHistoryProps {
   completedDays: Set<number>;
-  partialDays: Set<number>; // 일부만 읽은 날짜
+  partialDays?: Set<number>; // 일부만 읽은 날짜
   currentDay: number;
   onDayClick: (day: number) => void;
   totalDays: number;
+  schedule?: Array<{ day: number; readings: Array<{ book: string; chapters: string }> }>;
 }
 
 export function ReadingHistory({
@@ -14,9 +16,31 @@ export function ReadingHistory({
   currentDay,
   onDayClick,
   totalDays,
+  schedule,
 }: ReadingHistoryProps) {
-  const weeks = Math.ceil(totalDays / 7);
   const days = Array.from({ length: totalDays }, (_, i) => i + 1);
+  const [query, setQuery] = useState("");
+
+  const normalizedQuery = query.trim().toLowerCase();
+  const matchedDays = useMemo(() => {
+    if (!schedule || !normalizedQuery) return new Set<number>();
+    const hits = new Set<number>();
+    for (const entry of schedule) {
+      if (!entry?.day || !Array.isArray(entry.readings)) continue;
+      const ok = entry.readings.some((r) => String(r?.book ?? "").toLowerCase().includes(normalizedQuery));
+      if (ok) hits.add(entry.day);
+    }
+    return hits;
+  }, [schedule, normalizedQuery]);
+
+  const hasSearch = !!schedule;
+  const matchCount = normalizedQuery ? matchedDays.size : 0;
+  const safePartialDays = partialDays ?? new Set<number>();
+
+  const visibleDays = useMemo(() => {
+    if (!hasSearch || !normalizedQuery) return days;
+    return Array.from(matchedDays).sort((a, b) => a - b);
+  }, [days, hasSearch, matchedDays, normalizedQuery]);
 
   return (
     <div className="bg-white rounded-xl border-2 border-gray-200 p-6">
@@ -26,14 +50,35 @@ export function ReadingHistory({
         </div>
         <div>
           <h2>읽기 기록</h2>
-          <p className="text-gray-600">전체 진행 상황</p>
+          <p className="text-gray-600 text-sm">일자</p>
         </div>
       </div>
 
+      {hasSearch && (
+        <div className="mb-4 flex items-center gap-2">
+          <div className="relative flex-1 min-w-0">
+            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="책 이름 검색 (예: 히브리서)"
+              className="w-full pl-9 pr-3 py-2 border-2 border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none text-sm"
+            />
+          </div>
+          {normalizedQuery && (
+            <div className="text-xs text-gray-500 whitespace-nowrap">{matchCount}일</div>
+          )}
+        </div>
+      )}
+
+      {hasSearch && normalizedQuery && matchCount === 0 && (
+        <div className="text-sm text-gray-500 mb-3">검색 결과가 없습니다.</div>
+      )}
+
       <div className="grid grid-cols-7 gap-2">
-        {days.map((day) => {
+        {visibleDays.map((day) => {
           const isCompleted = completedDays.has(day);
-          const isPartial = partialDays.has(day);
+          const isPartial = safePartialDays.has(day);
           const isCurrent = day === currentDay;
 
           return (
@@ -96,3 +141,4 @@ export function ReadingHistory({
     </div>
   );
 }
+

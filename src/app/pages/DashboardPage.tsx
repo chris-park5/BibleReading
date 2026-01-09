@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useQuery } from '@tanstack/react-query';
 import { BookOpen } from 'lucide-react';
 import { usePlanStore } from '../../stores/plan.store';
@@ -8,6 +9,7 @@ import { ProgressChart } from '../components/ProgressChart';
 import { ReadingHistory } from '../components/ReadingHistory';
 import { useAuthStore } from '../../stores/auth.store';
 import * as friendService from '../../services/friendService';
+import { computeChaptersTotals } from "../utils/chaptersProgress";
 
 export function DashboardPage({ embedded = false }: { embedded?: boolean }) {
   const { 
@@ -66,21 +68,9 @@ export function DashboardPage({ embedded = false }: { embedded?: boolean }) {
     }
   };
 
-  const getChartData = () => {
-    if (!progress) return [];
-
-    const data = [];
-    const sortedDays = [...progress.completedDays].sort((a, b) => a - b);
-
-    for (let i = 0; i < sortedDays.length; i++) {
-      data.push({
-        day: sortedDays[i],
-        completed: i + 1,
-      });
-    }
-
-    return data;
-  };
+  const { totalChapters, completedChapters } = useMemo(() => {
+    return computeChaptersTotals({ schedule: selectedPlan.schedule, progress });
+  }, [selectedPlan.schedule, progress]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
@@ -161,9 +151,8 @@ export function DashboardPage({ embedded = false }: { embedded?: boolean }) {
 
             {/* Progress Chart */}
             <ProgressChart
-              totalDays={selectedPlan.totalDays}
-              completedDays={progress.completedDays.length}
-              chartData={getChartData()}
+              totalChapters={totalChapters}
+              completedChapters={completedChapters}
             />
           </div>
 
@@ -171,9 +160,11 @@ export function DashboardPage({ embedded = false }: { embedded?: boolean }) {
           <div className="lg:col-span-1">
             <ReadingHistory
               completedDays={new Set(progress.completedDays)}
+              partialDays={new Set<number>()}
               currentDay={currentDay}
               onDayClick={setCurrentDay}
               totalDays={selectedPlan.totalDays}
+              schedule={selectedPlan.schedule}
             />
           </div>
         </div>
@@ -181,3 +172,4 @@ export function DashboardPage({ embedded = false }: { embedded?: boolean }) {
     </div>
   );
 }
+
