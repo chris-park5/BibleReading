@@ -1,16 +1,15 @@
 import { TrendingUp } from "lucide-react";
 
 interface ProgressChartProps {
-  totalDays: number;
-  completedDays: number;
-  chartData: Array<{ day: number; completed: number }>;
+  totalChapters: number;
+  completedChapters: number;
 }
 
 export function ProgressChart({
-  totalDays,
-  completedDays,
+  totalChapters,
+  completedChapters,
 }: ProgressChartProps) {
-  const percentage = Math.round((completedDays / totalDays) * 100);
+  const percentage = totalChapters <= 0 ? 0 : Math.round((completedChapters / totalChapters) * 100);
 
   return (
     <div className="bg-white rounded-xl border-2 border-gray-200 p-6">
@@ -18,7 +17,7 @@ export function ProgressChart({
         <div>
           <h2>진행 상황</h2>
           <p className="text-gray-600">
-            {completedDays}일 / {totalDays}일 완료
+            {completedChapters}장 / {totalChapters}장 완료
           </p>
         </div>
         <div className="flex items-center gap-2 px-4 py-2 bg-blue-100 rounded-lg">
@@ -38,3 +37,4 @@ export function ProgressChart({
     </div>
   );
 }
+
