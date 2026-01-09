@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { X, BookPlus, ChevronUp, ChevronDown, Trash2 } from "lucide-react";
+import { X, BookPlus, RotateCcw } from "lucide-react";
 import { BIBLE_BOOKS } from "../data/bibleBooks";
 import { generateScheduleFromSelectedBooks } from "../utils/generateScheduleFromSelectedBooks";
 
@@ -21,6 +21,8 @@ interface CustomPlanCreatorProps {
 }
 
 export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
+  type Step = 1 | 2 | 3;
+  const [step, setStep] = useState<Step>(1);
   const [name, setName] = useState("");
   const [startDate, setStartDate] = useState(
     new Date().toISOString().split("T")[0]
@@ -71,11 +73,14 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
   // NOTE: duplicates are allowed (e.g., 성경 2독).
   // Order in this array is the reading order.
   const [selectedBooks, setSelectedBooks] = useState<string[]>([]);
+  const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
+  const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
+
+  const [otRepeat, setOtRepeat] = useState(1);
+  const [ntRepeat, setNtRepeat] = useState(1);
 
   const otBooks = useMemo(() => BIBLE_BOOKS.slice(0, 39).map((b) => b.name), []);
   const ntBooks = useMemo(() => BIBLE_BOOKS.slice(39).map((b) => b.name), []);
-
-  const visibleBooks = activeTestament === "OT" ? otBooks : ntBooks;
 
   const countsByBook = useMemo(() => {
     const map = new Map<string, number>();
@@ -132,8 +137,81 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
     return `${first} ~ ${last} (${selectedBooks.length}항목)`;
   }, [selectedBooks]);
 
+  const finalName = useMemo(() => (name.trim() || autoPlanName).trim(), [name, autoPlanName]);
+  const isFinalNameValid = finalName.length > 0 && finalName.length <= MAX_PLAN_NAME_LENGTH;
+
+  const uniqueBookCount = useMemo(() => new Set(selectedBooks).size, [selectedBooks]);
+  const duplicateEntryCount = useMemo(
+    () => Math.max(0, selectedBooks.length - uniqueBookCount),
+    [selectedBooks.length, uniqueBookCount]
+  );
+
+  const totalChapters = useMemo(() => {
+    if (selectedBooks.length === 0) return 0;
+    const chapterByName = new Map(BIBLE_BOOKS.map((b) => [b.name, b.chapters] as const));
+    return selectedBooks.reduce((acc, n) => acc + (chapterByName.get(n) ?? 0), 0);
+  }, [selectedBooks]);
+
+  const avgChaptersPerDay = useMemo(() => {
+    if (!computedTotalDays || computedTotalDays <= 0) return null;
+    if (totalChapters <= 0) return 0;
+    return totalChapters / computedTotalDays;
+  }, [computedTotalDays, totalChapters]);
+
   const addBook = (bookName: string) => {
     setSelectedBooks((prev) => [...prev, bookName]);
+  };
+
+  const clampRepeat = (n: number) => {
+    if (!Number.isFinite(n)) return 0;
+    return Math.max(0, Math.min(10, Math.floor(n)));
+  };
+
+  const applyCountForBook = (list: string[], bookName: string, desiredCountRaw: number) => {
+    const desiredCount = clampRepeat(desiredCountRaw);
+    let next = [...list];
+    const currentCount = next.reduce((acc, n) => acc + (n === bookName ? 1 : 0), 0);
+
+    if (desiredCount > currentCount) {
+      const add = desiredCount - currentCount;
+      for (let i = 0; i < add; i++) next.push(bookName);
+      return next;
+    }
+
+    if (desiredCount < currentCount) {
+      let remove = currentCount - desiredCount;
+      for (let i = next.length - 1; i >= 0 && remove > 0; i--) {
+        if (next[i] === bookName) {
+          next.splice(i, 1);
+          remove -= 1;
+        }
+      }
+      return next;
+    }
+
+    return next;
+  };
+
+  const setBookCount = (bookName: string, desiredCount: number) => {
+    setSelectedBooks((prev) => applyCountForBook(prev, bookName, desiredCount));
+  };
+
+  const setSectionAll = (testament: Testament, repeatCount: number) => {
+    const books = testament === "OT" ? otBooks : ntBooks;
+    setSelectedBooks((prev) => {
+      let next = [...prev];
+      for (const b of books) next = applyCountForBook(next, b, repeatCount);
+      return next;
+    });
+  };
+
+  const clearSection = (testament: Testament) => {
+    const books = testament === "OT" ? otBooks : ntBooks;
+    setSelectedBooks((prev) => {
+      let next = [...prev];
+      for (const b of books) next = applyCountForBook(next, b, 0);
+      return next;
+    });
   };
 
   const removeSelectedAt = (index: number) => {
@@ -151,15 +229,12 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
     });
   };
 
-  const addAll = (testament: "OT" | "NT" | "ALL") => {
-    const books =
-      testament === "OT"
-        ? BIBLE_BOOKS.slice(0, 39).map((b) => b.name)
-        : testament === "NT"
-          ? BIBLE_BOOKS.slice(39).map((b) => b.name)
-          : BIBLE_BOOKS.map((b) => b.name);
-    setSelectedBooks((prev) => [...prev, ...books]);
+  const resetSelection = () => {
+    setSelectedBooks([]);
   };
+
+  const step1Valid = !isDateRangeInvalid && !!startDate && !!endDate;
+  const step2Valid = selectedBooks.length > 0;
 
   const handleSave = () => {
     if (!startDate || !endDate) {
@@ -217,6 +292,39 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
     }
   };
 
+  const isCreateDisabled =
+    selectedBooks.length === 0 ||
+    !startDate ||
+    !endDate ||
+    isDateRangeInvalid ||
+    !isFinalNameValid;
+
+  const goNext = () => {
+    if (step === 1) {
+      if (!step1Valid) {
+        alert("날짜 범위를 올바르게 입력해주세요");
+        return;
+      }
+      setStep(2);
+      return;
+    }
+    if (step === 2) {
+      if (!step2Valid) {
+        alert("책을 1개 이상 선택해주세요");
+        return;
+      }
+      setStep(3);
+    }
+  };
+
+  const goPrev = () => {
+    if (step === 3) setStep(2);
+    else if (step === 2) setStep(1);
+  };
+
+  const otAllSelected = useMemo(() => otBooks.every((b) => (countsByBook.get(b) ?? 0) > 0), [otBooks, countsByBook]);
+  const ntAllSelected = useMemo(() => ntBooks.every((b) => (countsByBook.get(b) ?? 0) > 0), [ntBooks, countsByBook]);
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-6 z-50">
       <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -228,9 +336,7 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
               </div>
               <div>
                 <h2>사용자 지정 계획 만들기</h2>
-                <p className="text-gray-600">
-                  시작/종료 날짜와 책 범위를 선택하세요
-                </p>
+                <p className="text-gray-600 text-sm">날짜 + 책 선택</p>
               </div>
             </div>
             <button
@@ -243,255 +349,540 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
         </div>
 
         <div className="p-6 space-y-6">
-          <div className="space-y-4">
-            <div>
-              <label className="block text-gray-700 mb-2">계획 이름</label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                maxLength={MAX_PLAN_NAME_LENGTH}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
-                placeholder="비워두면 (책 범위)로 자동 생성"
-              />
-            </div>
+          {/* Stepper */}
+          <div className="border-2 border-gray-200 rounded-xl p-4">
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setStep(1)}
+                className={`flex-1 min-w-0 px-2 py-1.5 rounded-lg border-2 text-xs sm:text-sm whitespace-nowrap transition-colors ${
+                  step === 1 ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:bg-gray-50"
+                }`}
+              >
+                정보 입력
+              </button>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-gray-700 mb-2">시작 날짜</label>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => {
-                    const nextStart = e.target.value;
-                    setStartDate(nextStart);
+              <span className="text-gray-400 shrink-0">→</span>
 
-                    // Keep endDate within [startDate, startDate + MAX_TOTAL_DAYS - 1]
-                    if (!nextStart) return;
-                    const max = (() => {
-                      const s = parseDate(nextStart);
-                      const m = new Date(s);
-                      m.setDate(m.getDate() + (MAX_TOTAL_DAYS - 1));
-                      return formatDateYMD(m);
-                    })();
-
-                    setEndDate((prevEnd) => {
-                      if (!prevEnd) return nextStart;
-                      if (prevEnd < nextStart) return nextStart;
-                      if (prevEnd > max) return max;
-                      return prevEnd;
-                    });
-                  }}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-gray-700 mb-2">종료 날짜</label>
-                <input
-                  type="date"
-                  value={endDate}
-                  min={startDate}
-                  max={maxEndDate}
-                  onChange={(e) => {
-                    const nextEnd = e.target.value;
-                    if (!nextEnd) {
-                      setEndDate(nextEnd);
-                      return;
-                    }
-
-                    if (startDate && nextEnd < startDate) {
-                      setEndDate(startDate);
-                      return;
-                    }
-
-                    if (maxEndDate && nextEnd > maxEndDate) {
-                      setEndDate(maxEndDate);
-                      return;
-                    }
-
-                    setEndDate(nextEnd);
-                  }}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
-                />
-              </div>
-            </div>
-
-            <div className="text-sm text-gray-500">
-              날짜 범위는 최대 {MAX_TOTAL_DAYS}일(약 10년)까지 가능합니다.
-              {computedTotalDays !== null && (
-                <span className="ml-2">(현재 {computedTotalDays}일)</span>
-              )}
-              {computedTotalDays !== null && computedTotalDays > MAX_TOTAL_DAYS && (
-                <div className="mt-1 text-red-600">
-                  기간이 너무 깁니다. 종료 날짜를 줄여주세요.
-                </div>
-              )}
-              {computedTotalDays !== null && computedTotalDays <= 0 && (
-                <div className="mt-1 text-red-600">종료 날짜는 시작 날짜 이후여야 합니다.</div>
-              )}
-            </div>
-
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setActiveTestament("OT")}
-                  className={`px-4 py-2 rounded-lg border-2 transition-colors ${
-                    activeTestament === "OT"
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-gray-200 hover:bg-gray-50"
-                  }`}
-                >
-                  구약
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTestament("NT")}
-                  className={`px-4 py-2 rounded-lg border-2 transition-colors ${
-                    activeTestament === "NT"
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-gray-200 hover:bg-gray-50"
-                  }`}
-                >
-                  신약
-                </button>
-              </div>
               <button
                 type="button"
                 onClick={() => {
-                  setSelectedBooks([]);
+                  if (!step1Valid) {
+                    alert("날짜 범위를 올바르게 입력해주세요");
+                    return;
+                  }
+                  setStep(2);
                 }}
-                className="px-4 py-2 rounded-lg border-2 border-gray-200 hover:bg-gray-50 transition-colors"
+                className={`flex-1 min-w-0 px-2 py-1.5 rounded-lg border-2 text-xs sm:text-sm whitespace-nowrap transition-colors ${
+                  step === 2 ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:bg-gray-50"
+                }`}
               >
-                선택 초기화
+                범위 선택
+              </button>
+
+              <span className="text-gray-400 shrink-0">→</span>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (!step1Valid) {
+                    alert("날짜 범위를 올바르게 입력해주세요");
+                    return;
+                  }
+                  if (!step2Valid) {
+                    alert("책을 1개 이상 선택해주세요");
+                    return;
+                  }
+                  setStep(3);
+                }}
+                className={`flex-1 min-w-0 px-2 py-1.5 rounded-lg border-2 text-xs sm:text-sm whitespace-nowrap transition-colors ${
+                  step === 3 ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:bg-gray-50"
+                }`}
+              >
+                순서 확인
               </button>
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => addAll("OT")}
-                className="px-4 py-2 rounded-lg border-2 border-gray-200 hover:bg-gray-50 transition-colors"
-              >
-                구약 전체 추가
-              </button>
-              <button
-                type="button"
-                onClick={() => addAll("NT")}
-                className="px-4 py-2 rounded-lg border-2 border-gray-200 hover:bg-gray-50 transition-colors"
-              >
-                신약 전체 추가
-              </button>
-              <button
-                type="button"
-                onClick={() => addAll("ALL")}
-                className="px-4 py-2 rounded-lg border-2 border-gray-200 hover:bg-gray-50 transition-colors"
-              >
-                성경 전체 추가
-              </button>
-              <button
-                type="button"
-                onClick={() => setSelectedBooks([])}
-                className="px-4 py-2 rounded-lg border-2 border-gray-200 hover:bg-gray-50 transition-colors"
-              >
-                전체 해제
-              </button>
+            <div className="mt-3 text-xs sm:text-sm text-gray-600 min-w-0 overflow-hidden">
+              <span className="font-medium text-gray-800 break-words">{finalName || "(이름 자동 생성)"}</span>
+              <span className="mx-2 text-gray-400">•</span>
+              <span>
+                {startDate} ~ {endDate}
+                {computedTotalDays !== null && <span className="text-gray-500"> (총 {computedTotalDays}일)</span>}
+              </span>
+              <span className="mx-2 text-gray-400">•</span>
+              <span>
+                책 {uniqueBookCount}권
+                {duplicateEntryCount > 0 && <span className="text-gray-500">(+중복 {duplicateEntryCount})</span>}
+              </span>
             </div>
+          </div>
 
-            <div className="p-4 border-2 border-gray-200 rounded-lg">
-              <div className="flex items-center justify-between mb-3">
-                <div className="text-gray-700 font-medium">선택한 책 {selectedLabel}</div>
-                <div className="text-sm text-gray-500">
-                  여러 권/중복 선택 가능
+          {/* Step 1 */}
+          {step === 1 && (
+            <div className="space-y-4">
+              <div className="border-2 border-gray-200 rounded-xl p-4">
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <div>
+                    <div className="text-sm text-gray-600">계획 이름</div>
+                    <div className="text-xs text-gray-500">비우면 자동</div>
+                  </div>
+                  <div className="text-xs text-gray-500">{(name ?? "").length}/{MAX_PLAN_NAME_LENGTH}</div>
                 </div>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  maxLength={MAX_PLAN_NAME_LENGTH}
+                  className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none text-sm"
+                  placeholder="예) 성경 1년 1독 / 구약 90일"
+                />
+                {!isFinalNameValid && finalName.length > MAX_PLAN_NAME_LENGTH && (
+                  <div className="text-sm text-red-600 mt-2">이름이 너무 깁니다. (최대 {MAX_PLAN_NAME_LENGTH}자)</div>
+                )}
+                {!name.trim() && autoPlanName && (
+                  <div className="mt-2 text-sm text-gray-600">
+                    자동 이름: <span className="font-medium text-gray-800">{autoPlanName}</span>
+                  </div>
+                )}
               </div>
 
-              {selectedBooks.length > 0 && (
-                <div className="mb-3 border border-gray-200 rounded-lg p-3 bg-white">
-                  <div className="text-sm text-gray-600 mb-2">읽기 순서 (위/아래로 순서 변경 가능)</div>
-                  <div className="space-y-2">
-                    {selectedBooks.map((bn, idx) => (
-                      <div key={`${bn}-${idx}`} className="flex items-center gap-2">
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm text-gray-800 truncate">
-                            {idx + 1}. {bn}
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => moveSelected(idx, idx - 1)}
-                          disabled={idx === 0}
-                          className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50"
-                          title="위로"
-                        >
-                          <ChevronUp className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => moveSelected(idx, idx + 1)}
-                          disabled={idx === selectedBooks.length - 1}
-                          className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50"
-                          title="아래로"
-                        >
-                          <ChevronDown className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => removeSelectedAt(idx)}
-                          className="p-2 rounded-lg border border-gray-200 hover:bg-red-50 text-red-600"
-                          title="삭제"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
+              <div className="border-2 border-gray-200 rounded-xl p-4">
+                <div className="mb-3">
+                  <div className="text-sm text-gray-600">날짜 범위</div>
+                  <div className="text-xs text-gray-500">최대 {MAX_TOTAL_DAYS}일</div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-gray-700 mb-2">시작 날짜</label>
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => {
+                        const nextStart = e.target.value;
+                        setStartDate(nextStart);
+
+                        // Keep endDate within [startDate, startDate + MAX_TOTAL_DAYS - 1]
+                        if (!nextStart) return;
+                        const max = (() => {
+                          const s = parseDate(nextStart);
+                          const m = new Date(s);
+                          m.setDate(m.getDate() + (MAX_TOTAL_DAYS - 1));
+                          return formatDateYMD(m);
+                        })();
+
+                        setEndDate((prevEnd) => {
+                          if (!prevEnd) return nextStart;
+                          if (prevEnd < nextStart) return nextStart;
+                          if (prevEnd > max) return max;
+                          return prevEnd;
+                        });
+                      }}
+                      className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-gray-700 mb-2">종료 날짜</label>
+                    <input
+                      type="date"
+                      value={endDate}
+                      min={startDate}
+                      max={maxEndDate}
+                      onChange={(e) => {
+                        const nextEnd = e.target.value;
+                        if (!nextEnd) {
+                          setEndDate(nextEnd);
+                          return;
+                        }
+
+                        if (startDate && nextEnd < startDate) {
+                          setEndDate(startDate);
+                          return;
+                        }
+
+                        if (maxEndDate && nextEnd > maxEndDate) {
+                          setEndDate(maxEndDate);
+                          return;
+                        }
+
+                        setEndDate(nextEnd);
+                      }}
+                      className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none text-sm"
+                    />
                   </div>
                 </div>
-              )}
-
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
-                {visibleBooks.map((bn) => {
-                  const count = countsByBook.get(bn) ?? 0;
-                  return (
-                    <button
-                      key={bn}
-                      type="button"
-                      onClick={() => addBook(bn)}
-                      className={`px-3 py-2 rounded-lg border-2 text-sm transition-colors ${
-                        count > 0 ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:bg-gray-50"
-                      }`}
-                      title={bn}
-                    >
-                      <span className="inline-flex items-center gap-1">
-                        <span>{bn}</span>
-                        {count > 0 && <span className="text-xs text-blue-700">x{count}</span>}
-                      </span>
-                    </button>
-                  );
-                })}
+                <div className="text-sm text-gray-500 mt-3">
+                  {computedTotalDays !== null && <span>현재 {computedTotalDays}일</span>}
+                  {maxEndDate && <span className="ml-2">(최대 종료 날짜: {maxEndDate})</span>}
+                  {computedTotalDays !== null && computedTotalDays > MAX_TOTAL_DAYS && (
+                    <div className="mt-1 text-red-600">기간이 너무 깁니다. 종료 날짜를 줄여주세요.</div>
+                  )}
+                  {computedTotalDays !== null && computedTotalDays <= 0 && (
+                    <div className="mt-1 text-red-600">종료 날짜는 시작 날짜 이후여야 합니다.</div>
+                  )}
+                </div>
               </div>
             </div>
+          )}
 
-            <p className="text-sm text-gray-500">
-              기본은 장 단위로 생성하며, 날짜가 더 길면 절 단위로 자동 생성합니다.
-            </p>
-          </div>
+          {/* Step 2 */}
+          {step === 2 && (
+            <div className="space-y-4">
+              <div className="border-2 border-gray-200 rounded-xl p-4">
+                <div className="text-sm text-gray-600 mb-4">책 선택</div>
+
+                {/* OT/NT Tabs */}
+                <div className="flex items-center gap-2 mb-4">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTestament("OT")}
+                    className={`px-2 py-1.5 rounded-lg border-2 text-xs sm:text-sm whitespace-nowrap transition-colors min-w-0 ${
+                      activeTestament === "OT"
+                        ? "border-blue-500 bg-blue-50"
+                        : "border-gray-200 hover:bg-gray-50"
+                    }`}
+                  >
+                    구약
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTestament("NT")}
+                    className={`px-2 py-1.5 rounded-lg border-2 text-xs sm:text-sm whitespace-nowrap transition-colors min-w-0 ${
+                      activeTestament === "NT"
+                        ? "border-blue-500 bg-blue-50"
+                        : "border-gray-200 hover:bg-gray-50"
+                    }`}
+                  >
+                    신약
+                  </button>
+
+                  <div className="flex-1" />
+                  <button
+                    type="button"
+                    onClick={resetSelection}
+                    className="p-1.5 rounded-lg border-2 border-gray-200 hover:bg-gray-50 transition-colors"
+                    title="전체 초기화"
+                  >
+                    <RotateCcw className="w-4 h-4 text-gray-700" />
+                  </button>
+                </div>
+
+                {/* Active Tab Panel */}
+                {activeTestament === "OT" ? (
+                  <div className="border border-gray-200 rounded-lg p-3 min-w-0">
+                    <div className="flex items-center justify-between gap-2 mb-3">
+                      <div className="font-medium text-gray-800">구약</div>
+                      <div className="flex items-center gap-2">
+                        <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                          <input
+                            type="checkbox"
+                            checked={otAllSelected}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              if (checked) setSectionAll("OT", clampRepeat(otRepeat) || 1);
+                              else clearSection("OT");
+                            }}
+                          />
+                          전체 선택
+                        </label>
+
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs text-gray-600 whitespace-nowrap">반복</span>
+                          <input
+                            type="number"
+                            min={1}
+                            max={10}
+                            value={otRepeat}
+                            onChange={(e) => {
+                              const v = clampRepeat(Number(e.target.value)) || 1;
+                              setOtRepeat(v);
+                              if (otAllSelected) setSectionAll("OT", v);
+                            }}
+                            className="w-14 px-2 py-1 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none text-sm"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => clearSection("OT")}
+                            className="p-1.5 rounded-lg border-2 border-gray-200 hover:bg-gray-50 transition-colors"
+                            title="구약 초기화"
+                          >
+                            <RotateCcw className="w-4 h-4 text-gray-700" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="max-h-80 overflow-y-auto pr-1 space-y-2">
+                      {otBooks.map((bn) => {
+                        const count = countsByBook.get(bn) ?? 0;
+                        return (
+                          <div key={bn} className="flex items-center gap-2 border border-gray-200 rounded-lg px-2 py-2 bg-white min-w-0">
+                            <button
+                              type="button"
+                              onClick={() => setBookCount(bn, count + 1)}
+                              className="flex-1 min-w-0 text-left"
+                              title={bn}
+                            >
+                              <div className="text-sm text-gray-800 truncate">{bn}</div>
+                            </button>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => setBookCount(bn, Math.max(0, count - 1))}
+                                className="w-7 h-7 rounded-lg border-2 border-gray-200 hover:bg-gray-50 text-sm"
+                                title="-1"
+                              >
+                                −
+                              </button>
+                              <div className={`w-9 text-center text-xs sm:text-sm font-medium ${count > 0 ? "text-blue-700" : "text-gray-400"}`}>
+                                x{count}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => setBookCount(bn, count + 1)}
+                                className="w-7 h-7 rounded-lg border-2 border-gray-200 hover:bg-gray-50 text-sm"
+                                title="+1"
+                              >
+                                +
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="border border-gray-200 rounded-lg p-3 min-w-0">
+                    <div className="flex items-center justify-between gap-2 mb-3">
+                      <div className="font-medium text-gray-800">신약</div>
+                      <div className="flex items-center gap-2">
+                        <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                          <input
+                            type="checkbox"
+                            checked={ntAllSelected}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              if (checked) setSectionAll("NT", clampRepeat(ntRepeat) || 1);
+                              else clearSection("NT");
+                            }}
+                          />
+                          전체 선택
+                        </label>
+
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs text-gray-600 whitespace-nowrap">반복</span>
+                          <input
+                            type="number"
+                            min={1}
+                            max={10}
+                            value={ntRepeat}
+                            onChange={(e) => {
+                              const v = clampRepeat(Number(e.target.value)) || 1;
+                              setNtRepeat(v);
+                              if (ntAllSelected) setSectionAll("NT", v);
+                            }}
+                            className="w-14 px-2 py-1 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none text-sm"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => clearSection("NT")}
+                            className="p-1.5 rounded-lg border-2 border-gray-200 hover:bg-gray-50 transition-colors"
+                            title="신약 초기화"
+                          >
+                            <RotateCcw className="w-4 h-4 text-gray-700" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="max-h-80 overflow-y-auto pr-1 space-y-2">
+                      {ntBooks.map((bn) => {
+                        const count = countsByBook.get(bn) ?? 0;
+                        return (
+                          <div key={bn} className="flex items-center gap-2 border border-gray-200 rounded-lg px-2 py-2 bg-white min-w-0">
+                            <button
+                              type="button"
+                              onClick={() => setBookCount(bn, count + 1)}
+                              className="flex-1 min-w-0 text-left"
+                              title={bn}
+                            >
+                              <div className="text-sm text-gray-800 truncate">{bn}</div>
+                            </button>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => setBookCount(bn, Math.max(0, count - 1))}
+                                className="w-7 h-7 rounded-lg border-2 border-gray-200 hover:bg-gray-50 text-sm"
+                                title="-1"
+                              >
+                                −
+                              </button>
+                              <div className={`w-9 text-center text-xs sm:text-sm font-medium ${count > 0 ? "text-blue-700" : "text-gray-400"}`}>
+                                x{count}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => setBookCount(bn, count + 1)}
+                                className="w-7 h-7 rounded-lg border-2 border-gray-200 hover:bg-gray-50 text-sm"
+                                title="+1"
+                              >
+                                +
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                <div className="text-xs text-gray-500 mt-3 break-words">
+                  선택: {selectedBooks.length}항목
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Step 3 */}
+          {step === 3 && (
+            <div className="space-y-4">
+              <div className="border-2 border-gray-200 rounded-xl p-4">
+                <div className="flex items-start justify-between gap-3 mb-3 min-w-0">
+                  <div>
+                    <div className="text-sm text-gray-600">선택된 리스트 최종 확인</div>
+                    <div className="text-xs text-gray-500">드래그로 순서 변경</div>
+                  </div>
+                </div>
+
+                {selectedBooks.length === 0 ? (
+                  <div className="text-sm text-gray-500">아직 선택된 책이 없습니다.</div>
+                ) : (
+                  <div className="max-h-72 overflow-y-auto pr-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {selectedBooks.map((bn, idx) => (
+                        <div key={`${bn}-${idx}`} className="inline-flex items-center gap-2">
+                          <div
+                            draggable
+                            onDragStart={() => {
+                              setDraggingIndex(idx);
+                              setDropTargetIndex(null);
+                            }}
+                            onDragEnd={() => {
+                              setDraggingIndex(null);
+                              setDropTargetIndex(null);
+                            }}
+                            onDragOver={(e) => {
+                              e.preventDefault();
+                              setDropTargetIndex(idx);
+                            }}
+                            onDrop={() => {
+                              if (draggingIndex === null || draggingIndex === idx) {
+                                setDropTargetIndex(null);
+                                return;
+                              }
+                              moveSelected(draggingIndex, idx);
+                              setDraggingIndex(null);
+                              setDropTargetIndex(null);
+                            }}
+                            className={`inline-flex items-center gap-2 rounded-full border bg-white px-3 py-1.5 max-w-full min-w-0 transition-colors ${
+                              draggingIndex === idx ? "opacity-60" : ""
+                            } ${
+                              dropTargetIndex === idx && draggingIndex !== null && draggingIndex !== idx
+                                ? "border-blue-500 ring-2 ring-blue-200"
+                                : "border-gray-200"
+                            }`}
+                            title="드래그해서 이동"
+                          >
+                            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-700 text-xs font-medium shrink-0">
+                              {idx + 1}
+                            </span>
+                            <span className="text-sm text-gray-800 truncate max-w-[9rem]">{bn}</span>
+
+                            <button
+                              type="button"
+                              onClick={() => removeSelectedAt(idx)}
+                              className="w-6 h-6 rounded-lg border-2 border-gray-200 hover:bg-red-50 text-red-600 shrink-0 text-sm"
+                              title="삭제"
+                            >
+                              ×
+                            </button>
+                          </div>
+
+                          {idx < selectedBooks.length - 1 && (
+                            <span className="text-gray-400 select-none">→</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="text-xs text-gray-500 mt-3 break-words">
+                  중복 선택 = 2독/3독
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
-        <div className="sticky bottom-0 bg-white border-t-2 border-gray-200 p-6 flex gap-4">
-          <button
-            onClick={onClose}
-            className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            취소
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={selectedBooks.length === 0 || !startDate || !endDate || isDateRangeInvalid}
-            className="flex-1 px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:hover:bg-blue-500"
-          >
-            계획 생성
-          </button>
+        <div className="sticky bottom-0 bg-white border-t-2 border-gray-200 p-6 space-y-3">
+          {/* 수치 기반 요약 */}
+          <div className="text-xs sm:text-sm text-gray-700">
+            {selectedBooks.length === 0 || computedTotalDays === null || computedTotalDays <= 0 ? (
+              <span className="text-gray-500">책과 날짜를 선택하면 요약이 표시됩니다.</span>
+            ) : (
+              <span>
+                총 <span className="font-medium">{uniqueBookCount}권</span>
+                {duplicateEntryCount > 0 && (
+                  <span className="text-gray-600">(+중복 {duplicateEntryCount})</span>
+                )}
+                {` (${totalChapters}장)을 `}
+                <span className="font-medium">{computedTotalDays}일</span> 동안 읽습니다.
+                {avgChaptersPerDay !== null && (
+                  <span className="text-gray-600"> (하루 평균 {avgChaptersPerDay.toFixed(1)}장)</span>
+                )}
+              </span>
+            )}
+          </div>
+
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="px-3 py-2.5 border-2 border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-sm"
+            >
+              취소
+            </button>
+
+            <div className="flex-1 flex gap-3">
+              {step > 1 && (
+                <button
+                  type="button"
+                  onClick={goPrev}
+                  className="flex-1 px-3 py-2.5 border-2 border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-sm"
+                >
+                  이전
+                </button>
+              )}
+
+              {step < 3 ? (
+                <button
+                  type="button"
+                  onClick={goNext}
+                  className="flex-1 px-3 py-2.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
+                >
+                  다음
+                </button>
+              ) : (
+                <button
+                  onClick={handleSave}
+                  disabled={isCreateDisabled}
+                  className="flex-1 px-3 py-2.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:hover:bg-blue-500 text-sm"
+                >
+                  계획 생성
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
