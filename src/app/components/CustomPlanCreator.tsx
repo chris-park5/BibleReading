@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { X, BookPlus, RotateCcw } from "lucide-react";
+import { X, BookPlus } from "lucide-react";
 import { BIBLE_BOOKS } from "../data/bibleBooks";
 import { generateScheduleFromSelectedBooks } from "../utils/generateScheduleFromSelectedBooks";
 
@@ -229,10 +229,6 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
     });
   };
 
-  const resetSelection = () => {
-    setSelectedBooks([]);
-  };
-
   const step1Valid = !isDateRangeInvalid && !!startDate && !!endDate;
   const step2Valid = selectedBooks.length > 0;
 
@@ -335,7 +331,7 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
                 <BookPlus className="w-6 h-6 text-blue-600" />
               </div>
               <div>
-                <h2>사용자 지정 계획 만들기</h2>
+                <h2>새 계획 만들기</h2>
                 <p className="text-gray-600 text-sm">날짜 + 책 선택</p>
               </div>
             </div>
@@ -401,20 +397,6 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
               >
                 순서 확인
               </button>
-            </div>
-
-            <div className="mt-3 text-xs sm:text-sm text-gray-600 min-w-0 overflow-hidden">
-              <span className="font-medium text-gray-800 break-words">{finalName || "(이름 자동 생성)"}</span>
-              <span className="mx-2 text-gray-400">•</span>
-              <span>
-                {startDate} ~ {endDate}
-                {computedTotalDays !== null && <span className="text-gray-500"> (총 {computedTotalDays}일)</span>}
-              </span>
-              <span className="mx-2 text-gray-400">•</span>
-              <span>
-                책 {uniqueBookCount}권
-                {duplicateEntryCount > 0 && <span className="text-gray-500">(+중복 {duplicateEntryCount})</span>}
-              </span>
             </div>
           </div>
 
@@ -557,14 +539,6 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
                   </button>
 
                   <div className="flex-1" />
-                  <button
-                    type="button"
-                    onClick={resetSelection}
-                    className="p-1.5 rounded-lg border-2 border-gray-200 hover:bg-gray-50 transition-colors"
-                    title="전체 초기화"
-                  >
-                    <RotateCcw className="w-4 h-4 text-gray-700" />
-                  </button>
                 </div>
 
                 {/* Active Tab Panel */}
@@ -587,26 +561,39 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
                         </label>
 
                         <div className="flex items-center gap-1">
-                          <span className="text-xs text-gray-600 whitespace-nowrap">반복</span>
-                          <input
-                            type="number"
-                            min={1}
-                            max={10}
-                            value={otRepeat}
-                            onChange={(e) => {
-                              const v = clampRepeat(Number(e.target.value)) || 1;
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const v = Math.max(1, clampRepeat(otRepeat - 1) || 1);
                               setOtRepeat(v);
                               if (otAllSelected) setSectionAll("OT", v);
                             }}
-                            className="w-14 px-2 py-1 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none text-sm"
-                          />
+                            className="w-7 h-7 rounded-lg border-2 border-gray-200 hover:bg-gray-50 text-sm"
+                            title="-"
+                          >
+                            −
+                          </button>
+                          <div className="w-10 text-center text-xs sm:text-sm font-medium text-gray-700">x{otRepeat}</div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const v = Math.min(10, clampRepeat(otRepeat + 1) || 1);
+                              setOtRepeat(v);
+                              if (otAllSelected) setSectionAll("OT", v);
+                            }}
+                            className="w-7 h-7 rounded-lg border-2 border-gray-200 hover:bg-gray-50 text-sm"
+                            title="+"
+                          >
+                            +
+                          </button>
+
                           <button
                             type="button"
                             onClick={() => clearSection("OT")}
-                            className="p-1.5 rounded-lg border-2 border-gray-200 hover:bg-gray-50 transition-colors"
+                            className="px-2 py-1.5 rounded-lg border-2 border-gray-200 hover:bg-gray-50 transition-colors text-xs sm:text-sm"
                             title="구약 초기화"
                           >
-                            <RotateCcw className="w-4 h-4 text-gray-700" />
+                            초기화
                           </button>
                         </div>
                       </div>
@@ -670,26 +657,39 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
                         </label>
 
                         <div className="flex items-center gap-1">
-                          <span className="text-xs text-gray-600 whitespace-nowrap">반복</span>
-                          <input
-                            type="number"
-                            min={1}
-                            max={10}
-                            value={ntRepeat}
-                            onChange={(e) => {
-                              const v = clampRepeat(Number(e.target.value)) || 1;
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const v = Math.max(1, clampRepeat(ntRepeat - 1) || 1);
                               setNtRepeat(v);
                               if (ntAllSelected) setSectionAll("NT", v);
                             }}
-                            className="w-14 px-2 py-1 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none text-sm"
-                          />
+                            className="w-7 h-7 rounded-lg border-2 border-gray-200 hover:bg-gray-50 text-sm"
+                            title="-"
+                          >
+                            −
+                          </button>
+                          <div className="w-10 text-center text-xs sm:text-sm font-medium text-gray-700">x{ntRepeat}</div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const v = Math.min(10, clampRepeat(ntRepeat + 1) || 1);
+                              setNtRepeat(v);
+                              if (ntAllSelected) setSectionAll("NT", v);
+                            }}
+                            className="w-7 h-7 rounded-lg border-2 border-gray-200 hover:bg-gray-50 text-sm"
+                            title="+"
+                          >
+                            +
+                          </button>
+
                           <button
                             type="button"
                             onClick={() => clearSection("NT")}
-                            className="p-1.5 rounded-lg border-2 border-gray-200 hover:bg-gray-50 transition-colors"
+                            className="px-2 py-1.5 rounded-lg border-2 border-gray-200 hover:bg-gray-50 transition-colors text-xs sm:text-sm"
                             title="신약 초기화"
                           >
-                            <RotateCcw className="w-4 h-4 text-gray-700" />
+                            초기화
                           </button>
                         </div>
                       </div>
