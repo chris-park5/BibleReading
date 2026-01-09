@@ -135,21 +135,16 @@ class LazyRouteErrorBoundary extends Component<
           : String(this.state.error);
 
       return (
-        <div className="min-h-screen bg-white p-6">
-          <div className="max-w-md mx-auto">
+        <div className="min-h-screen bg-muted/30 p-6">
+          <div className="max-w-md mx-auto bg-card text-card-foreground border border-border rounded-xl p-6">
             <h1 className="text-lg font-semibold mb-2">화면을 불러오지 못했습니다</h1>
-            <p className="text-sm text-gray-700 mb-4">
+            <p className="text-sm text-muted-foreground mb-4">
               네트워크 상태 또는 캐시 문제로 페이지 로딩이 실패할 수 있습니다. 새로고침 후 다시 시도해주세요.
             </p>
-            <pre className="text-xs text-gray-600 whitespace-pre-wrap break-words border border-gray-200 rounded-md p-3 mb-4">
+            <pre className="text-xs text-muted-foreground whitespace-pre-wrap break-words border border-border rounded-md bg-muted/30 p-3 mb-4">
               {message}
             </pre>
-            <button
-              className="px-4 py-2 rounded-md bg-blue-600 text-white"
-              onClick={() => window.location.reload()}
-            >
-              새로고침
-            </button>
+            <Button onClick={() => window.location.reload()}>새로고침</Button>
           </div>
         </div>
       );

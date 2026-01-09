@@ -64,56 +64,56 @@ export function DeveloperPlansPage({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-6">
+    <div className="min-h-screen bg-muted/30 p-6">
       <div className="max-w-4xl mx-auto">
         <div className="flex items-start justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-500 rounded-xl">
+            <div className="inline-flex items-center justify-center w-12 h-12 bg-primary rounded-xl">
               <BookPlus className="w-6 h-6 text-white" />
             </div>
             <div>
               <h1 className="mb-1">개발자 계획 등록</h1>
-              <p className="text-gray-600">JSON 계획을 업로드하여 추천 계획으로 등록합니다</p>
+              <p className="text-muted-foreground">JSON 계획을 업로드하여 추천 계획으로 등록합니다</p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-white rounded-lg transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-muted-foreground hover:bg-accent rounded-lg transition-colors"
           >
             <X className="w-5 h-5" />
             닫기
           </button>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-          <label className="block text-gray-700 mb-2">계획 JSON 업로드</label>
+        <div className="bg-card text-card-foreground rounded-xl border border-border p-6 mb-6">
+          <label className="block text-muted-foreground mb-2">계획 JSON 업로드</label>
           <div className="flex items-center gap-3">
             <input
               type="file"
               accept=".json"
               onChange={handleUpload}
               disabled={busy}
-              className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
+              className="flex-1 px-4 py-3 border border-border rounded-lg bg-input-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
-            <div className="flex items-center gap-2 text-gray-600">
+            <div className="flex items-center gap-2 text-muted-foreground">
               <FileUp className="w-5 h-5" />
               <span className="text-sm">id/title/schedule 필요</span>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="bg-card text-card-foreground rounded-xl border border-border p-6">
           <h2 className="mb-4">등록된 개발자 계획</h2>
           {plans.length === 0 ? (
-            <p className="text-gray-600">아직 등록된 계획이 없습니다.</p>
+            <p className="text-muted-foreground">아직 등록된 계획이 없습니다.</p>
           ) : (
             <div className="space-y-3">
               {plans.map((p) => (
-                <div key={p.id} className="flex items-center justify-between p-4 border-2 border-gray-100 rounded-lg">
+                <div key={p.id} className="flex items-center justify-between p-4 border border-border rounded-lg">
                   <div>
                     <div className="font-semibold">{p.title}</div>
-                    <div className="text-sm text-gray-600">{p.totalDays}일 · id: {p.id}</div>
+                    <div className="text-sm text-muted-foreground">{p.totalDays}일 · id: {p.id}</div>
                   </div>
                   <button
                     onClick={() => handleRemove(p.id)}

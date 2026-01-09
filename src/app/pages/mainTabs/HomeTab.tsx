@@ -228,28 +228,28 @@ export function HomeTab() {
     return (
       <div className="max-w-4xl mx-auto p-6">
         {incomingRequestsCount > 0 && (
-          <div className="bg-white border-2 border-gray-200 rounded-xl p-4 mb-4 flex items-center justify-between gap-4">
+          <div className="bg-card text-card-foreground border border-border rounded-xl p-4 mb-4 flex items-center justify-between gap-4">
             <div>
               <p>새 친구 요청이 있습니다</p>
-              <p className="text-sm text-gray-600">{incomingRequestsCount}개</p>
+              <p className="text-sm text-muted-foreground">{incomingRequestsCount}개</p>
             </div>
             <button
               type="button"
               onClick={() => setHashTab("friends")}
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-colors"
             >
               확인하기
             </button>
           </div>
         )}
 
-        <div className="bg-white border-2 border-gray-200 rounded-xl p-6 text-center">
-          <p className="text-gray-700">현재 진행 중인 계획이 없습니다.</p>
-          <p className="text-gray-500 text-sm mt-1">계획을 추가하면 홈에서 오늘 읽을 분량을 볼 수 있습니다.</p>
+        <div className="bg-card text-card-foreground border border-border rounded-xl p-6 text-center">
+          <p>현재 진행 중인 계획이 없습니다.</p>
+          <p className="text-muted-foreground text-sm mt-1">계획을 추가하면 홈에서 오늘 읽을 분량을 볼 수 있습니다.</p>
           <button
             type="button"
             onClick={() => setHashTab("add")}
-            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-colors"
           >
             계획 추가로 이동
           </button>
@@ -278,38 +278,38 @@ export function HomeTab() {
     return (
       <div className="max-w-4xl mx-auto p-6 space-y-4">
         {incomingRequestsCount > 0 && (
-          <div className="bg-white border-2 border-gray-200 rounded-xl p-4 flex items-center justify-between gap-4">
+          <div className="bg-card text-card-foreground border border-border rounded-xl p-4 flex items-center justify-between gap-4">
             <div>
               <p>새 친구 요청이 있습니다</p>
-              <p className="text-sm text-gray-600">{incomingRequestsCount}개</p>
+              <p className="text-sm text-muted-foreground">{incomingRequestsCount}개</p>
             </div>
             <button
               type="button"
               onClick={() => setHashTab("friends")}
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-colors"
             >
               확인하기
             </button>
           </div>
         )}
-        <div className="bg-white border-2 border-gray-200 rounded-xl p-4">
+        <div className="bg-card text-card-foreground border border-border rounded-xl p-4">
           <div className="flex items-center justify-between gap-2">
             <button
               type="button"
               onClick={handlePrevDay}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-accent rounded-lg transition-colors"
               title="이전 날"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
             <div className="flex-1 text-center">
-              <p className="text-sm text-gray-600">{isToday ? "오늘" : "선택한 날짜"}</p>
+              <p className="text-sm text-muted-foreground">{isToday ? "오늘" : "선택한 날짜"}</p>
               <p className="text-lg">{viewDateLabel}</p>
             </div>
             <button
               type="button"
               onClick={handleNextDay}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 hover:bg-accent rounded-lg transition-colors"
               title="다음 날"
             >
               <ChevronRight className="w-5 h-5" />
@@ -319,15 +319,15 @@ export function HomeTab() {
             <button
               type="button"
               onClick={handleToday}
-              className="w-full mt-2 px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+              className="w-full mt-2 px-3 py-2 text-sm text-primary hover:bg-primary/10 rounded-lg transition-colors"
             >
               오늘로 돌아가기
             </button>
           )}
         </div>
-        <div className="bg-white border-2 border-gray-200 rounded-xl p-6 text-center">
-          <p className="text-gray-700">이 날짜에 읽을 계획이 없습니다.</p>
-          <p className="text-gray-500 text-sm mt-1">다른 날짜를 선택하거나 계획을 추가해주세요.</p>
+        <div className="bg-card text-card-foreground border border-border rounded-xl p-6 text-center">
+          <p>이 날짜에 읽을 계획이 없습니다.</p>
+          <p className="text-muted-foreground text-sm mt-1">다른 날짜를 선택하거나 계획을 추가해주세요.</p>
         </div>
       </div>
     );
@@ -336,38 +336,38 @@ export function HomeTab() {
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-4">
       {incomingRequestsCount > 0 && (
-        <div className="bg-white border-2 border-gray-200 rounded-xl p-4 flex items-center justify-between gap-4">
+        <div className="bg-card text-card-foreground border border-border rounded-xl p-4 flex items-center justify-between gap-4">
           <div>
             <p>새 친구 요청이 있습니다</p>
-            <p className="text-sm text-gray-600">{incomingRequestsCount}개</p>
+            <p className="text-sm text-muted-foreground">{incomingRequestsCount}개</p>
           </div>
           <button
             type="button"
             onClick={() => setHashTab("friends")}
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-colors"
           >
             확인하기
           </button>
         </div>
       )}
-      <div className="bg-white border-2 border-gray-200 rounded-xl p-4">
+      <div className="bg-card text-card-foreground border border-border rounded-xl p-4">
         <div className="flex items-center justify-between gap-2">
           <button
             type="button"
             onClick={handlePrevDay}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-accent rounded-lg transition-colors"
             title="이전 날"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
           <div className="flex-1 text-center">
-            <p className="text-sm text-gray-600">{isToday ? "오늘" : "선택한 날짜"}</p>
+            <p className="text-sm text-muted-foreground">{isToday ? "오늘" : "선택한 날짜"}</p>
             <p className="text-lg">{viewDateLabel}</p>
           </div>
           <button
             type="button"
             onClick={handleNextDay}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-accent rounded-lg transition-colors"
             title="다음 날"
           >
             <ChevronRight className="w-5 h-5" />
@@ -377,7 +377,7 @@ export function HomeTab() {
           <button
             type="button"
             onClick={handleToday}
-            className="w-full mt-2 px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+            className="w-full mt-2 px-3 py-2 text-sm text-primary hover:bg-primary/10 rounded-lg transition-colors"
           >
             오늘로 돌아가기
           </button>
