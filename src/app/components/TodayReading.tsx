@@ -24,15 +24,15 @@ export function TodayReading({
   const allCompleted = readings.length > 0 && completedByIndex.every(Boolean);
 
   return (
-    <div className="bg-white rounded-xl border-2 border-gray-200 p-6">
+    <div className="bg-card text-card-foreground rounded-xl border border-border p-6">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <div className="p-3 bg-blue-100 rounded-lg">
-            <BookOpenCheck className="w-6 h-6 text-blue-600" />
+          <div className="p-3 bg-primary/10 rounded-lg">
+            <BookOpenCheck className="w-6 h-6 text-primary" />
           </div>
           <div>
             <h2>{typeof day === "number" ? `Day ${day}` : "오늘"}</h2>
-            {subtitle ? <p className="text-gray-600">{subtitle}</p> : null}
+            {subtitle ? <p className="text-sm text-muted-foreground">{subtitle}</p> : null}
           </div>
         </div>
         <div
@@ -58,18 +58,18 @@ export function TodayReading({
             className={`w-full p-4 rounded-lg border-2 text-left transition-colors flex items-center justify-between gap-3 ${
               completedByIndex[index]
                 ? "border-green-200 bg-green-50"
-                : "border-gray-200 bg-gray-50 hover:bg-gray-100"
+                : "border-border bg-muted/40 hover:bg-muted/60"
             }`}
           >
             <div className="min-w-0">
-              <p className="text-xs text-gray-600 break-words">{reading.planName ?? ""}</p>
-              <p className="text-gray-900 break-words">{reading.book}</p>
-              <p className="text-gray-600 text-sm break-words">{reading.chapters}</p>
+              <p className="text-xs text-muted-foreground break-words">{reading.planName ?? ""}</p>
+              <p className="break-words">{reading.book}</p>
+              <p className="text-sm text-muted-foreground break-words">{reading.chapters}</p>
             </div>
             {completedByIndex[index] ? (
               <CheckCircle className="w-5 h-5 text-green-600 shrink-0" />
             ) : (
-              <Circle className="w-5 h-5 text-gray-400 shrink-0" />
+              <Circle className="w-5 h-5 text-muted-foreground/60 shrink-0" />
             )}
           </button>
         ))}

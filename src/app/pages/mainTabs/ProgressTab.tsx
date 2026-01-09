@@ -88,9 +88,9 @@ export function ProgressTab() {
   if (!activePlanId || !plan || !progress) {
     return (
       <div className="max-w-4xl mx-auto p-6">
-        <div className="bg-white border-2 border-gray-200 rounded-xl p-6 text-center">
-          <p className="text-gray-700">진도율을 보려면 계획을 선택해주세요.</p>
-          <p className="text-gray-500 text-sm mt-1">계획 추가 탭에서 계획을 추가할 수 있습니다.</p>
+        <div className="bg-card text-card-foreground border border-border rounded-xl p-6 text-center">
+          <p>진도율을 보려면 계획을 선택해주세요.</p>
+          <p className="text-muted-foreground text-sm mt-1">계획 추가 탭에서 계획을 추가할 수 있습니다.</p>
         </div>
       </div>
     );
@@ -127,10 +127,10 @@ export function ProgressTab() {
               key={p.id}
               type="button"
               onClick={() => selectPlan(p.id)}
-              className={`shrink-0 px-3 py-2 rounded-lg border-2 text-sm transition-colors ${
+              className={`shrink-0 px-3 py-2 rounded-lg border text-sm transition-colors ${
                 p.id === activePlanId
-                  ? "border-blue-500 bg-blue-50 text-blue-700"
-                  : "border-gray-200 bg-white text-gray-700"
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border bg-card text-muted-foreground hover:bg-accent"
               }`}
             >
               <span className="block max-w-[10rem] text-center text-xs leading-snug whitespace-normal break-words line-clamp-2">
@@ -141,28 +141,28 @@ export function ProgressTab() {
         </div>
       )}
 
-      <div className="bg-white border-2 border-gray-200 rounded-xl p-4">
-        <p className="text-sm text-gray-600">진도율</p>
+      <div className="bg-card text-card-foreground border border-border rounded-xl p-4">
+        <p className="text-sm text-muted-foreground">진도율</p>
         <p className="text-lg">{plan.name}</p>
       </div>
 
-      <div className="bg-white border-2 border-gray-200 rounded-xl p-4">
-        <p className="text-sm text-gray-600">달성률</p>
+      <div className="bg-card text-card-foreground border border-border rounded-xl p-4">
+        <p className="text-sm text-muted-foreground">달성률</p>
         <p className="text-2xl font-semibold">{completionRateElapsed}%</p>
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-sm text-muted-foreground mt-1">
           오늘까지 {elapsedChapters}장 중 {completedChaptersUpToToday}장 완료
         </p>
-        <p className="text-gray-600 mt-1">{completionMessage}</p>
+        <p className="text-muted-foreground mt-1">{completionMessage}</p>
       </div>
 
       <ProgressChart totalChapters={totalChapters} completedChapters={completedChapters} />
 
-      <div className="bg-white border-2 border-gray-200 rounded-xl p-3 flex gap-2">
+      <div className="bg-card text-card-foreground border border-border rounded-xl p-2 flex gap-2">
         <button
           type="button"
           onClick={() => setViewMode("day")}
-          className={`flex-1 px-3 py-2 rounded-lg border-2 text-sm transition-colors ${
-            viewMode === "day" ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-200 bg-white"
+          className={`flex-1 px-3 py-2 rounded-lg border text-sm transition-colors ${
+            viewMode === "day" ? "border-primary bg-primary/10 text-primary" : "border-border bg-card hover:bg-accent"
           }`}
         >
           일자별
@@ -170,8 +170,8 @@ export function ProgressTab() {
         <button
           type="button"
           onClick={() => setViewMode("book")}
-          className={`flex-1 px-3 py-2 rounded-lg border-2 text-sm transition-colors ${
-            viewMode === "book" ? "border-blue-500 bg-blue-50 text-blue-700" : "border-gray-200 bg-white"
+          className={`flex-1 px-3 py-2 rounded-lg border text-sm transition-colors ${
+            viewMode === "book" ? "border-primary bg-primary/10 text-primary" : "border-border bg-card hover:bg-accent"
           }`}
         >
           성경별
@@ -275,41 +275,41 @@ export function ProgressTab() {
           })()}
         </>
       ) : (
-        <div className="bg-white border-2 border-gray-200 rounded-xl p-4">
-          <div className="text-sm text-gray-600 mb-3">책별 진행</div>
+        <div className="bg-card text-card-foreground border border-border rounded-xl p-4">
+          <div className="text-sm text-muted-foreground mb-3">책별 진행</div>
 
           <div className="mb-3 flex items-center gap-2">
             <div className="relative flex-1 min-w-0">
-              <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Search className="w-4 h-4 text-muted-foreground/60 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 value={bookQuery}
                 onChange={(e) => setBookQuery(e.target.value)}
                 placeholder="책 이름 검색 (예: 히브리서)"
-                className="w-full pl-9 pr-3 py-2 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none text-sm"
+                className="w-full pl-9 pr-3 py-2 border border-border rounded-lg bg-input-background text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
             </div>
             {normalizedBookQuery && (
-              <div className="text-xs text-gray-500 whitespace-nowrap">{filteredBookRows.length}권</div>
+              <div className="text-xs text-muted-foreground whitespace-nowrap">{filteredBookRows.length}권</div>
             )}
           </div>
 
           {bookProgressRows.length === 0 ? (
-            <div className="text-sm text-gray-500">표시할 데이터가 없습니다.</div>
+            <div className="text-sm text-muted-foreground">표시할 데이터가 없습니다.</div>
           ) : filteredBookRows.length === 0 ? (
-            <div className="text-sm text-gray-500">검색 결과가 없습니다.</div>
+            <div className="text-sm text-muted-foreground">검색 결과가 없습니다.</div>
           ) : (
             <div className="space-y-2">
               {filteredBookRows.map((row) => (
-                <div key={row.book} className="border border-gray-200 rounded-lg p-3">
+                <div key={row.book} className="border border-border rounded-lg p-3 bg-card">
                   <div className="flex items-center justify-between gap-3 min-w-0">
                     <div className="min-w-0">
-                      <div className="text-sm text-gray-900 truncate">{row.book}</div>
-                      <div className="text-xs text-gray-600">{row.completed}/{row.total}장</div>
+                      <div className="text-sm truncate">{row.book}</div>
+                      <div className="text-xs text-muted-foreground">{row.completed}/{row.total}장</div>
                     </div>
-                    <div className="text-sm font-medium text-gray-700 shrink-0">{row.percent}%</div>
+                    <div className="text-sm font-medium text-muted-foreground shrink-0">{row.percent}%</div>
                   </div>
-                  <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${row.percent}%` }} />
+                  <div className="mt-2 w-full bg-muted rounded-full h-2">
+                    <div className="bg-primary h-2 rounded-full" style={{ width: `${row.percent}%` }} />
                   </div>
                 </div>
               ))}

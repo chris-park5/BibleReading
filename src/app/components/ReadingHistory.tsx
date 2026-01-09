@@ -105,30 +105,30 @@ export function ReadingHistory({
   }, [visibleDaysSet]);
 
   return (
-    <div className="bg-white rounded-xl border-2 border-gray-200 p-6">
+    <div className="bg-card text-card-foreground rounded-xl border border-border p-6">
       <div className="flex items-center gap-3 mb-6">
-        <div className="p-3 bg-purple-100 rounded-lg">
-          <Calendar className="w-6 h-6 text-purple-600" />
+        <div className="p-3 bg-primary/10 rounded-lg">
+          <Calendar className="w-6 h-6 text-primary" />
         </div>
         <div>
           <h2>읽기 기록</h2>
-          <p className="text-gray-600 text-sm">일자</p>
+          <p className="text-sm text-muted-foreground">일자</p>
         </div>
       </div>
 
       {hasSearch && (
         <div className="mb-4 flex items-center gap-2">
           <div className="relative flex-1 min-w-0">
-            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-muted-foreground/60 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="책 이름 검색 (예: 히브리서)"
-              className="w-full pl-9 pr-3 py-2 border-2 border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none text-sm"
+              className="w-full pl-9 pr-3 py-2 border border-border rounded-lg bg-input-background text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
           </div>
           {normalizedQuery && (
-            <div className="text-xs text-gray-500 whitespace-nowrap">{matchCount}일</div>
+            <div className="text-xs text-muted-foreground whitespace-nowrap">{matchCount}일</div>
           )}
         </div>
       )}
@@ -136,31 +136,31 @@ export function ReadingHistory({
       <div className="mb-4 flex items-center gap-4 justify-center text-sm flex-wrap">
         <div className="flex items-center gap-2">
           <CheckCircle className="w-4 h-4 text-green-500" />
-          <span className="text-gray-600">완료</span>
+          <span className="text-muted-foreground">완료</span>
         </div>
         <div className="flex items-center gap-2">
           <CircleDashed className="w-4 h-4 text-yellow-500" />
-          <span className="text-gray-600">일부 완료</span>
+          <span className="text-muted-foreground">일부 완료</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 border-2 border-blue-500 rounded bg-blue-50" />
-          <span className="text-gray-600">오늘</span>
+          <div className="w-4 h-4 border-2 border-primary rounded bg-primary/10" />
+          <span className="text-muted-foreground">오늘</span>
         </div>
         <div className="flex items-center gap-2">
           <Circle className="w-4 h-4 text-gray-300" />
-          <span className="text-gray-600">미완료</span>
+          <span className="text-muted-foreground">미완료</span>
         </div>
       </div>
 
       {hasSearch && normalizedQuery && matchCount === 0 && (
-        <div className="text-sm text-gray-500 mb-3">검색 결과가 없습니다.</div>
+        <div className="text-sm text-muted-foreground mb-3">검색 결과가 없습니다.</div>
       )}
 
       {visibleDaysSet ? (
         <div>
-          <div className="text-sm font-medium text-gray-800 mb-2">검색 결과</div>
+          <div className="text-sm font-medium mb-2">검색 결과</div>
           {searchResultDays.length === 0 ? (
-            <div className="text-sm text-gray-500">표시할 날짜가 없습니다.</div>
+            <div className="text-sm text-muted-foreground">표시할 날짜가 없습니다.</div>
           ) : (
             <div className="grid grid-cols-3 gap-2">
               {searchResultDays.map((day) => {
@@ -179,18 +179,18 @@ export function ReadingHistory({
                     onClick={() => onDayClick(day)}
                     className={`p-2 rounded-lg border-2 flex items-center justify-between gap-2 transition-all ${
                       isCurrent
-                        ? "border-blue-500 bg-blue-50"
+                        ? "border-primary bg-primary/10"
                         : isCompleted
                         ? "border-green-200 bg-green-50"
                         : isPartial
                         ? "border-yellow-200 bg-yellow-50"
-                        : "border-gray-200 bg-white hover:border-gray-300"
+                        : "border-border bg-card hover:bg-accent"
                     }`}
                     title={`${day}일차`}
                   >
                     <div className="min-w-0 text-left">
-                      <div className="text-xs text-gray-500">{mm}/{dd}</div>
-                      <div className="text-sm font-medium text-gray-800 truncate">{day}일차</div>
+                      <div className="text-xs text-muted-foreground">{mm}/{dd}</div>
+                      <div className="text-sm font-medium truncate">{day}일차</div>
                     </div>
                     <div className="shrink-0">
                       {isCompleted ? (
@@ -208,7 +208,7 @@ export function ReadingHistory({
           )}
         </div>
       ) : months.length === 0 ? (
-        <div className="text-sm text-gray-500">달력을 표시할 수 없습니다.</div>
+        <div className="text-sm text-muted-foreground">달력을 표시할 수 없습니다.</div>
       ) : (
         (() => {
           const mo = months[Math.max(0, Math.min(months.length - 1, activeMonthIndex))];
@@ -226,16 +226,16 @@ export function ReadingHistory({
                   type="button"
                   onClick={() => setActiveMonthIndex((i) => Math.max(0, i - 1))}
                   disabled={!canPrev}
-                  className="px-3 py-2 rounded-lg border-2 border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:hover:bg-white transition-colors text-sm"
+                  className="px-3 py-2 rounded-lg border border-border bg-card hover:bg-accent disabled:opacity-50 transition-colors text-sm"
                 >
                   이전
                 </button>
-                <div className="text-sm font-medium text-gray-800">{monthLabel}</div>
+                <div className="text-sm font-medium">{monthLabel}</div>
                 <button
                   type="button"
                   onClick={() => setActiveMonthIndex((i) => Math.min(months.length - 1, i + 1))}
                   disabled={!canNext}
-                  className="px-3 py-2 rounded-lg border-2 border-gray-200 hover:bg-gray-50 disabled:opacity-50 disabled:hover:bg-white transition-colors text-sm"
+                  className="px-3 py-2 rounded-lg border border-border bg-card hover:bg-accent disabled:opacity-50 transition-colors text-sm"
                 >
                   다음
                 </button>
@@ -243,7 +243,7 @@ export function ReadingHistory({
 
               <div className="grid grid-cols-7 gap-2 mb-2">
                 {weekdayLabels.map((w) => (
-                  <div key={w} className="text-xs text-gray-500 text-center">
+                  <div key={w} className="text-xs text-muted-foreground text-center">
                     {w}
                   </div>
                 ))}
@@ -275,24 +275,24 @@ export function ReadingHistory({
                       onClick={() => onDayClick(day)}
                       className={`aspect-square p-2 rounded-lg border-2 flex flex-col items-center justify-center transition-all ${
                         isCurrent
-                          ? "border-blue-500 bg-blue-50"
+                          ? "border-primary bg-primary/10"
                           : isCompleted
                           ? "border-green-200 bg-green-50"
                           : isPartial
                           ? "border-yellow-200 bg-yellow-50"
-                          : "border-gray-200 bg-white hover:border-gray-300"
+                          : "border-border bg-card hover:bg-accent"
                       }`}
                       title={`${day}일차`}
                     >
                       <span
                         className={`text-xs mb-1 ${
                           isCurrent
-                            ? "text-blue-600"
+                            ? "text-primary"
                             : isCompleted
                             ? "text-green-600"
                             : isPartial
                             ? "text-yellow-600"
-                            : "text-gray-600"
+                            : "text-muted-foreground"
                         }`}
                       >
                         {dayOfMonth}

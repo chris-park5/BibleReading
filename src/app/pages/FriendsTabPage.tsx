@@ -134,45 +134,45 @@ export function FriendsTabPage() {
   return (
     <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-6">
       <div className="flex items-center gap-3">
-        <div className="p-3 bg-purple-100 rounded-lg">
-          <UsersRound className="w-6 h-6 text-purple-600" />
+        <div className="p-3 bg-primary/10 rounded-lg">
+          <UsersRound className="w-6 h-6 text-primary" />
         </div>
         <div>
           <h1>친구</h1>
-          <p className="text-gray-600">친구를 추가하고 진도 현황을 확인하세요</p>
+          <p className="text-muted-foreground">친구를 추가하고 진도 현황을 확인하세요</p>
         </div>
       </div>
 
       {loadingFriends ? (
-        <div className="bg-white border-2 border-gray-200 rounded-xl p-6">
+        <div className="bg-card text-card-foreground border border-border rounded-xl p-6">
           <h2 className="mb-3">받은 친구 요청 (불러오는 중)</h2>
-          <div className="text-center py-8 text-gray-500">불러오는 중...</div>
+          <div className="text-center py-8 text-muted-foreground">불러오는 중...</div>
         </div>
       ) : incomingRequests.length > 0 ? (
-        <div className="bg-white border-2 border-gray-200 rounded-xl p-6">
+        <div className="bg-card text-card-foreground border border-border rounded-xl p-6">
           <h2 className="mb-3">받은 친구 요청 ({incomingRequests.length})</h2>
           <div className="space-y-2">
             {incomingRequests.map((req) => (
               <div
                 key={req.requestId}
-                className="p-4 border-2 border-gray-200 rounded-lg"
+                className="p-4 border border-border rounded-lg"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div>
                     <p>
                       {req.fromUser.name}
                       {req.fromUser.username ? (
-                        <span className="text-sm text-gray-600"> (#{req.fromUser.username})</span>
+                        <span className="text-sm text-muted-foreground"> (#{req.fromUser.username})</span>
                       ) : null}
                     </p>
-                    <p className="text-sm text-gray-600">{req.fromUser.email}</p>
+                    <p className="text-sm text-muted-foreground">{req.fromUser.email}</p>
                   </div>
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
                     <button
                       type="button"
                       disabled={respondingRequestId === req.requestId}
                       onClick={() => handleRespond(req.requestId, "accept")}
-                      className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors w-full sm:w-auto"
+                      className="flex items-center justify-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors w-full sm:w-auto"
                     >
                       <Check className="w-4 h-4" />
                       수락
@@ -181,7 +181,7 @@ export function FriendsTabPage() {
                       type="button"
                       disabled={respondingRequestId === req.requestId}
                       onClick={() => handleRespond(req.requestId, "decline")}
-                      className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors w-full sm:w-auto"
+                      className="flex items-center justify-center gap-2 px-4 py-2 bg-card text-muted-foreground border border-border rounded-lg hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors w-full sm:w-auto"
                     >
                       <X className="w-4 h-4" />
                       거부
@@ -195,34 +195,34 @@ export function FriendsTabPage() {
       ) : null}
 
       {loadingFriends ? (
-        <div className="bg-white border-2 border-gray-200 rounded-xl p-6">
+        <div className="bg-card text-card-foreground border border-border rounded-xl p-6">
           <h2 className="mb-3">내가 보낸 요청 (불러오는 중)</h2>
-          <div className="text-center py-8 text-gray-500">불러오는 중...</div>
+          <div className="text-center py-8 text-muted-foreground">불러오는 중...</div>
         </div>
       ) : outgoingRequests.length > 0 ? (
-        <div className="bg-white border-2 border-gray-200 rounded-xl p-6">
+        <div className="bg-card text-card-foreground border border-border rounded-xl p-6">
           <h2 className="mb-3">내가 보낸 요청 ({outgoingRequests.length})</h2>
           <div className="space-y-2">
             {outgoingRequests.map((req) => (
               <div
                 key={req.requestId}
-                className="p-4 border-2 border-gray-200 rounded-lg"
+                className="p-4 border border-border rounded-lg"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div>
                     <p>
                       {req.toUser.name}
                       {req.toUser.username ? (
-                        <span className="text-sm text-gray-600"> (#{req.toUser.username})</span>
+                        <span className="text-sm text-muted-foreground"> (#{req.toUser.username})</span>
                       ) : null}
                     </p>
-                    <p className="text-sm text-gray-600">{req.toUser.email}</p>
+                    <p className="text-sm text-muted-foreground">{req.toUser.email}</p>
                   </div>
                   <button
                     type="button"
                     disabled={respondingRequestId === req.requestId}
                     onClick={() => handleCancel(req.requestId)}
-                    className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors w-full sm:w-auto"
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-card text-muted-foreground border border-border rounded-lg hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors w-full sm:w-auto"
                   >
                     <X className="w-4 h-4" />
                     취소
@@ -234,21 +234,21 @@ export function FriendsTabPage() {
         </div>
       ) : null}
 
-      <div className="bg-white border-2 border-gray-200 rounded-xl p-6">
+      <div className="bg-card text-card-foreground border border-border rounded-xl p-6">
         <h2 className="mb-3">친구 요청 보내기</h2>
         <form onSubmit={handleSendFriendRequest} className="flex flex-col sm:flex-row gap-2">
           <input
             type="text"
             value={friendUsername}
             onChange={(e) => setFriendUsername(e.target.value)}
-            className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
+            className="flex-1 px-4 py-3 border border-border rounded-lg bg-input-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             placeholder="친구 아이디(Username) 입력"
             required
           />
           <button
             type="submit"
             disabled={loading}
-            className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors w-full sm:w-auto"
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors w-full sm:w-auto"
           >
             <UserPlus className="w-5 h-5" />
             요청
@@ -257,23 +257,23 @@ export function FriendsTabPage() {
         {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
       </div>
 
-      <div className="bg-white border-2 border-gray-200 rounded-xl p-6">
+      <div className="bg-card text-card-foreground border border-border rounded-xl p-6">
         <h2 className="mb-3">친구 목록 ({loadingFriends ? "불러오는 중" : friends.length})</h2>
         {loadingFriends ? (
-          <div className="text-center py-8 text-gray-500">불러오는 중...</div>
+          <div className="text-center py-8 text-muted-foreground">불러오는 중...</div>
         ) : friends.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">아직 추가된 친구가 없습니다</div>
+          <div className="text-center py-8 text-muted-foreground">아직 추가된 친구가 없습니다</div>
         ) : (
           <div className="space-y-2">
             {friends.map((friend) => (
               <div
                 key={friend.userId}
-                className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-300 transition-colors"
+                className="p-4 border border-border rounded-lg hover:bg-accent/40 transition-colors"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div>
                     <p>{friend.name}</p>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-muted-foreground">
                       {friend.username ? `#${friend.username} · ` : ""}
                       {friend.email}
                     </p>
@@ -282,7 +282,7 @@ export function FriendsTabPage() {
                     <button
                       type="button"
                       onClick={() => handleViewStatus(friend)}
-                      className="flex items-center justify-center gap-2 px-3 py-1.5 text-sm bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors w-auto"
+                      className="flex items-center justify-center gap-2 px-3 py-1.5 text-sm bg-primary/10 text-primary rounded-lg hover:bg-primary/15 transition-colors w-auto"
                     >
                       <TrendingUp className="w-4 h-4" />
                       {expandedFriendIds.has(friend.userId) ? "닫기" : "보기"}
@@ -291,7 +291,7 @@ export function FriendsTabPage() {
                       type="button"
                       disabled={deletingFriendId === friend.userId}
                       onClick={() => handleDeleteFriend(friend)}
-                      className="flex items-center justify-center gap-2 px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors w-auto"
+                      className="flex items-center justify-center gap-2 px-3 py-1.5 text-sm bg-muted/40 text-muted-foreground rounded-lg hover:bg-muted/60 disabled:opacity-50 disabled:cursor-not-allowed transition-colors w-auto"
                       title="친구 삭제"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -301,7 +301,7 @@ export function FriendsTabPage() {
                 </div>
 
                 {expandedFriendIds.has(friend.userId) && (
-                  <div className="mt-4 bg-white border-2 border-purple-200 rounded-xl p-4">
+                  <div className="mt-4 bg-card border border-border rounded-xl p-4">
                     <div className="flex items-center justify-between gap-3 mb-3">
                       <h2>{friend.name}님</h2>
                       <button
@@ -313,7 +313,7 @@ export function FriendsTabPage() {
                             return next;
                           });
                         }}
-                        className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                        className="px-3 py-1.5 text-sm bg-muted/40 text-muted-foreground rounded-lg hover:bg-muted/60 transition-colors"
                       >
                         닫기
                       </button>
@@ -322,15 +322,15 @@ export function FriendsTabPage() {
                     {friendStatusById[friend.userId] ? (
                       <div className="space-y-3">
                         <div>
-                          <p className="text-sm text-gray-600">계획</p>
+                          <p className="text-sm text-muted-foreground">계획</p>
                           <p>{friendStatusById[friend.userId].plan?.name ?? "공유된 계획이 없습니다"}</p>
                         </div>
                         <div>
-                          <p className="text-sm text-gray-600">달성률</p>
+                          <p className="text-sm text-muted-foreground">달성률</p>
                           <div className="flex items-center gap-3">
-                            <div className="flex-1 bg-gray-200 rounded-full h-3">
+                            <div className="flex-1 bg-muted rounded-full h-3">
                               <div
-                                className="bg-purple-500 h-3 rounded-full transition-all"
+                                className="bg-primary h-3 rounded-full transition-all"
                                 style={{
                                   width: `${Math.max(0, Math.min(100, friendStatusById[friend.userId].achievementRate))}%`,
                                 }}
@@ -345,7 +345,7 @@ export function FriendsTabPage() {
                         </div>
                       </div>
                     ) : (
-                      <p className="text-sm text-gray-600">불러오는 중...</p>
+                      <p className="text-sm text-muted-foreground">불러오는 중...</p>
                     )}
                   </div>
                 )}

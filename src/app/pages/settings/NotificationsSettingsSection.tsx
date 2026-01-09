@@ -212,33 +212,33 @@ export function NotificationsSettingsSection() {
   };
 
   return (
-    <div className="bg-white border-2 border-gray-200 rounded-xl p-6">
+    <div className="bg-card text-card-foreground border border-border rounded-xl p-6">
       <div className="flex items-center gap-3 mb-4">
-        <div className="p-3 bg-yellow-100 rounded-lg">
-          <Bell className="w-6 h-6 text-yellow-600" />
+        <div className="p-3 bg-primary/10 rounded-lg">
+          <Bell className="w-6 h-6 text-primary" />
         </div>
         <div>
           <h2>알림</h2>
-          <p className="text-gray-600">오늘 말씀 알림</p>
+          <p className="text-muted-foreground">오늘 말씀 알림</p>
         </div>
       </div>
 
       {!permissionGranted && (
-        <div className="p-4 bg-yellow-50 border-2 border-yellow-200 rounded-lg mb-4">
+        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg mb-4">
           <p className="text-yellow-800 text-sm">알림을 받으려면 브라우저에서 알림 권한을 허용해주세요</p>
         </div>
       )}
 
       {notificationSyncWarning && (
-        <div className="p-4 bg-gray-50 border-2 border-gray-200 rounded-lg mb-4">
-          <p className="text-gray-700 text-sm">{notificationSyncWarning}</p>
+        <div className="p-4 bg-muted/40 border border-border rounded-lg mb-4">
+          <p className="text-muted-foreground text-sm">{notificationSyncWarning}</p>
         </div>
       )}
 
       <div className="flex items-center justify-between">
         <div>
           <p>매일 알림 받기</p>
-          <p className="text-sm text-gray-600">설정한 시간에 읽기 알림을 받습니다</p>
+          <p className="text-sm text-muted-foreground">설정한 시간에 읽기 알림을 받습니다</p>
         </div>
         <label className="relative inline-block w-12 h-6">
           <input
@@ -258,19 +258,19 @@ export function NotificationsSettingsSection() {
             }}
             className="sr-only peer"
           />
-          <span className="absolute inset-0 bg-gray-300 rounded-full peer-checked:bg-blue-500 transition-colors cursor-pointer"></span>
-          <span className="absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-6"></span>
+          <span className="absolute inset-0 bg-muted rounded-full peer-checked:bg-primary transition-colors cursor-pointer"></span>
+          <span className="absolute left-1 top-1 w-4 h-4 bg-background rounded-full transition-transform peer-checked:translate-x-6 border border-border"></span>
         </label>
       </div>
 
       {enabled && (
         <div className="mt-4">
-          <label className="block text-gray-700 mb-2">알림 시간</label>
+          <label className="block text-muted-foreground mb-2">알림 시간</label>
           <input
             type="time"
             value={time}
             onChange={(e) => setTime(e.target.value)}
-            className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
+            className="w-full px-4 py-3 border border-border rounded-lg bg-input-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
         </div>
       )}
@@ -279,14 +279,14 @@ export function NotificationsSettingsSection() {
         <button
           type="button"
           onClick={handleTestNotification}
-          className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+          className="flex-1 px-4 py-3 border border-border rounded-lg bg-card hover:bg-accent transition-colors"
         >
           테스트 알림
         </button>
         <button
           type="button"
           onClick={handleSave}
-          className="flex-1 px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+          className="flex-1 px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-colors"
         >
           저장
         </button>

@@ -139,14 +139,14 @@ export function ProfileSettingsSection() {
 
   return (
     <>
-      <div className="bg-white border-2 border-gray-200 rounded-xl p-6">
+      <div className="bg-card text-card-foreground border border-border rounded-xl p-6">
         <div className="flex items-center gap-3 mb-4">
-          <div className="p-3 bg-blue-100 rounded-lg">
-            <User className="w-6 h-6 text-blue-600" />
+          <div className="p-3 bg-primary/10 rounded-lg">
+            <User className="w-6 h-6 text-primary" />
           </div>
           <div>
             <h2>프로필</h2>
-            <p className="text-gray-600">
+            <p className="text-muted-foreground">
               {profileLoading ? "불러오는 중..." : `${profileUsername || "-"} / ${profileEmail || "-"}`}
             </p>
           </div>
@@ -154,41 +154,41 @@ export function ProfileSettingsSection() {
 
         <div className="space-y-4">
           <div>
-            <label className="block text-gray-700 mb-2">아이디 변경</label>
+            <label className="block text-muted-foreground mb-2">아이디 변경</label>
             <input
               type="text"
               value={newUsername}
               onChange={(e) => setNewUsername(e.target.value)}
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
+              className="w-full px-4 py-3 border border-border rounded-lg bg-input-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               placeholder="새 아이디"
             />
             <button
               type="button"
               onClick={handleUpdateUsername}
               disabled={updatingUsername}
-              className="mt-3 w-full px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="mt-3 w-full px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {updatingUsername ? "변경 중..." : "아이디 변경"}
             </button>
           </div>
 
           <div>
-            <label className="block text-gray-700 mb-2">비밀번호 변경</label>
+            <label className="block text-muted-foreground mb-2">비밀번호 변경</label>
 
             <div className="space-y-3">
               <div>
-                <label className="block text-sm text-gray-600 mb-2">현재 비밀번호</label>
+                <label className="block text-sm text-muted-foreground mb-2">현재 비밀번호</label>
                 <div className="relative">
                   <input
                     type={showCurrentPassword ? "text" : "password"}
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
-                    className="w-full px-4 py-3 pr-12 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
+                    className="w-full px-4 py-3 pr-12 border border-border rounded-lg bg-input-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   />
                   <button
                     type="button"
                     onClick={() => setShowCurrentPassword((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
                     {showCurrentPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
@@ -196,18 +196,18 @@ export function ProfileSettingsSection() {
               </div>
 
               <div>
-                <label className="block text-sm text-gray-600 mb-2">새 비밀번호</label>
+                <label className="block text-sm text-muted-foreground mb-2">새 비밀번호</label>
                 <div className="relative">
                   <input
                     type={showNewPassword ? "text" : "password"}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full px-4 py-3 pr-12 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
+                    className="w-full px-4 py-3 pr-12 border border-border rounded-lg bg-input-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   />
                   <button
                     type="button"
                     onClick={() => setShowNewPassword((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
                     {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
@@ -215,18 +215,18 @@ export function ProfileSettingsSection() {
               </div>
 
               <div>
-                <label className="block text-sm text-gray-600 mb-2">새 비밀번호 확인</label>
+                <label className="block text-sm text-muted-foreground mb-2">새 비밀번호 확인</label>
                 <div className="relative">
                   <input
                     type={showNewPasswordConfirm ? "text" : "password"}
                     value={newPasswordConfirm}
                     onChange={(e) => setNewPasswordConfirm(e.target.value)}
-                    className="w-full px-4 py-3 pr-12 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
+                    className="w-full px-4 py-3 pr-12 border border-border rounded-lg bg-input-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   />
                   <button
                     type="button"
                     onClick={() => setShowNewPasswordConfirm((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
                     {showNewPasswordConfirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
@@ -237,7 +237,7 @@ export function ProfileSettingsSection() {
                 type="button"
                 onClick={handleUpdatePassword}
                 disabled={updatingPassword}
-                className="mt-3 w-full px-4 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="mt-3 w-full px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {updatingPassword ? "변경 중..." : "비밀번호 변경"}
               </button>
@@ -246,14 +246,14 @@ export function ProfileSettingsSection() {
         </div>
       </div>
 
-      <div className="bg-white border-2 border-red-200 rounded-xl p-6">
-        <p className="text-sm text-gray-600 mb-4">
+      <div className="bg-card text-card-foreground border border-red-200 rounded-xl p-6">
+        <p className="text-sm text-muted-foreground mb-4">
           회원 탈퇴 시 모든 데이터가 영구적으로 삭제되며 복구할 수 없습니다.
         </p>
         <button
           type="button"
           onClick={handleDeleteAccount}
-          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-50 text-red-600 border-2 border-red-200 hover:bg-red-100 rounded-lg transition-colors"
+          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 rounded-lg transition-colors"
         >
           <UserX className="w-5 h-5" />
           회원 탈퇴

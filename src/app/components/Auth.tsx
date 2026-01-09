@@ -54,19 +54,19 @@ export function Auth({ onAuthSuccess }: AuthProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center p-6">
+    <div className="min-h-screen bg-muted/30 flex items-center justify-center p-6">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-500 rounded-2xl mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-2xl mb-4">
             <BookOpen className="w-8 h-8 text-white" />
           </div>
           <h1 className="mb-2">성경 읽기 계획</h1>
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             {isSignUp ? "새 계정을 만들어주세요" : "로그인하여 시작하세요"}
           </p>
         </div>
 
-        <div className="bg-white rounded-xl border-2 border-gray-200 p-8">
+        <div className="bg-card text-card-foreground rounded-xl border border-border p-8">
           <form onSubmit={handleSubmit} className="space-y-4">
             {isSignUp && (
               <>
@@ -78,7 +78,7 @@ export function Auth({ onAuthSuccess }: AuthProps) {
                       type="text"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
+                      className="w-full pl-10 pr-4 py-3 border border-border rounded-lg bg-input-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       placeholder="홍길동"
                       required
                     />
@@ -93,7 +93,7 @@ export function Auth({ onAuthSuccess }: AuthProps) {
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
+                      className="w-full pl-10 pr-4 py-3 border border-border rounded-lg bg-input-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       placeholder="email@example.com"
                       required
                     />
@@ -112,7 +112,7 @@ export function Auth({ onAuthSuccess }: AuthProps) {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
+                  className="w-full pl-10 pr-4 py-3 border border-border rounded-lg bg-input-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   placeholder={isSignUp ? "아이디를 입력하세요" : "아이디"}
                   required
                   minLength={3}
@@ -122,7 +122,7 @@ export function Auth({ onAuthSuccess }: AuthProps) {
                 />
               </div>
               {isSignUp && (
-                <p className="mt-1 text-xs text-gray-500">
+                <p className="mt-1 text-xs text-muted-foreground">
                   3-20자, 영문자/숫자/밑줄(_)만 사용 가능
                 </p>
               )}
@@ -136,7 +136,7 @@ export function Auth({ onAuthSuccess }: AuthProps) {
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-20 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:outline-none"
+                  className="w-full pl-10 pr-20 py-3 border border-border rounded-lg bg-input-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   placeholder="••••••••"
                   required
                   minLength={6}
@@ -144,7 +144,7 @@ export function Auth({ onAuthSuccess }: AuthProps) {
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 보기"}
                   aria-pressed={showPassword}
                 >
@@ -166,7 +166,7 @@ export function Auth({ onAuthSuccess }: AuthProps) {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full py-3 bg-primary text-primary-foreground rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {loading ? "처리 중..." : isSignUp ? "회원가입" : "로그인"}
             </button>
@@ -175,10 +175,10 @@ export function Auth({ onAuthSuccess }: AuthProps) {
           {/* Divider */}
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t-2 border-gray-200"></div>
+              <div className="w-full border-t border-border"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">또는</span>
+              <span className="px-2 bg-card text-muted-foreground">또는</span>
             </div>
           </div>
 
@@ -186,7 +186,7 @@ export function Auth({ onAuthSuccess }: AuthProps) {
           <button
             onClick={handleGoogleSignIn}
             disabled={loading}
-            className="w-full py-3 px-4 border-2 border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-3"
+            className="w-full py-3 px-4 border border-border rounded-lg bg-card hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-3"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path
@@ -206,7 +206,7 @@ export function Auth({ onAuthSuccess }: AuthProps) {
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
               />
             </svg>
-            <span className="text-gray-700">Google로 {isSignUp ? "회원가입" : "로그인"}</span>
+            <span className="text-muted-foreground">Google로 {isSignUp ? "회원가입" : "로그인"}</span>
           </button>
 
           <div className="mt-6 text-center">
@@ -216,7 +216,7 @@ export function Auth({ onAuthSuccess }: AuthProps) {
                 setError("");
                 setShowPassword(false);
               }}
-              className="text-blue-500 hover:text-blue-600"
+              className="text-primary hover:opacity-90"
             >
               {isSignUp
                 ? "이미 계정이 있으신가요? 로그인"
