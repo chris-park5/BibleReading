@@ -71,9 +71,9 @@ export function Auth({ onAuthSuccess }: AuthProps) {
             {isSignUp && (
               <>
                 <div>
-                  <label className="block text-gray-700 mb-2">이름</label>
+                  <label className="block text-sm font-medium text-foreground mb-2">이름</label>
                   <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/60" />
                     <input
                       type="text"
                       value={name}
@@ -86,9 +86,9 @@ export function Auth({ onAuthSuccess }: AuthProps) {
                 </div>
 
                 <div>
-                  <label className="block text-gray-700 mb-2">이메일</label>
+                  <label className="block text-sm font-medium text-foreground mb-2">이메일</label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/60" />
                     <input
                       type="email"
                       value={email}
@@ -103,11 +103,11 @@ export function Auth({ onAuthSuccess }: AuthProps) {
             )}
 
             <div>
-              <label className="block text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-foreground mb-2">
                 {isSignUp ? "아이디" : "아이디"}
               </label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/60" />
                 <input
                   type="text"
                   value={username}
@@ -129,9 +129,9 @@ export function Auth({ onAuthSuccess }: AuthProps) {
             </div>
 
             <div>
-              <label className="block text-gray-700 mb-2">비밀번호</label>
+              <label className="block text-sm font-medium text-foreground mb-2">비밀번호</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/60" />
                 <input
                   type={showPassword ? "text" : "password"}
                   value={password}
@@ -158,8 +158,8 @@ export function Auth({ onAuthSuccess }: AuthProps) {
             </div>
 
             {error && (
-              <div className="p-3 bg-red-50 border-2 border-red-200 rounded-lg">
-                <p className="text-red-700 text-sm">{error}</p>
+              <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+                <p className="text-destructive text-sm">{error}</p>
               </div>
             )}
 

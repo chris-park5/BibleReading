@@ -37,7 +37,7 @@ export function TodayReading({
         </div>
         <div
           className={`flex items-center gap-2 px-3 py-2 rounded-lg ${
-            allCompleted ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"
+            allCompleted ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
           }`}
         >
           {allCompleted ? (
@@ -55,7 +55,7 @@ export function TodayReading({
             key={index}
             type="button"
             onClick={() => onToggleReading(index, !completedByIndex[index])}
-            className={`w-full p-4 rounded-lg border-2 text-left transition-colors flex items-center justify-between gap-3 ${
+            className={`w-full p-4 rounded-lg border text-left transition-colors flex items-center justify-between gap-3 ${
               completedByIndex[index]
                 ? "border-green-200 bg-green-50"
                 : "border-border bg-muted/40 hover:bg-muted/60"

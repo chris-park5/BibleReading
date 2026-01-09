@@ -5,6 +5,7 @@ interface ReadingHistoryProps {
   completedDays: Set<number>;
   partialDays?: Set<number>; // 일부만 읽은 날짜
   currentDay: number;
+  selectedDay?: number;
   onDayClick: (day: number) => void;
   startDate: string; // YYYY-MM-DD (local)
   totalDays: number;
@@ -15,6 +16,7 @@ export function ReadingHistory({
   completedDays,
   partialDays,
   currentDay,
+  selectedDay,
   onDayClick,
   startDate,
   totalDays,
@@ -143,11 +145,11 @@ export function ReadingHistory({
           <span className="text-muted-foreground">일부 완료</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 border-2 border-primary rounded bg-primary/10" />
+          <div className="w-4 h-4 border border-primary rounded bg-primary/10" />
           <span className="text-muted-foreground">오늘</span>
         </div>
         <div className="flex items-center gap-2">
-          <Circle className="w-4 h-4 text-gray-300" />
+          <Circle className="w-4 h-4 text-muted-foreground/40" />
           <span className="text-muted-foreground">미완료</span>
         </div>
       </div>
@@ -171,13 +173,14 @@ export function ReadingHistory({
                 const isCompleted = completedDays.has(day);
                 const isPartial = safePartialDays.has(day);
                 const isCurrent = day === currentDay;
+                const isSelected = day === (selectedDay ?? currentDay);
 
                 return (
                   <button
                     key={day}
                     type="button"
                     onClick={() => onDayClick(day)}
-                    className={`p-2 rounded-lg border-2 flex items-center justify-between gap-2 transition-all ${
+                    className={`p-2 rounded-lg border flex items-center justify-between gap-2 transition-all ${
                       isCurrent
                         ? "border-primary bg-primary/10"
                         : isCompleted
@@ -185,6 +188,8 @@ export function ReadingHistory({
                         : isPartial
                         ? "border-yellow-200 bg-yellow-50"
                         : "border-border bg-card hover:bg-accent"
+                    } ${
+                      isSelected && !isCurrent ? "ring-2 ring-ring" : ""
                     }`}
                     title={`${day}일차`}
                   >
@@ -198,7 +203,7 @@ export function ReadingHistory({
                       ) : isPartial ? (
                         <CircleDashed className="w-4 h-4 text-yellow-500" />
                       ) : (
-                        <Circle className="w-4 h-4 text-gray-300" />
+                        <Circle className="w-4 h-4 text-muted-foreground/40" />
                       )}
                     </div>
                   </button>
@@ -267,13 +272,14 @@ export function ReadingHistory({
                   const isCompleted = completedDays.has(day);
                   const isPartial = safePartialDays.has(day);
                   const isCurrent = day === currentDay;
+                  const isSelected = day === (selectedDay ?? currentDay);
 
                   return (
                     <button
                       key={`d-${i}`}
                       type="button"
                       onClick={() => onDayClick(day)}
-                      className={`aspect-square p-2 rounded-lg border-2 flex flex-col items-center justify-center transition-all ${
+                      className={`aspect-square p-2 rounded-lg border flex flex-col items-center justify-center transition-all ${
                         isCurrent
                           ? "border-primary bg-primary/10"
                           : isCompleted
@@ -281,6 +287,8 @@ export function ReadingHistory({
                           : isPartial
                           ? "border-yellow-200 bg-yellow-50"
                           : "border-border bg-card hover:bg-accent"
+                      } ${
+                        isSelected && !isCurrent ? "ring-2 ring-ring" : ""
                       }`}
                       title={`${day}일차`}
                     >
@@ -302,7 +310,7 @@ export function ReadingHistory({
                       ) : isPartial ? (
                         <CircleDashed className="w-4 h-4 text-yellow-500" />
                       ) : (
-                        <Circle className="w-4 h-4 text-gray-300" />
+                        <Circle className="w-4 h-4 text-muted-foreground/40" />
                       )}
                     </button>
                   );

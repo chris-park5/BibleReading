@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { usePlans, usePlan } from "../../../hooks/usePlans";
 import { useProgress } from "../../../hooks/useProgress";
 import { usePlanStore } from "../../../stores/plan.store";
@@ -23,6 +23,7 @@ export function ProgressTab() {
   const [bookQuery, setBookQuery] = useState("");
   const [selectedHistoryDay, setSelectedHistoryDay] = useState<number>(currentDay);
   const [isPinnedHistoryDay, setIsPinnedHistoryDay] = useState(false);
+  const historyDetailRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     // When plan changes, reset selection to currentDay.
@@ -228,9 +229,17 @@ export function ProgressTab() {
               return partial;
             })()}
             currentDay={currentDay}
+            selectedDay={selectedHistoryDay}
             onDayClick={(day) => {
               setSelectedHistoryDay(day);
               setIsPinnedHistoryDay(true);
+
+              // Scroll to the checkbox list (TodayReading) below.
+              if (typeof window !== "undefined") {
+                window.requestAnimationFrame(() => {
+                  historyDetailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                });
+              }
             }}
             startDate={plan.startDate}
             totalDays={plan.totalDays}
@@ -249,9 +258,9 @@ export function ProgressTab() {
             const completedByIndex = readings.map((_, i) => isDayCompleted || completedSet.has(i));
 
             return (
-              <div className="pt-2">
+              <div ref={historyDetailRef} className="pt-2">
                 {readings.length === 0 ? (
-                  <div className="bg-white border-2 border-gray-200 rounded-xl p-4 text-sm text-gray-600">
+                  <div className="bg-card text-card-foreground border border-border rounded-xl p-4 text-sm text-muted-foreground">
                     선택한 날짜에 읽기 항목이 없습니다.
                   </div>
                 ) : (

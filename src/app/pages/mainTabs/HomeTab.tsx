@@ -228,28 +228,28 @@ export function HomeTab() {
     return (
       <div className="max-w-4xl mx-auto p-6">
         {incomingRequestsCount > 0 && (
-          <div className="bg-white border-2 border-gray-200 rounded-xl p-4 mb-4 flex items-center justify-between gap-4">
+          <div className="bg-card text-card-foreground border border-border rounded-xl p-4 mb-4 flex items-center justify-between gap-4">
             <div>
               <p>새 친구 요청이 있습니다</p>
-              <p className="text-sm text-gray-600">{incomingRequestsCount}개</p>
+              <p className="text-sm text-muted-foreground">{incomingRequestsCount}개</p>
             </div>
             <button
               type="button"
               onClick={() => setHashTab("friends")}
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-colors"
             >
               확인하기
             </button>
           </div>
         )}
 
-        <div className="bg-white border-2 border-gray-200 rounded-xl p-6 text-center">
-          <p className="text-gray-700">현재 진행 중인 계획이 없습니다.</p>
-          <p className="text-gray-500 text-sm mt-1">계획을 추가하면 홈에서 오늘 읽을 분량을 볼 수 있습니다.</p>
+        <div className="bg-card text-card-foreground border border-border rounded-xl p-6 text-center">
+          <p>현재 진행 중인 계획이 없습니다.</p>
+          <p className="text-muted-foreground text-sm mt-1">계획을 추가하면 홈에서 오늘 읽을 분량을 볼 수 있습니다.</p>
           <button
             type="button"
             onClick={() => setHashTab("add")}
-            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-colors"
           >
             계획 추가로 이동
           </button>
