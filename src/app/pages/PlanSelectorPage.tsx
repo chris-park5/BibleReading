@@ -6,14 +6,13 @@ import { useAuthStore } from '../../stores/auth.store';
 import { ReadingPlanCard } from '../components/ReadingPlanCard';
 import { CustomPlanCreator } from '../components/CustomPlanCreator';
 import * as authService from '../../services/authService';
-import * as planService from '../../services/planService';
 import * as friendService from '../../services/friendService';
 import * as api from '../utils/api';
 
 import { bundledPresetPlans, normalizeSchedule } from '../plans/bundledPresets';
 
 export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
-  const { plans, createPlanAsync, deletePlanAsync, isCreating, isDeleting, refetch } = usePlans();
+  const { plans, createPlanAsync, deletePlanAsync, isCreating, isDeleting } = usePlans();
   const { selectPlan, deselectPlan, showCustomPlanCreator, toggleCustomPlanCreator } = usePlanStore();
   const logout = useAuthStore((state) => state.logout);
   const selectedPlanId = usePlanStore((state) => state.selectedPlanId);
@@ -110,36 +109,6 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
       console.error('Failed to create custom plan:', err);
       const errorMessage = err.message || '계획 생성에 실패했습니다';
       alert(errorMessage);
-    }
-  };
-
-  const handleMovePlanUp = async (index: number) => {
-    if (index === 0) return;
-    
-    const planToMove = plans[index];
-    const targetPlan = plans[index - 1];
-    
-    try {
-      await planService.updatePlanOrder(planToMove.id, targetPlan.displayOrder || index - 1);
-      await refetch();
-    } catch (err) {
-      console.error('Failed to move plan:', err);
-      alert('계획 이동에 실패했습니다');
-    }
-  };
-
-  const handleMovePlanDown = async (index: number) => {
-    if (index === plans.length - 1) return;
-    
-    const planToMove = plans[index];
-    const targetPlan = plans[index + 1];
-    
-    try {
-      await planService.updatePlanOrder(planToMove.id, targetPlan.displayOrder || index + 1);
-      await refetch();
-    } catch (err) {
-      console.error('Failed to move plan:', err);
-      alert('계획 이동에 실패했습니다');
     }
   };
 
@@ -261,10 +230,6 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
                       setDeletingPlanId(null);
                     }
                   }}
-                  canMoveUp={index > 0}
-                  canMoveDown={index < plans.length - 1}
-                  onMoveUp={() => handleMovePlanUp(index)}
-                  onMoveDown={() => handleMovePlanDown(index)}
                 />
               ))}
             </div>
