@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { X, BookPlus } from "lucide-react";
 import { BIBLE_BOOKS } from "../data/bibleBooks";
 import { generateScheduleFromSelectedBooks } from "../utils/generateScheduleFromSelectedBooks";
@@ -75,6 +75,8 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
   const [selectedBooks, setSelectedBooks] = useState<string[]>([]);
   const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
   const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
+  const [showShuffleOptions, setShowShuffleOptions] = useState(false);
+  const step3ScrollRef = useRef<HTMLDivElement | null>(null);
 
   const [otRepeat, setOtRepeat] = useState(1);
   const [ntRepeat, setNtRepeat] = useState(1);
@@ -227,6 +229,68 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
       next.splice(to, 0, item);
       return next;
     });
+  };
+
+  const shuffleArray = <T,>(arr: T[]) => {
+    const next = [...arr];
+    for (let i = next.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [next[i], next[j]] = [next[j], next[i]];
+    }
+    return next;
+  };
+
+  const shuffleSelected = (mode: "OT" | "NT" | "ALL") => {
+    const otSet = new Set(otBooks);
+    const ntSet = new Set(ntBooks);
+
+    setSelectedBooks((prev) => {
+      if (prev.length <= 1) return prev;
+
+      if (mode === "ALL") {
+        return shuffleArray(prev);
+      }
+
+      const isTarget = (book: string) => (mode === "OT" ? otSet.has(book) : ntSet.has(book));
+      const indices = [] as number[];
+      const values = [] as string[];
+
+      for (let i = 0; i < prev.length; i++) {
+        if (isTarget(prev[i])) {
+          indices.push(i);
+          values.push(prev[i]);
+        }
+      }
+
+      if (values.length <= 1) return prev;
+
+      const shuffled = shuffleArray(values);
+      const next = [...prev];
+      for (let k = 0; k < indices.length; k++) {
+        next[indices[k]] = shuffled[k];
+      }
+      return next;
+    });
+  };
+
+  const handleStep3AutoScroll = (clientY: number) => {
+    const el = step3ScrollRef.current;
+    if (!el) return;
+
+    const rect = el.getBoundingClientRect();
+    const edge = 48; // px
+    const maxSpeed = 18; // px per dragover
+
+    const topZone = rect.top + edge;
+    const bottomZone = rect.bottom - edge;
+
+    if (clientY < topZone) {
+      const strength = Math.min(1, (topZone - clientY) / edge);
+      el.scrollTop -= Math.ceil(maxSpeed * strength);
+    } else if (clientY > bottomZone) {
+      const strength = Math.min(1, (clientY - bottomZone) / edge);
+      el.scrollTop += Math.ceil(maxSpeed * strength);
+    }
   };
 
   const step1Valid = !isDateRangeInvalid && !!startDate && !!endDate;
@@ -752,12 +816,66 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
                     <div className="text-sm text-muted-foreground">선택된 리스트 최종 확인</div>
                     <div className="text-xs text-muted-foreground">드래그로 순서 변경</div>
                   </div>
+
+                  <div className="flex flex-col items-end gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setShowShuffleOptions((v) => !v)}
+                      className="px-2 py-1.5 rounded-lg border border-border hover:bg-accent transition-colors text-xs sm:text-sm whitespace-nowrap"
+                      title="랜덤 선택"
+                    >
+                      랜덤 선택
+                    </button>
+
+                    {showShuffleOptions && (
+                      <div className="flex flex-wrap justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            shuffleSelected("OT");
+                            setShowShuffleOptions(false);
+                          }}
+                          className="px-2 py-1.5 rounded-lg border border-border hover:bg-accent transition-colors text-xs sm:text-sm whitespace-nowrap"
+                        >
+                          구약만 섞기
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            shuffleSelected("NT");
+                            setShowShuffleOptions(false);
+                          }}
+                          className="px-2 py-1.5 rounded-lg border border-border hover:bg-accent transition-colors text-xs sm:text-sm whitespace-nowrap"
+                        >
+                          신약만 섞기
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            shuffleSelected("ALL");
+                            setShowShuffleOptions(false);
+                          }}
+                          className="px-2 py-1.5 rounded-lg border border-border hover:bg-accent transition-colors text-xs sm:text-sm whitespace-nowrap"
+                        >
+                          랜덤 섞기
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {selectedBooks.length === 0 ? (
                   <div className="text-sm text-muted-foreground">아직 선택된 책이 없습니다.</div>
                 ) : (
-                  <div className="max-h-72 overflow-y-auto pr-1">
+                  <div
+                    ref={step3ScrollRef}
+                    className="max-h-72 overflow-y-auto pr-1"
+                    onDragOver={(e) => {
+                      if (draggingIndex === null) return;
+                      e.preventDefault();
+                      handleStep3AutoScroll(e.clientY);
+                    }}
+                  >
                     <div className="space-y-2">
                       {selectedBooks.map((bn, idx) => (
                         <div
@@ -774,6 +892,7 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
                           onDragOver={(e) => {
                             e.preventDefault();
                             setDropTargetIndex(idx);
+                            handleStep3AutoScroll(e.clientY);
                           }}
                           onDrop={() => {
                             if (draggingIndex === null || draggingIndex === idx) {
