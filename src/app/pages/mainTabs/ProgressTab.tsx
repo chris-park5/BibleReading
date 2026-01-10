@@ -9,6 +9,7 @@ import { BIBLE_BOOKS } from "../../data/bibleBooks";
 import { computeTodayDay, startOfTodayLocal } from "./dateUtils";
 import { computeChaptersTotals, countChapters } from "../../utils/chaptersProgress";
 import { Search } from "lucide-react";
+import { bookMatchesQuery } from "../../utils/bookSearch";
 
 export function ProgressTab() {
   const { plans } = usePlans();
@@ -83,7 +84,7 @@ export function ProgressTab() {
   const normalizedBookQuery = bookQuery.trim().toLowerCase();
   const filteredBookRows = useMemo(() => {
     if (!normalizedBookQuery) return bookProgressRows;
-    return bookProgressRows.filter((row) => row.book.toLowerCase().includes(normalizedBookQuery));
+    return bookProgressRows.filter((row) => bookMatchesQuery(row.book, normalizedBookQuery));
   }, [bookProgressRows, normalizedBookQuery]);
 
   if (!activePlanId || !plan || !progress) {
