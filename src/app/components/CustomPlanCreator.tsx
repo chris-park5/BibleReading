@@ -76,13 +76,25 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
   const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
   const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
   const [showShuffleOptions, setShowShuffleOptions] = useState(false);
+  const [separateTestamentReading, setSeparateTestamentReading] = useState(false);
+  const [showOtShuffleMenu, setShowOtShuffleMenu] = useState(false);
+  const [showNtShuffleMenu, setShowNtShuffleMenu] = useState(false);
+  const [draggingGroup, setDraggingGroup] = useState<"OT" | "NT" | null>(null);
+  const [draggingGroupIndex, setDraggingGroupIndex] = useState<number | null>(null);
+  const [dropTargetOtIndex, setDropTargetOtIndex] = useState<number | null>(null);
+  const [dropTargetNtIndex, setDropTargetNtIndex] = useState<number | null>(null);
   const step3ScrollRef = useRef<HTMLDivElement | null>(null);
+  const otStep3ScrollRef = useRef<HTMLDivElement | null>(null);
+  const ntStep3ScrollRef = useRef<HTMLDivElement | null>(null);
 
   const [otRepeat, setOtRepeat] = useState(1);
   const [ntRepeat, setNtRepeat] = useState(1);
 
   const otBooks = useMemo(() => BIBLE_BOOKS.slice(0, 39).map((b) => b.name), []);
   const ntBooks = useMemo(() => BIBLE_BOOKS.slice(39).map((b) => b.name), []);
+
+  const otSet = useMemo(() => new Set(otBooks), [otBooks]);
+  const ntSet = useMemo(() => new Set(ntBooks), [ntBooks]);
 
   const countsByBook = useMemo(() => {
     const map = new Map<string, number>();
@@ -241,9 +253,6 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
   };
 
   const shuffleSelected = (mode: "OT" | "NT" | "ALL") => {
-    const otSet = new Set(otBooks);
-    const ntSet = new Set(ntBooks);
-
     setSelectedBooks((prev) => {
       if (prev.length <= 1) return prev;
 
@@ -273,8 +282,70 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
     });
   };
 
-  const handleStep3AutoScroll = (clientY: number) => {
-    const el = step3ScrollRef.current;
+  const splitSelected = useMemo(() => {
+    const ot: string[] = [];
+    const nt: string[] = [];
+    for (const b of selectedBooks) {
+      if (otSet.has(b)) ot.push(b);
+      else if (ntSet.has(b)) nt.push(b);
+      else ot.push(b);
+    }
+    return { ot, nt };
+  }, [ntSet, otSet, selectedBooks]);
+
+  const applySeparateMode = (enabled: boolean) => {
+    setSeparateTestamentReading(enabled);
+    setShowShuffleOptions(false);
+    setShowOtShuffleMenu(false);
+    setShowNtShuffleMenu(false);
+    setDraggingGroup(null);
+    setDraggingGroupIndex(null);
+    setDropTargetOtIndex(null);
+    setDropTargetNtIndex(null);
+
+    if (!enabled) return;
+    // Group into OT then NT for a stable two-column UX.
+    setSelectedBooks((prev) => {
+      const ot: string[] = [];
+      const nt: string[] = [];
+      for (const b of prev) {
+        if (otSet.has(b)) ot.push(b);
+        else if (ntSet.has(b)) nt.push(b);
+        else ot.push(b);
+      }
+      return [...ot, ...nt];
+    });
+  };
+
+  const moveWithinGroup = (group: "OT" | "NT", from: number, to: number) => {
+    const cur = group === "OT" ? splitSelected.ot : splitSelected.nt;
+    if (from < 0 || from >= cur.length) return;
+    if (to < 0 || to >= cur.length) return;
+    const nextGroup = [...cur];
+    const [item] = nextGroup.splice(from, 1);
+    nextGroup.splice(to, 0, item);
+    const other = group === "OT" ? splitSelected.nt : splitSelected.ot;
+    setSelectedBooks(group === "OT" ? [...nextGroup, ...other] : [...other, ...nextGroup]);
+  };
+
+  const removeFromGroupAt = (group: "OT" | "NT", index: number) => {
+    const cur = group === "OT" ? splitSelected.ot : splitSelected.nt;
+    if (index < 0 || index >= cur.length) return;
+    const nextGroup = cur.filter((_, i) => i !== index);
+    const other = group === "OT" ? splitSelected.nt : splitSelected.ot;
+    setSelectedBooks(group === "OT" ? [...nextGroup, ...other] : [...other, ...nextGroup]);
+  };
+
+  const shuffleGroup = (group: "OT" | "NT") => {
+    const cur = group === "OT" ? splitSelected.ot : splitSelected.nt;
+    if (cur.length <= 1) return;
+    const nextGroup = shuffleArray(cur);
+    const other = group === "OT" ? splitSelected.nt : splitSelected.ot;
+    setSelectedBooks(group === "OT" ? [...nextGroup, ...other] : [...other, ...nextGroup]);
+  };
+
+  const handleStep3AutoScroll = (clientY: number, elOverride?: HTMLDivElement | null) => {
+    const el = elOverride ?? step3ScrollRef.current;
     if (!el) return;
 
     const rect = el.getBoundingClientRect();
@@ -308,11 +379,36 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
     }
 
     try {
-      const { totalDays, schedule } = generateScheduleFromSelectedBooks({
-        startDate,
-        endDate,
-        selectedBooks,
-      });
+      const { totalDays, schedule } = (() => {
+        if (!separateTestamentReading) {
+          return generateScheduleFromSelectedBooks({
+            startDate,
+            endDate,
+            selectedBooks,
+          });
+        }
+
+        const otSelected = selectedBooks.filter((b) => otSet.has(b));
+        const ntSelected = selectedBooks.filter((b) => ntSet.has(b));
+
+        if (otSelected.length === 0 || ntSelected.length === 0) {
+          throw new Error("구약/신약을 각각 1개 이상 선택해주세요.");
+        }
+
+        const ot = generateScheduleFromSelectedBooks({ startDate, endDate, selectedBooks: otSelected });
+        const nt = generateScheduleFromSelectedBooks({ startDate, endDate, selectedBooks: ntSelected });
+
+        if (ot.totalDays !== nt.totalDays) {
+          throw new Error("구약/신약 계획 날짜가 일치하지 않습니다. 날짜를 다시 확인해주세요.");
+        }
+
+        const merged = ot.schedule.map((d, idx) => ({
+          day: d.day,
+          readings: [...(d.readings ?? []), ...(nt.schedule[idx]?.readings ?? [])],
+        }));
+
+        return { totalDays: ot.totalDays, schedule: merged };
+      })();
 
       if (totalDays > MAX_TOTAL_DAYS) {
         alert(`계획 기간이 너무 깁니다. 최대 ${MAX_TOTAL_DAYS}일까지 가능합니다.`);
@@ -818,47 +914,60 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
                   </div>
 
                   <div className="flex flex-col items-end gap-2 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => setShowShuffleOptions((v) => !v)}
-                      className="px-2 py-1.5 rounded-lg border border-border hover:bg-accent transition-colors text-xs sm:text-sm whitespace-nowrap"
-                      title="랜덤 선택"
-                    >
-                      랜덤 선택
-                    </button>
+                    <label className="inline-flex items-center gap-2 text-xs sm:text-sm text-foreground whitespace-nowrap">
+                      <input
+                        type="checkbox"
+                        checked={separateTestamentReading}
+                        onChange={(e) => applySeparateMode(e.target.checked)}
+                      />
+                      구약/신약 따로 읽기
+                    </label>
 
-                    {showShuffleOptions && (
-                      <div className="flex flex-wrap justify-end gap-2">
+                    {!separateTestamentReading && (
+                      <div className="relative">
                         <button
                           type="button"
-                          onClick={() => {
-                            shuffleSelected("OT");
-                            setShowShuffleOptions(false);
-                          }}
+                          onClick={() => setShowShuffleOptions((v) => !v)}
                           className="px-2 py-1.5 rounded-lg border border-border hover:bg-accent transition-colors text-xs sm:text-sm whitespace-nowrap"
+                          title="섞기"
                         >
-                          구약만 섞기
+                          섞기
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            shuffleSelected("NT");
-                            setShowShuffleOptions(false);
-                          }}
-                          className="px-2 py-1.5 rounded-lg border border-border hover:bg-accent transition-colors text-xs sm:text-sm whitespace-nowrap"
-                        >
-                          신약만 섞기
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            shuffleSelected("ALL");
-                            setShowShuffleOptions(false);
-                          }}
-                          className="px-2 py-1.5 rounded-lg border border-border hover:bg-accent transition-colors text-xs sm:text-sm whitespace-nowrap"
-                        >
-                          랜덤 섞기
-                        </button>
+
+                        {showShuffleOptions && (
+                          <div className="absolute right-0 mt-2 w-40 rounded-lg border border-border bg-card text-card-foreground shadow-sm p-1 z-10">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                shuffleSelected("OT");
+                                setShowShuffleOptions(false);
+                              }}
+                              className="w-full text-left px-2 py-1.5 rounded-md hover:bg-accent text-sm"
+                            >
+                              구약만 섞기
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                shuffleSelected("NT");
+                                setShowShuffleOptions(false);
+                              }}
+                              className="w-full text-left px-2 py-1.5 rounded-md hover:bg-accent text-sm"
+                            >
+                              신약만 섞기
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                shuffleSelected("ALL");
+                                setShowShuffleOptions(false);
+                              }}
+                              className="w-full text-left px-2 py-1.5 rounded-md hover:bg-accent text-sm"
+                            >
+                              랜덤 섞기
+                            </button>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -866,6 +975,206 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
 
                 {selectedBooks.length === 0 ? (
                   <div className="text-sm text-muted-foreground">아직 선택된 책이 없습니다.</div>
+                ) : separateTestamentReading ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* OT */}
+                    <div className="border border-border rounded-lg p-3 bg-card">
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <div className="text-sm font-medium">구약</div>
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowOtShuffleMenu((v) => !v);
+                              setShowNtShuffleMenu(false);
+                            }}
+                            className="px-2 py-1.5 rounded-lg border border-border hover:bg-accent transition-colors text-xs sm:text-sm whitespace-nowrap"
+                          >
+                            섞기
+                          </button>
+                          {showOtShuffleMenu && (
+                            <div className="absolute right-0 mt-2 w-32 rounded-lg border border-border bg-card text-card-foreground shadow-sm p-1 z-10">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  shuffleGroup("OT");
+                                  setShowOtShuffleMenu(false);
+                                }}
+                                className="w-full text-left px-2 py-1.5 rounded-md hover:bg-accent text-sm"
+                              >
+                                랜덤 섞기
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div ref={otStep3ScrollRef} className="max-h-72 overflow-y-auto pr-1 space-y-2">
+                        {splitSelected.ot.length === 0 ? (
+                          <div className="text-sm text-muted-foreground">구약이 비어 있습니다.</div>
+                        ) : (
+                          splitSelected.ot.map((bn, idx) => (
+                            <div
+                              key={`ot-${bn}-${idx}`}
+                              draggable
+                              onDragStart={() => {
+                                setDraggingGroup("OT");
+                                setDraggingGroupIndex(idx);
+                                setDropTargetOtIndex(null);
+                                setDropTargetNtIndex(null);
+                              }}
+                              onDragEnd={() => {
+                                setDraggingGroup(null);
+                                setDraggingGroupIndex(null);
+                                setDropTargetOtIndex(null);
+                                setDropTargetNtIndex(null);
+                              }}
+                              onDragOver={(e) => {
+                                if (draggingGroup !== "OT") return;
+                                e.preventDefault();
+                                setDropTargetOtIndex(idx);
+                                handleStep3AutoScroll(e.clientY, otStep3ScrollRef.current);
+                              }}
+                              onDrop={() => {
+                                if (draggingGroup !== "OT") return;
+                                if (draggingGroupIndex === null || draggingGroupIndex === idx) {
+                                  setDropTargetOtIndex(null);
+                                  return;
+                                }
+                                moveWithinGroup("OT", draggingGroupIndex, idx);
+                                setDraggingGroup(null);
+                                setDraggingGroupIndex(null);
+                                setDropTargetOtIndex(null);
+                              }}
+                              className={`flex items-center gap-3 rounded-lg border bg-background px-3 py-2 transition-colors cursor-move active:cursor-grabbing ${
+                                draggingGroup === "OT" && draggingGroupIndex === idx ? "opacity-60" : ""
+                              } ${
+                                dropTargetOtIndex === idx && draggingGroup === "OT" && draggingGroupIndex !== null && draggingGroupIndex !== idx
+                                  ? "border-primary ring-2 ring-ring"
+                                  : "border-border"
+                              }`}
+                            >
+                              <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary text-xs font-medium shrink-0">
+                                {idx + 1}
+                              </span>
+                              <span className="text-muted-foreground/60 shrink-0 select-none">≡</span>
+                              <span className="text-sm text-foreground min-w-0 flex-1 break-words">{bn}</span>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removeFromGroupAt("OT", idx);
+                                }}
+                                className="w-8 h-8 rounded-lg border border-border hover:bg-destructive/10 text-destructive shrink-0 text-sm"
+                                title="삭제"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+
+                    {/* NT */}
+                    <div className="border border-border rounded-lg p-3 bg-card">
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <div className="text-sm font-medium">신약</div>
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowNtShuffleMenu((v) => !v);
+                              setShowOtShuffleMenu(false);
+                            }}
+                            className="px-2 py-1.5 rounded-lg border border-border hover:bg-accent transition-colors text-xs sm:text-sm whitespace-nowrap"
+                          >
+                            섞기
+                          </button>
+                          {showNtShuffleMenu && (
+                            <div className="absolute right-0 mt-2 w-32 rounded-lg border border-border bg-card text-card-foreground shadow-sm p-1 z-10">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  shuffleGroup("NT");
+                                  setShowNtShuffleMenu(false);
+                                }}
+                                className="w-full text-left px-2 py-1.5 rounded-md hover:bg-accent text-sm"
+                              >
+                                랜덤 섞기
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div ref={ntStep3ScrollRef} className="max-h-72 overflow-y-auto pr-1 space-y-2">
+                        {splitSelected.nt.length === 0 ? (
+                          <div className="text-sm text-muted-foreground">신약이 비어 있습니다.</div>
+                        ) : (
+                          splitSelected.nt.map((bn, idx) => (
+                            <div
+                              key={`nt-${bn}-${idx}`}
+                              draggable
+                              onDragStart={() => {
+                                setDraggingGroup("NT");
+                                setDraggingGroupIndex(idx);
+                                setDropTargetOtIndex(null);
+                                setDropTargetNtIndex(null);
+                              }}
+                              onDragEnd={() => {
+                                setDraggingGroup(null);
+                                setDraggingGroupIndex(null);
+                                setDropTargetOtIndex(null);
+                                setDropTargetNtIndex(null);
+                              }}
+                              onDragOver={(e) => {
+                                if (draggingGroup !== "NT") return;
+                                e.preventDefault();
+                                setDropTargetNtIndex(idx);
+                                handleStep3AutoScroll(e.clientY, ntStep3ScrollRef.current);
+                              }}
+                              onDrop={() => {
+                                if (draggingGroup !== "NT") return;
+                                if (draggingGroupIndex === null || draggingGroupIndex === idx) {
+                                  setDropTargetNtIndex(null);
+                                  return;
+                                }
+                                moveWithinGroup("NT", draggingGroupIndex, idx);
+                                setDraggingGroup(null);
+                                setDraggingGroupIndex(null);
+                                setDropTargetNtIndex(null);
+                              }}
+                              className={`flex items-center gap-3 rounded-lg border bg-background px-3 py-2 transition-colors cursor-move active:cursor-grabbing ${
+                                draggingGroup === "NT" && draggingGroupIndex === idx ? "opacity-60" : ""
+                              } ${
+                                dropTargetNtIndex === idx && draggingGroup === "NT" && draggingGroupIndex !== null && draggingGroupIndex !== idx
+                                  ? "border-primary ring-2 ring-ring"
+                                  : "border-border"
+                              }`}
+                            >
+                              <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-primary/10 text-primary text-xs font-medium shrink-0">
+                                {idx + 1}
+                              </span>
+                              <span className="text-muted-foreground/60 shrink-0 select-none">≡</span>
+                              <span className="text-sm text-foreground min-w-0 flex-1 break-words">{bn}</span>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removeFromGroupAt("NT", idx);
+                                }}
+                                className="w-8 h-8 rounded-lg border border-border hover:bg-destructive/10 text-destructive shrink-0 text-sm"
+                                title="삭제"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 ) : (
                   <div
                     ref={step3ScrollRef}
