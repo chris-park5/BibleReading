@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Calendar, CheckCircle, Circle, CircleDashed, Search } from "lucide-react";
+import { bookMatchesQuery } from "../utils/bookSearch";
 
 interface ReadingHistoryProps {
   completedDays: Set<number>;
@@ -50,7 +51,7 @@ export function ReadingHistory({
     const hits = new Set<number>();
     for (const entry of schedule) {
       if (!entry?.day || !Array.isArray(entry.readings)) continue;
-      const ok = entry.readings.some((r) => String(r?.book ?? "").toLowerCase().includes(normalizedQuery));
+      const ok = entry.readings.some((r) => bookMatchesQuery(String(r?.book ?? ""), normalizedQuery));
       if (ok) hits.add(entry.day);
     }
     return hits;
