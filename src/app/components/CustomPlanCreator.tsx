@@ -344,6 +344,70 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
     setSelectedBooks(group === "OT" ? [...nextGroup, ...other] : [...other, ...nextGroup]);
   };
 
+  const resetAllToCanonicalOrder = () => {
+    setSelectedBooks((prev) => {
+      if (prev.length <= 1) return prev;
+      const counts = new Map<string, number>();
+      for (const b of prev) counts.set(b, (counts.get(b) ?? 0) + 1);
+
+      const next: string[] = [];
+      for (const b of otBooks) {
+        const c = counts.get(b) ?? 0;
+        for (let i = 0; i < c; i++) next.push(b);
+        if (c > 0) counts.delete(b);
+      }
+      for (const b of ntBooks) {
+        const c = counts.get(b) ?? 0;
+        for (let i = 0; i < c; i++) next.push(b);
+        if (c > 0) counts.delete(b);
+      }
+
+      // If any unknown books exist, preserve their relative order at the end.
+      if (counts.size > 0) {
+        for (const b of prev) {
+          const c = counts.get(b);
+          if (!c) continue;
+          next.push(b);
+          const remaining = c - 1;
+          if (remaining <= 0) counts.delete(b);
+          else counts.set(b, remaining);
+        }
+      }
+
+      return next;
+    });
+  };
+
+  const resetGroupToCanonicalOrder = (group: "OT" | "NT") => {
+    const cur = group === "OT" ? splitSelected.ot : splitSelected.nt;
+    if (cur.length <= 1) return;
+
+    const counts = new Map<string, number>();
+    for (const b of cur) counts.set(b, (counts.get(b) ?? 0) + 1);
+
+    const canonical = group === "OT" ? otBooks : ntBooks;
+    const nextGroup: string[] = [];
+    for (const b of canonical) {
+      const c = counts.get(b) ?? 0;
+      for (let i = 0; i < c; i++) nextGroup.push(b);
+      if (c > 0) counts.delete(b);
+    }
+
+    if (counts.size > 0) {
+      for (const b of cur) {
+        const c = counts.get(b);
+        if (!c) continue;
+        nextGroup.push(b);
+        const remaining = c - 1;
+        if (remaining <= 0) counts.delete(b);
+        else counts.set(b, remaining);
+      }
+    }
+
+    const other = group === "OT" ? splitSelected.nt : splitSelected.ot;
+    setSelectedBooks(group === "OT" ? [...nextGroup, ...other] : [...other, ...nextGroup]);
+  };
+
   const handleStep3AutoScroll = (clientY: number, elOverride?: HTMLDivElement | null) => {
     const el = elOverride ?? step3ScrollRef.current;
     if (!el) return;
@@ -966,6 +1030,18 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
                             >
                               랜덤 섞기
                             </button>
+
+                            <div className="h-px bg-border my-1" />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                resetAllToCanonicalOrder();
+                                setShowShuffleOptions(false);
+                              }}
+                              className="w-full text-left px-2 py-1.5 rounded-md hover:bg-accent text-sm"
+                            >
+                              기본 순서로 초기화
+                            </button>
                           </div>
                         )}
                       </div>
@@ -1003,6 +1079,18 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
                                 className="w-full text-left px-2 py-1.5 rounded-md hover:bg-accent text-sm"
                               >
                                 랜덤 섞기
+                              </button>
+
+                              <div className="h-px bg-border my-1" />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  resetGroupToCanonicalOrder("OT");
+                                  setShowOtShuffleMenu(false);
+                                }}
+                                className="w-full text-left px-2 py-1.5 rounded-md hover:bg-accent text-sm"
+                              >
+                                초기화
                               </button>
                             </div>
                           )}
@@ -1102,6 +1190,18 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
                                 className="w-full text-left px-2 py-1.5 rounded-md hover:bg-accent text-sm"
                               >
                                 랜덤 섞기
+                              </button>
+
+                              <div className="h-px bg-border my-1" />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  resetGroupToCanonicalOrder("NT");
+                                  setShowNtShuffleMenu(false);
+                                }}
+                                className="w-full text-left px-2 py-1.5 rounded-md hover:bg-accent text-sm"
+                              >
+                                초기화
                               </button>
                             </div>
                           )}
