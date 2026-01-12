@@ -255,6 +255,30 @@ export default function App() {
     return () => window.removeEventListener("hashchange", onHashChange);
   }, []);
 
+  // If session is revoked on another device, gracefully force logout.
+  useEffect(() => {
+    const handler = () => {
+      setUser(null);
+      try {
+        queryClient.clear();
+      } catch {
+        // ignore
+      }
+      usePlanStore.setState({
+        selectedPlanId: null,
+        currentDay: 1,
+        viewDate: null,
+        showPlanSelector: true,
+        showCustomPlanCreator: false,
+        showFriendsPanel: false,
+        showNotificationSettings: false,
+      });
+    };
+
+    window.addEventListener("auth:expired", handler as any);
+    return () => window.removeEventListener("auth:expired", handler as any);
+  }, [setUser]);
+
   useEffect(() => {
     const onOnline = () => setIsOnline(true);
     const onOffline = () => setIsOnline(false);
