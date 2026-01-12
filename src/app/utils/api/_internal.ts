@@ -91,7 +91,12 @@ export function getAccessToken() {
 // HTTP Client
 // ============================================================================
 
-export async function fetchAPI(endpoint: string, options: RequestInit = {}, useAuth = true) {
+export async function fetchAPI(
+  endpoint: string,
+  options: RequestInit = {},
+  useAuth = true,
+  timeoutMs: number = DEFAULT_API_TIMEOUT_MS
+) {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     apikey: SUPABASE_ANON_KEY,
@@ -104,7 +109,7 @@ export async function fetchAPI(endpoint: string, options: RequestInit = {}, useA
   }
 
   const controller = new AbortController();
-  const timeout = window.setTimeout(() => controller.abort(), DEFAULT_API_TIMEOUT_MS);
+  const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
 
   // If caller provided a signal, respect it as well.
   const externalSignal = options.signal;
@@ -142,7 +147,27 @@ export async function fetchAPI(endpoint: string, options: RequestInit = {}, useA
   }
 
   if (!response.ok) {
-    throw new Error(data.error || "API request failed");
+    const errText = data?.error ? String(data.error) : "";
+    const normalized = errText.toLowerCase();
+
+    // Common Supabase auth error when a JWT references a revoked/non-existent session.
+    if (response.status === 401 && normalized.includes("session from session_id claim") && normalized.includes("does not exist")) {
+      setAccessToken(null);
+      try {
+        // Clear local session so UI can recover.
+        await supabase.auth.signOut({ scope: "local" });
+      } catch {
+        // ignore
+      }
+      try {
+        window.dispatchEvent(new CustomEvent("auth:expired", { detail: { reason: errText } }));
+      } catch {
+        // ignore
+      }
+      throw new Error("세션이 만료되었습니다. 다시 로그인해주세요.");
+    }
+
+    throw new Error(errText || "API request failed");
   }
 
   return data;

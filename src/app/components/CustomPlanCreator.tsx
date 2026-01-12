@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { X, BookPlus } from "lucide-react";
 import { BIBLE_BOOKS } from "../data/bibleBooks";
 import { generateScheduleFromSelectedBooks } from "../utils/generateScheduleFromSelectedBooks";
+import { disambiguateScheduleForDb } from "../utils/scheduleUniq";
 
 interface Reading {
   book: string;
@@ -499,12 +500,20 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
         return;
       }
 
+      const fixed = disambiguateScheduleForDb(schedule);
+      if (fixed.duplicatesFixed > 0) {
+        const ok = window.confirm(
+          `같은 날짜에 동일한 읽기 항목이 ${fixed.duplicatesFixed}개 중복되어 자동으로 보정했습니다.\n\n계속 진행할까요?`
+        );
+        if (!ok) return;
+      }
+
       onSave({
         name: finalName,
         startDate,
         endDate,
         totalDays,
-        schedule,
+        schedule: fixed.schedule,
         isCustom: true,
       });
     } catch (err: any) {

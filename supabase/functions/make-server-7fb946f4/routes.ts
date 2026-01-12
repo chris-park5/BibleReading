@@ -24,6 +24,30 @@ const supabase = getSupabaseClient();
 const MAX_PLAN_TOTAL_DAYS = 3650; // ~10 years
 const MAX_SCHEDULE_ROWS = 20000; // total (day x readings) rows
 
+const ZERO_WIDTH_RE = /[\u200B-\u200D\uFEFF]/g;
+
+function stripZeroWidth(s: unknown) {
+  return String(s ?? "").replace(ZERO_WIDTH_RE, "");
+}
+
+function disambiguateDuplicateScheduleRows<T extends { day: number; book: string; chapters: string }>(
+  rows: T[]
+): T[] {
+  // DB has a unique index on (plan_id/preset_id, day, book, chapters).
+  // Some legitimate cases (e.g., 동일 책/범위가 같은 날에 2회 등장) can violate it.
+  // We keep UI text identical by adding invisible suffix characters only when duplicates occur.
+  const seen = new Map<string, number>();
+  return rows.map((r) => {
+    const baseChapters = stripZeroWidth(r.chapters);
+    const key = `${r.day}|${r.book}|${baseChapters}`;
+    const n = (seen.get(key) ?? 0) + 1;
+    seen.set(key, n);
+    if (n === 1) return { ...r, chapters: baseChapters };
+    // Append n-1 zero-width spaces.
+    return { ...r, chapters: `${baseChapters}${"\u200B".repeat(n - 1)}` };
+  });
+}
+
 function chunkArray<T>(items: T[], chunkSize: number): T[][] {
   if (chunkSize <= 0) return [items];
   const chunks: T[][] = [];
@@ -422,41 +446,72 @@ export async function createPlan(c: Context) {
     // - Custom plan: plan_schedules에 저장
     // - Preset plan: preset_schedules가 비어있으면(새 DB) 클라이언트가 보낸 schedule로 1회 시드
     if (!isCustom && presetId && schedule && schedule.length > 0) {
-      const { count } = await supabase
+      const { count, error: presetCountError } = await supabase
         .from("preset_schedules")
         .select("id", { count: "exact", head: true })
         .eq("preset_id", presetId);
 
-      if ((count ?? 0) === 0) {
-        const presetRows = schedule.flatMap((day) =>
-          day.readings.map((reading) => ({
-            preset_id: presetId,
-            day: day.day,
-            book: reading.book,
-            chapters: reading.chapters,
-          }))
-        );
+      if (presetCountError) throw presetCountError;
 
-        if (presetRows.length > 0) {
-          // Insert in chunks to avoid row/request limits.
-          const chunks = chunkArray(presetRows, 500);
-          for (const chunk of chunks) {
-            const { error: presetSeedError } = await supabase
-              .from("preset_schedules")
-              .insert(chunk);
+      const presetRowsRaw = schedule.flatMap((day) =>
+        day.readings.map((reading) => ({
+          preset_id: presetId,
+          day: day.day,
+          book: reading.book,
+          chapters: reading.chapters,
+        }))
+      );
 
-            if (presetSeedError) {
-              console.error("Failed to seed preset_schedules:", presetSeedError);
-              break;
-            }
+      const presetRows = disambiguateDuplicateScheduleRows(
+        presetRowsRaw.map((r) => ({
+          ...r,
+          // Ensure comparison is stable even if client already contains zero-width characters.
+          chapters: stripZeroWidth(r.chapters),
+        })) as any
+      ) as typeof presetRowsRaw;
+
+      const expectedRows = presetRows.length;
+
+      // IMPORTANT: never silently partially seed preset schedules.
+      // If DB has fewer rows than expected (common after timeout/partial insert), repair by upserting missing rows.
+      if (expectedRows > 0 && (count ?? 0) < expectedRows) {
+        const chunks = chunkArray(presetRows, 500);
+        for (const chunk of chunks) {
+          const { error: presetSeedError } = await supabase
+            .from("preset_schedules")
+            .upsert(chunk, {
+              onConflict: "preset_id,day,book,chapters",
+              ignoreDuplicates: true,
+            });
+
+          if (presetSeedError) {
+            console.error("Failed to seed/repair preset_schedules:", presetSeedError);
+            // Rollback created plan to avoid plans pointing at incomplete preset schedules.
+            await supabase.from("plans").delete().eq("id", plan.id);
+            throw presetSeedError;
           }
+        }
+
+        const { count: finalCount, error: finalCountError } = await supabase
+          .from("preset_schedules")
+          .select("id", { count: "exact", head: true })
+          .eq("preset_id", presetId);
+
+        if (finalCountError) {
+          await supabase.from("plans").delete().eq("id", plan.id);
+          throw finalCountError;
+        }
+
+        if ((finalCount ?? 0) < expectedRows) {
+          await supabase.from("plans").delete().eq("id", plan.id);
+          return c.json({ error: "Failed to seed preset schedule. Please retry." }, 500);
         }
       }
     }
 
     // Custom plan: plan_schedules
     if (isCustom && schedule && schedule.length > 0) {
-      const scheduleRows = schedule.flatMap((day) =>
+      const scheduleRowsRaw = schedule.flatMap((day) =>
         day.readings.map((reading) => ({
           plan_id: plan.id,
           day: day.day,
@@ -464,6 +519,13 @@ export async function createPlan(c: Context) {
           chapters: reading.chapters,
         }))
       );
+
+      const scheduleRows = disambiguateDuplicateScheduleRows(
+        scheduleRowsRaw.map((r) => ({
+          ...r,
+          chapters: stripZeroWidth(r.chapters),
+        })) as any
+      ) as typeof scheduleRowsRaw;
 
       // Insert in chunks to avoid row/request limits.
       const chunks = chunkArray(scheduleRows, 500);
@@ -509,56 +571,83 @@ export async function getPlans(c: Context) {
 
     if (error) throw error;
 
-    // 각 Plan의 Schedule 조회
-    const plans = await Promise.all(
-      plansData.map(async (p) => {
-        let scheduleData;
+    // Avoid N+1: fetch all schedules in bulk.
+    const customPlanIds = (plansData ?? [])
+      .filter((p: any) => Boolean(p?.is_custom))
+      .map((p: any) => p.id)
+      .filter(Boolean);
 
-        if (p.is_custom) {
-          // Custom: plan_schedules
-          const { data } = await supabase
-            .from("plan_schedules")
-            .select("day, book, chapters")
-            .eq("plan_id", p.id);
-          scheduleData = data || [];
-        } else {
-          // Preset: preset_schedules
-          const { data } = await supabase
-            .from("preset_schedules")
-            .select("day, book, chapters")
-            .eq("preset_id", p.preset_id);
-          scheduleData = data || [];
-        }
-
-        // Schedule 재구성
-        const scheduleMap = new Map<number, Array<{ book: string; chapters: string }>>();
-        
-        scheduleData.forEach((s: any) => {
-          if (!scheduleMap.has(s.day)) {
-            scheduleMap.set(s.day, []);
-          }
-          scheduleMap.get(s.day)!.push({ book: s.book, chapters: s.chapters });
-        });
-
-        const schedule = Array.from(scheduleMap.entries())
-          .map(([day, readings]) => ({ day, readings }))
-          .sort((a, b) => a.day - b.day);
-
-        return {
-          id: p.id,
-          userId: p.user_id,
-          presetId: p.preset_id,
-          name: p.name,
-          startDate: p.start_date,
-          endDate: p.end_date,
-          totalDays: p.total_days,
-          isCustom: p.is_custom,
-          displayOrder: p.display_order,
-          createdAt: p.created_at,
-          schedule,
-        };
-      })
+    const presetIds = Array.from(
+      new Set(
+        (plansData ?? [])
+          .filter((p: any) => !p?.is_custom && Boolean(p?.preset_id))
+          .map((p: any) => p.preset_id)
+      )
     );
+
+    const customScheduleByPlanId = new Map<string, Array<{ day: number; book: string; chapters: string }>>();
+    const presetScheduleByPresetId = new Map<string, Array<{ day: number; book: string; chapters: string }>>();
+
+    if (customPlanIds.length > 0) {
+      const { data: customRows, error: customErr } = await supabase
+        .from("plan_schedules")
+        .select("plan_id, day, book, chapters")
+        .in("plan_id", customPlanIds);
+
+      if (customErr) throw customErr;
+      (customRows ?? []).forEach((r: any) => {
+        const pid = String(r.plan_id);
+        if (!customScheduleByPlanId.has(pid)) customScheduleByPlanId.set(pid, []);
+        customScheduleByPlanId.get(pid)!.push({ day: r.day, book: r.book, chapters: r.chapters });
+      });
+    }
+
+    if (presetIds.length > 0) {
+      const { data: presetRows, error: presetErr } = await supabase
+        .from("preset_schedules")
+        .select("preset_id, day, book, chapters")
+        .in("preset_id", presetIds);
+
+      if (presetErr) throw presetErr;
+      (presetRows ?? []).forEach((r: any) => {
+        const pid = String(r.preset_id);
+        if (!presetScheduleByPresetId.has(pid)) presetScheduleByPresetId.set(pid, []);
+        presetScheduleByPresetId.get(pid)!.push({ day: r.day, book: r.book, chapters: r.chapters });
+      });
+    }
+
+    const buildSchedule = (rows: Array<{ day: number; book: string; chapters: string }>) => {
+      const scheduleMap = new Map<number, Array<{ book: string; chapters: string }>>();
+      (rows ?? []).forEach((s: any) => {
+        const dayNum = Number(s.day);
+        if (!Number.isFinite(dayNum)) return;
+        if (!scheduleMap.has(dayNum)) scheduleMap.set(dayNum, []);
+        scheduleMap.get(dayNum)!.push({ book: s.book, chapters: stripZeroWidth(s.chapters) });
+      });
+      return Array.from(scheduleMap.entries())
+        .map(([day, readings]) => ({ day, readings }))
+        .sort((a, b) => a.day - b.day);
+    };
+
+    const plans = (plansData ?? []).map((p: any) => {
+      const rows = p.is_custom
+        ? customScheduleByPlanId.get(String(p.id)) ?? []
+        : presetScheduleByPresetId.get(String(p.preset_id)) ?? [];
+
+      return {
+        id: p.id,
+        userId: p.user_id,
+        presetId: p.preset_id,
+        name: p.name,
+        startDate: p.start_date,
+        endDate: p.end_date,
+        totalDays: p.total_days,
+        isCustom: p.is_custom,
+        displayOrder: p.display_order,
+        createdAt: p.created_at,
+        schedule: buildSchedule(rows),
+      };
+    });
 
     return c.json({ success: true, plans });
   } catch (error) {

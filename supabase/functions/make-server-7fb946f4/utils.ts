@@ -178,5 +178,26 @@ export async function fetchUserProgress(userId: string, planId: string) {
  */
 export function handleError(error: unknown, message: string) {
   console.error(`${message}:`, error);
-  return { error: message };
+
+  // Surface a safe, actionable message to the client.
+  // Supabase/PostgREST errors typically have: message, details, hint, code.
+  const errObj = error as any;
+  const causeMsg =
+    typeof errObj?.message === "string" && errObj.message.trim().length > 0
+      ? errObj.message.trim()
+      : typeof errObj?.error_description === "string" && errObj.error_description.trim().length > 0
+      ? errObj.error_description.trim()
+      : null;
+  const details = typeof errObj?.details === "string" ? errObj.details : null;
+  const hint = typeof errObj?.hint === "string" ? errObj.hint : null;
+  const code = typeof errObj?.code === "string" ? errObj.code : null;
+
+  const parts: string[] = [message];
+  if (causeMsg) parts.push(causeMsg);
+  if (code) parts.push(`(code: ${code})`);
+
+  const extra = [details, hint].filter((v) => typeof v === "string" && v.length > 0).join(" ");
+  const full = extra ? `${parts.join(" - ")} ${extra}` : parts.join(" - ");
+
+  return { error: full };
 }

@@ -89,7 +89,8 @@ export async function signInWithGoogle() {
 }
 
 export async function signOut() {
-  await supabase.auth.signOut();
+  // IMPORTANT: Use local scope so logging out on one device does not revoke other devices' sessions.
+  await supabase.auth.signOut({ scope: "local" });
   setAccessToken(null);
 }
 
