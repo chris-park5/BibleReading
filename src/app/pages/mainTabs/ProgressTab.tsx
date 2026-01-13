@@ -14,7 +14,7 @@ import { bookMatchesQuery } from "../../utils/bookSearch";
 export function ProgressTab() {
   const { plans } = usePlans();
   const selectedPlanId = usePlanStore((s) => s.selectedPlanId);
-  const { selectPlan, currentDay } = usePlanStore();
+  const { selectPlan } = usePlanStore();
 
   // 계획이 있으면 자동으로 첫 번째 계획 선택 (selectedPlanId가 없을 때)
   const activePlanId = selectedPlanId || (plans.length > 0 ? plans[0].id : null);
@@ -22,20 +22,29 @@ export function ProgressTab() {
   const { progress, toggleReading } = useProgress(activePlanId);
   const [viewMode, setViewMode] = useState<"day" | "book">("day");
   const [bookQuery, setBookQuery] = useState("");
-  const [selectedHistoryDay, setSelectedHistoryDay] = useState<number>(currentDay);
+
+  // NOTE:
+  // - `todayDay` is computed from real calendar date + plan.startDate.
+  // - `selectedHistoryDay` is what user is currently inspecting in this tab.
+  // These two must be separated; otherwise "오늘" gets stuck on day 1 when store currentDay is reset.
+  const today = startOfTodayLocal();
+  const rawTodayDay = plan ? computeTodayDay(plan, today) : 1;
+  const todayDay = plan ? Math.max(1, Math.min(plan.totalDays, rawTodayDay)) : 1;
+
+  const [selectedHistoryDay, setSelectedHistoryDay] = useState<number>(todayDay);
   const [isPinnedHistoryDay, setIsPinnedHistoryDay] = useState(false);
   const historyDetailRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     // When plan changes, reset selection to currentDay.
-    setSelectedHistoryDay(currentDay);
+    setSelectedHistoryDay(todayDay);
     setIsPinnedHistoryDay(false);
-  }, [activePlanId]);
+  }, [activePlanId, todayDay]);
 
   useEffect(() => {
     // If user hasn't clicked a day in this tab, keep selection synced.
-    if (!isPinnedHistoryDay) setSelectedHistoryDay(currentDay);
-  }, [currentDay, isPinnedHistoryDay]);
+    if (!isPinnedHistoryDay) setSelectedHistoryDay(todayDay);
+  }, [todayDay, isPinnedHistoryDay]);
 
   // NOTE: Hooks must be called unconditionally.
   // Large plans can make plan/progress arrive a render later; keep hook order stable.
@@ -98,8 +107,6 @@ export function ProgressTab() {
     );
   }
 
-  const today = startOfTodayLocal();
-  const rawTodayDay = computeTodayDay(plan, today);
   const elapsedDays = Math.max(0, Math.min(plan.totalDays, rawTodayDay));
   const { totalChapters, completedChapters } = computeChaptersTotals({ schedule: plan.schedule, progress });
   const { totalChapters: elapsedChapters, completedChapters: completedChaptersUpToToday } = computeChaptersTotals({
@@ -229,7 +236,8 @@ export function ProgressTab() {
 
               return partial;
             })()}
-            currentDay={currentDay}
+            // "오늘" 표시(하이라이트)는 실제 오늘 날짜 기준 day를 사용합니다.
+            currentDay={todayDay}
             selectedDay={selectedHistoryDay}
             onDayClick={(day) => {
               setSelectedHistoryDay(day);
