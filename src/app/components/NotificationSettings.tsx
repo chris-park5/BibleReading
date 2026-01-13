@@ -102,11 +102,17 @@ export function NotificationSettings({
     }
   };
 
+  const normalizeTime = (t: string) => {
+    const parts = String(t || "").split(":");
+    if (parts.length < 2) return t;
+    return `${parts[0].padStart(2, "0")}:${parts[1].padStart(2, "0")}`;
+  };
+
   const loadSettings = async () => {
     const cached = readCachedNotificationSetting(planId);
     if (cached) {
       setEnabled(cached.enabled);
-      setTime(cached.time);
+      setTime(normalizeTime(cached.time));
     }
 
     try {
@@ -115,9 +121,10 @@ export function NotificationSettings({
         (n: any) => n.planId === planId
       );
       if (notification) {
+        const normalized = normalizeTime(notification.time);
         setEnabled(notification.enabled);
-        setTime(notification.time);
-        writeCachedNotificationSetting(planId, { enabled: notification.enabled, time: notification.time });
+        setTime(normalized);
+        writeCachedNotificationSetting(planId, { enabled: notification.enabled, time: normalized });
       } else {
         setEnabled(false);
         setTime("09:00");
@@ -138,9 +145,10 @@ export function NotificationSettings({
     }
 
     try {
-      await api.saveNotification(planId, time, enabled);
+      const normalizedTime = normalizeTime(time);
+      await api.saveNotification(planId, normalizedTime, enabled);
 
-      writeCachedNotificationSetting(planId, { enabled, time });
+      writeCachedNotificationSetting(planId, { enabled, time: normalizedTime });
 
       if (enabled) {
         scheduleNotification();
