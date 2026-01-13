@@ -83,6 +83,12 @@ export function NotificationsSettingsSection() {
     }
   };
 
+  const normalizeTime = (t: string) => {
+    const parts = String(t || "").split(":");
+    if (parts.length < 2) return t;
+    return `${parts[0].padStart(2, "0")}:${parts[1].padStart(2, "0")}`;
+  };
+
   const loadSettings = async () => {
     if (!activePlanId) return;
 
@@ -92,16 +98,17 @@ export function NotificationsSettingsSection() {
     const cached = readCachedNotificationSetting(activePlanId);
     if (cached) {
       setEnabled(cached.enabled);
-      setTime(cached.time);
+      setTime(normalizeTime(cached.time));
     }
 
     try {
       const result = await notificationService.getNotifications();
       const notification = result.notifications.find((n: any) => n.planId === activePlanId);
       if (notification) {
+        const normalized = normalizeTime(notification.time);
         setEnabled(notification.enabled);
-        setTime(notification.time);
-        writeCachedNotificationSetting(activePlanId, { enabled: notification.enabled, time: notification.time });
+        setTime(normalized);
+        writeCachedNotificationSetting(activePlanId, { enabled: notification.enabled, time: normalized });
       } else {
         // No server-side setting: fall back to defaults, and cache it.
         setEnabled(false);
@@ -191,10 +198,11 @@ export function NotificationsSettingsSection() {
     }
 
     try {
-      await notificationService.saveNotification(activePlanId, time, enabled);
+      const normalizedTime = normalizeTime(time);
+      await notificationService.saveNotification(activePlanId, normalizedTime, enabled);
 
       // Persist UI state locally as well to survive browser restarts / temporary auth issues.
-      writeCachedNotificationSetting(activePlanId, { enabled, time });
+      writeCachedNotificationSetting(activePlanId, { enabled, time: normalizedTime });
 
       if (enabled) {
         scheduleNotification();
