@@ -7,7 +7,11 @@
 import { Hono } from "npm:hono";
 import { cors } from "npm:hono/cors";
 import { logger } from "npm:hono/logger";
-import * as routes from "./routes.ts";
+import * as authRoutes from "./authRoutes.ts";
+import * as planRoutes from "./planRoutes.ts";
+import * as progressRoutes from "./progressRoutes.ts";
+import * as friendRoutes from "./friendRoutes.ts";
+import * as notificationRoutes from "./notificationRoutes.ts";
 
 const app = new Hono();
 const api = new Hono();
@@ -35,40 +39,40 @@ api.get("/", (c) => c.json({ status: "ok", message: "Bible Reading API" }));
 api.get("/health", (c) => c.json({ status: "ok" }));
 
 // Public routes
-api.post("/signup", routes.signup);
-api.post("/get-username-email", routes.getUsernameEmail);
+api.post("/signup", authRoutes.signup);
+api.post("/get-username-email", authRoutes.getUsernameEmail);
 
 // Protected routes
-api.post("/preset-schedules/seed", routes.requireAuth, routes.seedPresetSchedules);
-api.post("/plans", routes.requireAuth, routes.createPlan);
-api.get("/plans", routes.requireAuth, routes.getPlans);
-api.delete("/plans/:planId", routes.requireAuth, routes.deletePlan);
-api.patch("/plans/order", routes.requireAuth, routes.updatePlanOrder);
+api.post("/preset-schedules/seed", authRoutes.requireAuth, planRoutes.seedPresetSchedules);
+api.post("/plans", authRoutes.requireAuth, planRoutes.createPlan);
+api.get("/plans", authRoutes.requireAuth, planRoutes.getPlans);
+api.delete("/plans/:planId", authRoutes.requireAuth, planRoutes.deletePlan);
+api.patch("/plans/order", authRoutes.requireAuth, planRoutes.updatePlanOrder);
 
-api.post("/progress", routes.requireAuth, routes.updateProgress);
-api.get("/progress", routes.requireAuth, routes.getProgress);
+api.post("/progress", authRoutes.requireAuth, progressRoutes.updateProgress);
+api.get("/progress", authRoutes.requireAuth, progressRoutes.getProgress);
 
-api.post("/friends", routes.requireAuth, routes.addFriend);
-api.get("/friends", routes.requireAuth, routes.getFriends);
-api.delete("/friends/:friendUserId", routes.requireAuth, routes.deleteFriend);
-api.get("/friend-progress", routes.requireAuth, routes.getFriendProgress);
-api.post("/friend-requests/respond", routes.requireAuth, routes.respondFriendRequest);
-api.post("/friend-requests/cancel", routes.requireAuth, routes.cancelFriendRequest);
-api.get("/friend-status", routes.requireAuth, routes.getFriendStatus);
-api.get("/share-plan", routes.requireAuth, routes.getSharePlan);
-api.post("/share-plan", routes.requireAuth, routes.setSharePlan);
+api.post("/friends", authRoutes.requireAuth, friendRoutes.addFriend);
+api.get("/friends", authRoutes.requireAuth, friendRoutes.getFriends);
+api.delete("/friends/:friendUserId", authRoutes.requireAuth, friendRoutes.deleteFriend);
+api.get("/friend-progress", authRoutes.requireAuth, friendRoutes.getFriendProgress);
+api.post("/friend-requests/respond", authRoutes.requireAuth, friendRoutes.respondFriendRequest);
+api.post("/friend-requests/cancel", authRoutes.requireAuth, friendRoutes.cancelFriendRequest);
+api.get("/friend-status", authRoutes.requireAuth, friendRoutes.getFriendStatus);
+api.get("/share-plan", authRoutes.requireAuth, friendRoutes.getSharePlan);
+api.post("/share-plan", authRoutes.requireAuth, friendRoutes.setSharePlan);
 
-api.post("/notifications", routes.requireAuth, routes.saveNotification);
-api.get("/notifications", routes.requireAuth, routes.getNotifications);
+api.post("/notifications", authRoutes.requireAuth, notificationRoutes.saveNotification);
+api.get("/notifications", authRoutes.requireAuth, notificationRoutes.getNotifications);
 
-api.post("/push/subscribe", routes.requireAuth, routes.savePushSubscription);
-api.post("/push/test", routes.requireAuth, routes.sendTestPush);
-api.get("/push/public-key", routes.getVapidPublicKey);
+api.post("/push/subscribe", authRoutes.requireAuth, notificationRoutes.savePushSubscription);
+api.post("/push/test", authRoutes.requireAuth, notificationRoutes.sendTestPush);
+api.get("/push/public-key", notificationRoutes.getVapidPublicKey);
 
 // Scheduled/cron trigger (protect with a shared secret header).
-api.post("/cron/send-notifications", routes.sendScheduledNotifications);
+api.post("/cron/send-notifications", notificationRoutes.sendScheduledNotifications);
 
-api.delete("/account", routes.requireAuth, routes.deleteAccount);
+api.delete("/account", authRoutes.requireAuth, authRoutes.deleteAccount);
 
 // Mount routes for both cases:
 // - runtime passes path as '/health'
