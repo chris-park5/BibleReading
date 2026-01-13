@@ -48,6 +48,36 @@ function disambiguateDuplicateScheduleRows<T extends { day: number; book: string
   });
 }
 
+/**
+ * Supabase/PostgREST has a default max rows limit (commonly 1000).
+ * Large preset plans can exceed this (e.g., 365 days × multiple readings).
+ *
+ * This helper fetches *all* rows by paging with `.range()`.
+ *
+ * IMPORTANT: Always provide a deterministic ordering in the builderFactory
+ * to avoid duplicates/holes across pages.
+ */
+async function selectAllRows<T>(
+  builderFactory: (
+    from: number,
+    to: number
+  ) => PromiseLike<{ data: T[] | null; error: any }>,
+  pageSize = 1000
+): Promise<T[]> {
+  const out: T[] = [];
+  let from = 0;
+  for (;;) {
+    const to = from + pageSize - 1;
+    const { data, error } = await builderFactory(from, to);
+    if (error) throw error;
+    const chunk = (data ?? []) as T[];
+    out.push(...chunk);
+    if (chunk.length < pageSize) break;
+    from += pageSize;
+  }
+  return out;
+}
+
 function chunkArray<T>(items: T[], chunkSize: number): T[][] {
   if (chunkSize <= 0) return [items];
   const chunks: T[][] = [];
@@ -589,12 +619,21 @@ export async function getPlans(c: Context) {
     const presetScheduleByPresetId = new Map<string, Array<{ day: number; book: string; chapters: string }>>();
 
     if (customPlanIds.length > 0) {
-      const { data: customRows, error: customErr } = await supabase
-        .from("plan_schedules")
-        .select("plan_id, day, book, chapters")
-        .in("plan_id", customPlanIds);
+      const customRows = await selectAllRows<any>(
+        (from, to) =>
+          supabase
+            .from("plan_schedules")
+            .select("plan_id, day, book, chapters")
+            .in("plan_id", customPlanIds)
+            // Deterministic ordering for stable pagination
+            .order("plan_id", { ascending: true })
+            .order("day", { ascending: true })
+            .order("book", { ascending: true })
+            .order("chapters", { ascending: true })
+            .range(from, to),
+        1000
+      );
 
-      if (customErr) throw customErr;
       (customRows ?? []).forEach((r: any) => {
         const pid = String(r.plan_id);
         if (!customScheduleByPlanId.has(pid)) customScheduleByPlanId.set(pid, []);
@@ -603,12 +642,21 @@ export async function getPlans(c: Context) {
     }
 
     if (presetIds.length > 0) {
-      const { data: presetRows, error: presetErr } = await supabase
-        .from("preset_schedules")
-        .select("preset_id, day, book, chapters")
-        .in("preset_id", presetIds);
+      const presetRows = await selectAllRows<any>(
+        (from, to) =>
+          supabase
+            .from("preset_schedules")
+            .select("preset_id, day, book, chapters")
+            .in("preset_id", presetIds)
+            // Deterministic ordering for stable pagination
+            .order("preset_id", { ascending: true })
+            .order("day", { ascending: true })
+            .order("book", { ascending: true })
+            .order("chapters", { ascending: true })
+            .range(from, to),
+        1000
+      );
 
-      if (presetErr) throw presetErr;
       (presetRows ?? []).forEach((r: any) => {
         const pid = String(r.preset_id);
         if (!presetScheduleByPresetId.has(pid)) presetScheduleByPresetId.set(pid, []);

@@ -6,6 +6,30 @@
 
 import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 
+// Note: Supabase/PostgREST enforces a default max rows limit (commonly 1000).
+// Large schedules (e.g., preset plans with multiple readings per day) can exceed it.
+// This helper fetches all rows via pagination using `.range()`.
+async function selectAllRows<T>(
+  builderFactory: (
+    from: number,
+    to: number
+  ) => PromiseLike<{ data: T[] | null; error: any }>,
+  pageSize = 1000
+): Promise<T[]> {
+  const out: T[] = [];
+  let from = 0;
+  for (;;) {
+    const to = from + pageSize - 1;
+    const { data, error } = await builderFactory(from, to);
+    if (error) throw error;
+    const chunk = (data ?? []) as T[];
+    out.push(...chunk);
+    if (chunk.length < pageSize) break;
+    from += pageSize;
+  }
+  return out;
+}
+
 // Supabase 클라이언트 싱글톤
 let supabaseInstance: SupabaseClient | null = null;
 
@@ -129,12 +153,17 @@ export async function fetchUserProgress(userId: string, planId: string) {
   const scheduleCountByDay = new Map<number, number>();
 
   if (planRow.is_custom) {
-    const { data: scheduleRows, error: scheduleError } = await supabase
-      .from("plan_schedules")
-      .select("day")
-      .eq("plan_id", planId);
+    const scheduleRows = await selectAllRows<any>(
+      (from, to) =>
+        supabase
+          .from("plan_schedules")
+          .select("day")
+          .eq("plan_id", planId)
+          .order("day", { ascending: true })
+          .range(from, to),
+      1000
+    );
 
-    if (scheduleError) throw scheduleError;
     (scheduleRows ?? []).forEach((r: any) => {
       const dayNum = Number(r.day);
       if (!Number.isFinite(dayNum)) return;
@@ -142,12 +171,17 @@ export async function fetchUserProgress(userId: string, planId: string) {
     });
   } else {
     if (planRow.preset_id) {
-      const { data: scheduleRows, error: scheduleError } = await supabase
-        .from("preset_schedules")
-        .select("day")
-        .eq("preset_id", planRow.preset_id);
+      const scheduleRows = await selectAllRows<any>(
+        (from, to) =>
+          supabase
+            .from("preset_schedules")
+            .select("day")
+            .eq("preset_id", planRow.preset_id)
+            .order("day", { ascending: true })
+            .range(from, to),
+        1000
+      );
 
-      if (scheduleError) throw scheduleError;
       (scheduleRows ?? []).forEach((r: any) => {
         const dayNum = Number(r.day);
         if (!Number.isFinite(dayNum)) return;
