@@ -272,6 +272,7 @@ export async function sendScheduledNotifications(c: Context) {
     initWebPush();
 
     const { date, hhmm } = nowInSeoul();
+    console.log(`[cron] sendScheduledNotifications: Running at ${hhmm} (${date})`);
 
     const { data: due, error: dueError } = await supabase
       .from("notification_settings")
@@ -280,7 +281,7 @@ export async function sendScheduledNotifications(c: Context) {
 
     if (dueError) throw dueError;
 
-    const WINDOW_MINUTES = 2; // ±2분 허용
+    const WINDOW_MINUTES = 15; // ±15분 허용
     const nowMinutes = (() => {
       const [h, m] = hhmm.split(":").map(Number);
       return h * 60 + m;

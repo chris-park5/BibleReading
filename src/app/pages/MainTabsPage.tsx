@@ -115,11 +115,21 @@ export function MainTabsPage() {
           else moveTabBy(-1); // swipe right -> prev tab
         }}
       >
-        {tab === "home" && <HomeTab />}
-        {tab === "progress" && <ProgressTab />}
-        {tab === "add" && <PlanSelectorPage embedded />}
-        {tab === "friends" && <FriendsTabPage />}
-        {tab === "settings" && <SettingsTabPage />}
+        <div hidden={tab !== "home"}>
+          <HomeTab />
+        </div>
+        <div hidden={tab !== "progress"}>
+          <ProgressTab />
+        </div>
+        <div hidden={tab !== "add"}>
+          <PlanSelectorPage embedded />
+        </div>
+        <div hidden={tab !== "friends"}>
+          <FriendsTabPage />
+        </div>
+        <div hidden={tab !== "settings"}>
+          <SettingsTabPage />
+        </div>
       </main>
 
       <nav className="fixed bottom-0 left-0 right-0 border-t border-border bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70">
