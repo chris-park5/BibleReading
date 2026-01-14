@@ -96,7 +96,7 @@ async function sendPushToUser(userId: string, payloadJson: unknown) {
     };
 
     try {
-      await webpush.sendNotification(subscription as any, payload);
+      await webpush.sendNotification(subscription as any, payload, { urgency: 'high' });
       delivered++;
     } catch (e: any) {
       const statusCode = e?.statusCode ?? e?.status;
