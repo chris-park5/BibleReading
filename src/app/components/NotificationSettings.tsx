@@ -150,43 +150,11 @@ export function NotificationSettings({
 
       writeCachedNotificationSetting(planId, { enabled, time: normalizedTime });
 
-      if (enabled) {
-        scheduleNotification();
-      }
-
       alert("알림 설정이 저장되었습니다");
       onClose();
     } catch (err) {
       alert("알림 설정 저장에 실패했습니다");
     }
-  };
-
-  const scheduleNotification = () => {
-    // 매일 정해진 시간에 알림 (실제로는 서비스 워커나 백그라운드 작업 필요)
-    const [hours, minutes] = time.split(":");
-    const now = new Date();
-    const scheduledTime = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
-      parseInt(hours),
-      parseInt(minutes)
-    );
-
-    if (scheduledTime < now) {
-      scheduledTime.setDate(scheduledTime.getDate() + 1);
-    }
-
-    const delay = scheduledTime.getTime() - now.getTime();
-
-    setTimeout(() => {
-      if (Notification.permission === "granted") {
-        void showNotification(
-          "성경 읽기 알림",
-          "오늘 말씀을 읽을 시간이에요. 앱을 열어 오늘의 읽기를 확인하세요."
-        );
-      }
-    }, delay);
   };
 
   const handleTestNotification = () => {
