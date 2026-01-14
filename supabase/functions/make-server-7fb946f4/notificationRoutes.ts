@@ -210,11 +210,14 @@ export async function getNotifications(c: Context) {
 
     if (error) throw error;
 
-    const notifications = (data ?? []).map((row: any) => ({
-      planId: row.plan_id,
-      time: timeHHMM(row.time) ?? row.time,
-      enabled: Boolean(row.enabled),
-    }));
+    const notifications = (data ?? []).map((row: any) => {
+      const rawTime = row.time.split(':').slice(0, 2).join(':'); // 초 단위 제거
+      return {
+        planId: row.plan_id,
+        time: timeHHMM(rawTime) ?? rawTime,
+        enabled: Boolean(row.enabled),
+      };
+    });
 
     return c.json({ success: true, notifications });
   } catch (error) {
@@ -288,7 +291,9 @@ export async function sendScheduledNotifications(c: Context) {
     })();
 
     const dueFiltered = (due ?? []).filter((row: any) => {
-      const t = timeHHMM(row.time);
+      const rawTime = row.time.split(':').slice(0, 2).join(':'); 
+      const t = timeHHMM(rawTime); // 이제 "20:10"만 들어가서 안전합니다.
+      console.log(`[debug] Checking row: ${row.id}, targetTime: ${t}, nowTime: ${hhmm}`);
       if (!t || !isTimeWithinWindow(t, hhmm, WINDOW_MINUTES)) return false;
 
       // last_sent_at 중복 방지: 같은 날짜+시각에 이미 발송된 경우 스킵
