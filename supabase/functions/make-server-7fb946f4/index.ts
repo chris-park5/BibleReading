@@ -8,10 +8,7 @@ import { Hono } from "npm:hono";
 import { cors } from "npm:hono/cors";
 import { logger } from "npm:hono/logger";
 import * as authRoutes from "./authRoutes.ts";
-import * as planRoutes from "./planRoutes.ts";
-import * as progressRoutes from "./progressRoutes.ts";
-import * as friendRoutes from "./friendRoutes.ts";
-import * as notificationRoutes from "./notificationRoutes.ts";
+// The other route modules are now dynamically imported to improve cold start time.
 
 const app = new Hono();
 const api = new Hono();
@@ -43,34 +40,34 @@ api.post("/signup", authRoutes.signup);
 api.post("/get-username-email", authRoutes.getUsernameEmail);
 
 // Protected routes
-api.post("/preset-schedules/seed", authRoutes.requireAuth, planRoutes.seedPresetSchedules);
-api.post("/plans", authRoutes.requireAuth, planRoutes.createPlan);
-api.get("/plans", authRoutes.requireAuth, planRoutes.getPlans);
-api.delete("/plans/:planId", authRoutes.requireAuth, planRoutes.deletePlan);
-api.patch("/plans/order", authRoutes.requireAuth, planRoutes.updatePlanOrder);
+api.post("/preset-schedules/seed", authRoutes.requireAuth, async (c) => (await import("./planRoutes.ts")).seedPresetSchedules(c));
+api.post("/plans", authRoutes.requireAuth, async (c) => (await import("./planRoutes.ts")).createPlan(c));
+api.get("/plans", authRoutes.requireAuth, async (c) => (await import("./planRoutes.ts")).getPlans(c));
+api.delete("/plans/:planId", authRoutes.requireAuth, async (c) => (await import("./planRoutes.ts")).deletePlan(c));
+api.patch("/plans/order", authRoutes.requireAuth, async (c) => (await import("./planRoutes.ts")).updatePlanOrder(c));
 
-api.post("/progress", authRoutes.requireAuth, progressRoutes.updateProgress);
-api.get("/progress", authRoutes.requireAuth, progressRoutes.getProgress);
+api.post("/progress", authRoutes.requireAuth, async (c) => (await import("./progressRoutes.ts")).updateProgress(c));
+api.get("/progress", authRoutes.requireAuth, async (c) => (await import("./progressRoutes.ts")).getProgress(c));
 
-api.post("/friends", authRoutes.requireAuth, friendRoutes.addFriend);
-api.get("/friends", authRoutes.requireAuth, friendRoutes.getFriends);
-api.delete("/friends/:friendUserId", authRoutes.requireAuth, friendRoutes.deleteFriend);
-api.get("/friend-progress", authRoutes.requireAuth, friendRoutes.getFriendProgress);
-api.post("/friend-requests/respond", authRoutes.requireAuth, friendRoutes.respondFriendRequest);
-api.post("/friend-requests/cancel", authRoutes.requireAuth, friendRoutes.cancelFriendRequest);
-api.get("/friend-status", authRoutes.requireAuth, friendRoutes.getFriendStatus);
-api.get("/share-plan", authRoutes.requireAuth, friendRoutes.getSharePlan);
-api.post("/share-plan", authRoutes.requireAuth, friendRoutes.setSharePlan);
+api.post("/friends", authRoutes.requireAuth, async (c) => (await import("./friendRoutes.ts")).addFriend(c));
+api.get("/friends", authRoutes.requireAuth, async (c) => (await import("./friendRoutes.ts")).getFriends(c));
+api.delete("/friends/:friendUserId", authRoutes.requireAuth, async (c) => (await import("./friendRoutes.ts")).deleteFriend(c));
+api.get("/friend-progress", authRoutes.requireAuth, async (c) => (await import("./friendRoutes.ts")).getFriendProgress(c));
+api.post("/friend-requests/respond", authRoutes.requireAuth, async (c) => (await import("./friendRoutes.ts")).respondFriendRequest(c));
+api.post("/friend-requests/cancel", authRoutes.requireAuth, async (c) => (await import("./friendRoutes.ts")).cancelFriendRequest(c));
+api.get("/friend-status", authRoutes.requireAuth, async (c) => (await import("./friendRoutes.ts")).getFriendStatus(c));
+api.get("/share-plan", authRoutes.requireAuth, async (c) => (await import("./friendRoutes.ts")).getSharePlan(c));
+api.post("/share-plan", authRoutes.requireAuth, async (c) => (await import("./friendRoutes.ts")).setSharePlan(c));
 
-api.post("/notifications", authRoutes.requireAuth, notificationRoutes.saveNotification);
-api.get("/notifications", authRoutes.requireAuth, notificationRoutes.getNotifications);
+api.post("/notifications", authRoutes.requireAuth, async (c) => (await import("./notificationRoutes.ts")).saveNotification(c));
+api.get("/notifications", authRoutes.requireAuth, async (c) => (await import("./notificationRoutes.ts")).getNotifications(c));
 
-api.post("/push/subscribe", authRoutes.requireAuth, notificationRoutes.savePushSubscription);
-api.post("/push/test", authRoutes.requireAuth, notificationRoutes.sendTestPush);
-api.get("/push/public-key", notificationRoutes.getVapidPublicKey);
+api.post("/push/subscribe", authRoutes.requireAuth, async (c) => (await import("./notificationRoutes.ts")).savePushSubscription(c));
+api.post("/push/test", authRoutes.requireAuth, async (c) => (await import("./notificationRoutes.ts")).sendTestPush(c));
+api.get("/push/public-key", async (c) => (await import("./notificationRoutes.ts")).getVapidPublicKey(c));
 
 // Scheduled/cron trigger (protect with a shared secret header).
-api.post("/cron/send-notifications", notificationRoutes.sendScheduledNotifications);
+api.post("/cron/send-notifications", async (c) => (await import("./notificationRoutes.ts")).sendScheduledNotifications(c));
 
 api.delete("/account", authRoutes.requireAuth, authRoutes.deleteAccount);
 
