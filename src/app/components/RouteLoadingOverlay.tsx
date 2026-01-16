@@ -4,7 +4,7 @@ export function RouteLoadingOverlay({ visible }: { visible: boolean }) {
   if (!visible) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-muted/30">
+    <div className="fixed inset-0 z-50 flex flex-col bg-background">
       {/* Main Content Area Skeleton */}
       <div className="flex-1 overflow-y-auto pb-24">
         <div className="max-w-4xl mx-auto p-6 space-y-4">
