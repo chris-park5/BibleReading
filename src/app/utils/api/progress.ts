@@ -1,5 +1,5 @@
 import type { Progress } from "../../../types/domain";
-import { fetchAPI } from "./_internal";
+import { fetchAPI, fetchAll, supabase } from "./_internal";
 
 // ============================================================================
 // Progress APIs
@@ -34,5 +34,106 @@ export async function updateProgress(
 }
 
 export async function getProgress(planId: string): Promise<{ success: boolean; progress: Progress }> {
-  return fetchAPI(`/progress?planId=${planId}`);
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) throw new Error("로그인이 필요합니다.");
+
+  // 1. Fetch user progress
+  const { data, error } = await supabase
+    .from("reading_progress")
+    .select("day, reading_index")
+    .eq("user_id", user.id)
+    .eq("plan_id", planId);
+
+  if (error) throw error;
+
+  // 2. Group completed readings by day
+  const completedReadingsByDay: Record<string, number[]> = {};
+  const completedSetsByDay = new Map<number, Set<number>>();
+
+  (data ?? []).forEach((item: any) => {
+    const dayNum = Number(item.day);
+    const idx = Number(item.reading_index);
+    if (!Number.isFinite(dayNum) || !Number.isFinite(idx)) return;
+
+    const dayStr = String(dayNum);
+    if (!completedReadingsByDay[dayStr]) {
+      completedReadingsByDay[dayStr] = [];
+    }
+    completedReadingsByDay[dayStr].push(idx);
+
+    if (!completedSetsByDay.has(dayNum)) {
+      completedSetsByDay.set(dayNum, new Set());
+    }
+    completedSetsByDay.get(dayNum)!.add(idx);
+  });
+
+  // 3. Fetch Plan info (to know schedule)
+  const { data: planRow, error: planError } = await supabase
+    .from("plans")
+    .select("id, is_custom, preset_id")
+    .eq("id", planId)
+    .maybeSingle();
+
+  if (planError) throw planError;
+  
+  const completedDays: number[] = [];
+  
+  if (planRow) {
+    const scheduleCountByDay = new Map<number, number>();
+
+    if (planRow.is_custom) {
+      const scheduleRows = await fetchAll<any>(
+        (from, to) =>
+          supabase
+            .from("plan_schedules")
+            .select("day")
+            .eq("plan_id", planId)
+            .order("day", { ascending: true })
+            .range(from, to),
+        1000
+      );
+
+      (scheduleRows ?? []).forEach((r: any) => {
+        const dayNum = Number(r.day);
+        if (!Number.isFinite(dayNum)) return;
+        scheduleCountByDay.set(dayNum, (scheduleCountByDay.get(dayNum) ?? 0) + 1);
+      });
+    } else if (planRow.preset_id) {
+      const scheduleRows = await fetchAll<any>(
+        (from, to) =>
+          supabase
+            .from("preset_schedules")
+            .select("day")
+            .eq("preset_id", planRow.preset_id)
+            .order("day", { ascending: true })
+            .range(from, to),
+        1000
+      );
+
+      (scheduleRows ?? []).forEach((r: any) => {
+        const dayNum = Number(r.day);
+        if (!Number.isFinite(dayNum)) return;
+        scheduleCountByDay.set(dayNum, (scheduleCountByDay.get(dayNum) ?? 0) + 1);
+      });
+    }
+
+    // 4. Calculate completed days
+    for (const [dayNum, completedSet] of completedSetsByDay.entries()) {
+      const requiredCount = scheduleCountByDay.get(dayNum) ?? 0;
+      if (requiredCount > 0 && completedSet.size >= requiredCount) {
+        completedDays.push(dayNum);
+      }
+    }
+  }
+
+  return {
+    success: true,
+    progress: {
+      userId: user.id,
+      planId,
+      completedDays: completedDays.sort((a, b) => a - b),
+      completedReadingsByDay,
+      lastUpdated: new Date().toISOString(),
+    },
+  };
 }
