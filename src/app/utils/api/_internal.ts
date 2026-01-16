@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { projectId, publicAnonKey } from "../../../../utils/supabase/info.tsx";
+import { projectId, publicAnonKey } from "../../../../utils/supabase/info";
 
 // ============================================================================
 // Configuration

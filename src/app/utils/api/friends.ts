@@ -72,9 +72,9 @@ export async function getFriends(): Promise<{
         userId: u.id,
         email: u.email,
         name: u.name,
-        username: u.username,
+        username: u.username ?? undefined,
         addedAt: r.created_at,
-      };
+      } as Friend;
     })
     .filter((x): x is Friend => x !== null);
 
@@ -88,10 +88,10 @@ export async function getFriends(): Promise<{
           id: u.id,
           email: u.email,
           name: u.name,
-          username: u.username,
+          username: u.username ?? undefined,
         },
         createdAt: r.created_at,
-      };
+      } as IncomingFriendRequest;
     })
     .filter((x): x is IncomingFriendRequest => x !== null);
 
@@ -105,10 +105,10 @@ export async function getFriends(): Promise<{
           id: u.id,
           email: u.email,
           name: u.name,
-          username: u.username,
+          username: u.username ?? undefined,
         },
         createdAt: r.created_at,
-      };
+      } as OutgoingFriendRequest;
     })
     .filter((x): x is OutgoingFriendRequest => x !== null);
 
