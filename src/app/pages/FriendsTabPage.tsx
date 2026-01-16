@@ -1,52 +1,88 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Check, Trash2, TrendingUp, UserPlus, UsersRound, X } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as friendService from "../../services/friendService";
+import { useAuthStore } from "../../stores/auth.store";
 
 export function FriendsTabPage() {
-  const [friends, setFriends] = useState<friendService.Friend[]>([]);
-  const [incomingRequests, setIncomingRequests] = useState<friendService.IncomingFriendRequest[]>([]);
-  const [outgoingRequests, setOutgoingRequests] = useState<friendService.OutgoingFriendRequest[]>([]);
+  const userId = useAuthStore((s) => s.user?.id ?? null);
+  const queryClient = useQueryClient();
   const [friendUsername, setFriendUsername] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [loadingFriends, setLoadingFriends] = useState(true);
-  const [respondingRequestId, setRespondingRequestId] = useState<string | null>(null);
-  const [deletingFriendId, setDeletingFriendId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [expandedFriendIds, setExpandedFriendIds] = useState<Set<string>>(() => new Set());
   const [friendStatusById, setFriendStatusById] = useState<Record<string, friendService.FriendStatus>>({});
 
-  useEffect(() => {
-    void loadFriends();
-  }, []);
+  // 친구 목록 및 요청 쿼리 (Polling 추가)
+  const { data: friendsData, isLoading: loadingFriends } = useQuery({
+    queryKey: ["friends", userId],
+    queryFn: friendService.getFriends,
+    enabled: !!userId,
+    refetchInterval: 15000, // 15초마다 자동 갱신
+  });
 
-  const loadFriends = async () => {
-    setLoadingFriends(true);
-    try {
-      const result = await friendService.getFriends();
-      setFriends(result.friends || []);
-      setIncomingRequests(result.incomingRequests || []);
-      setOutgoingRequests(result.outgoingRequests || []);
-    } catch (err: any) {
-      console.error("Failed to load friends:", err);
-    } finally {
-      setLoadingFriends(false);
-    }
-  };
+  const friends = friendsData?.friends || [];
+  const incomingRequests = friendsData?.incomingRequests || [];
+  const outgoingRequests = friendsData?.outgoingRequests || [];
 
-  const handleSendFriendRequest = async (e: React.FormEvent) => {
+  // 친구 추가 Mutation
+  const addFriendMutation = useMutation({
+    mutationFn: (username: string) => friendService.addFriend(username),
+    onSuccess: () => {
+      setFriendUsername("");
+      void queryClient.invalidateQueries({ queryKey: ["friends", userId] });
+    },
+    onError: (err: any) => {
+      setError(err.message || "친구 추가에 실패했습니다");
+    },
+  });
+
+  // 친구 삭제 Mutation
+  const deleteFriendMutation = useMutation({
+    mutationFn: (friendId: string) => friendService.deleteFriend(friendId),
+    onSuccess: (_, friendId) => {
+      setExpandedFriendIds((prev) => {
+        const next = new Set(prev);
+        next.delete(friendId);
+        return next;
+      });
+      setFriendStatusById((prev) => {
+        const { [friendId]: _removed, ...rest } = prev;
+        return rest;
+      });
+      void queryClient.invalidateQueries({ queryKey: ["friends", userId] });
+    },
+    onError: (err: any) => {
+      setError(err.message || "친구 삭제에 실패했습니다");
+    },
+  });
+
+  // 요청 수락/거부 Mutation
+  const respondMutation = useMutation({
+    mutationFn: ({ requestId, action }: { requestId: string; action: "accept" | "decline" }) =>
+      friendService.respondFriendRequest(requestId, action),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["friends", userId] });
+    },
+    onError: (err: any) => {
+      setError(err.message || "요청 처리에 실패했습니다");
+    },
+  });
+
+  // 요청 취소 Mutation
+  const cancelMutation = useMutation({
+    mutationFn: (requestId: string) => friendService.cancelFriendRequest(requestId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["friends", userId] });
+    },
+    onError: (err: any) => {
+      setError(err.message || "요청 취소에 실패했습니다");
+    },
+  });
+
+  const handleSendFriendRequest = (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setLoading(true);
-
-    try {
-      await friendService.addFriend(friendUsername.trim());
-      setFriendUsername("");
-      await loadFriends();
-    } catch (err: any) {
-      setError(err.message || "친구 추가에 실패했습니다");
-    } finally {
-      setLoading(false);
-    }
+    addFriendMutation.mutate(friendUsername.trim());
   };
 
   const handleViewStatus = async (friend: friendService.Friend) => {
@@ -60,7 +96,6 @@ export function FriendsTabPage() {
       return;
     }
 
-    // Open first (optimistic), then fetch status if needed.
     setExpandedFriendIds((prev) => {
       const next = new Set(prev);
       next.add(friend.userId);
@@ -80,55 +115,20 @@ export function FriendsTabPage() {
     }
   };
 
-  const handleDeleteFriend = async (friend: friendService.Friend) => {
+  const handleDeleteFriend = (friend: friendService.Friend) => {
     if (!window.confirm("친구를 삭제할까요?")) return;
-
     setError("");
-    setDeletingFriendId(friend.userId);
-    try {
-      await friendService.deleteFriend(friend.userId);
-      setExpandedFriendIds((prev) => {
-        const next = new Set(prev);
-        next.delete(friend.userId);
-        return next;
-      });
-      setFriendStatusById((prev) => {
-        if (!prev[friend.userId]) return prev;
-        const { [friend.userId]: _removed, ...rest } = prev;
-        return rest;
-      });
-      await loadFriends();
-    } catch (err: any) {
-      setError(err.message || "친구 삭제에 실패했습니다");
-    } finally {
-      setDeletingFriendId(null);
-    }
+    deleteFriendMutation.mutate(friend.userId);
   };
 
-  const handleRespond = async (requestId: string, action: "accept" | "decline") => {
+  const handleRespond = (requestId: string, action: "accept" | "decline") => {
     setError("");
-    setRespondingRequestId(requestId);
-    try {
-      await friendService.respondFriendRequest(requestId, action);
-      await loadFriends();
-    } catch (err: any) {
-      setError(err.message || "요청 처리에 실패했습니다");
-    } finally {
-      setRespondingRequestId(null);
-    }
+    respondMutation.mutate({ requestId, action });
   };
 
-  const handleCancel = async (requestId: string) => {
+  const handleCancel = (requestId: string) => {
     setError("");
-    setRespondingRequestId(requestId);
-    try {
-      await friendService.cancelFriendRequest(requestId);
-      await loadFriends();
-    } catch (err: any) {
-      setError(err.message || "요청 취소에 실패했습니다");
-    } finally {
-      setRespondingRequestId(null);
-    }
+    cancelMutation.mutate(requestId);
   };
 
   return (
@@ -170,7 +170,7 @@ export function FriendsTabPage() {
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
                     <button
                       type="button"
-                      disabled={respondingRequestId === req.requestId}
+                      disabled={respondMutation.isPending}
                       onClick={() => handleRespond(req.requestId, "accept")}
                       className="flex items-center justify-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors w-full sm:w-auto"
                     >
@@ -179,7 +179,7 @@ export function FriendsTabPage() {
                     </button>
                     <button
                       type="button"
-                      disabled={respondingRequestId === req.requestId}
+                      disabled={respondMutation.isPending}
                       onClick={() => handleRespond(req.requestId, "decline")}
                       className="flex items-center justify-center gap-2 px-4 py-2 bg-card text-muted-foreground border border-border rounded-lg hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors w-full sm:w-auto"
                     >
@@ -220,7 +220,7 @@ export function FriendsTabPage() {
                   </div>
                   <button
                     type="button"
-                    disabled={respondingRequestId === req.requestId}
+                    disabled={cancelMutation.isPending}
                     onClick={() => handleCancel(req.requestId)}
                     className="flex items-center justify-center gap-2 px-4 py-2 bg-card text-muted-foreground border border-border rounded-lg hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors w-full sm:w-auto"
                   >
@@ -247,7 +247,7 @@ export function FriendsTabPage() {
           />
           <button
             type="submit"
-            disabled={loading}
+            disabled={addFriendMutation.isPending}
             className="flex items-center justify-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors w-full sm:w-auto"
           >
             <UserPlus className="w-5 h-5" />
@@ -289,7 +289,7 @@ export function FriendsTabPage() {
                     </button>
                     <button
                       type="button"
-                      disabled={deletingFriendId === friend.userId}
+                      disabled={deleteFriendMutation.isPending}
                       onClick={() => handleDeleteFriend(friend)}
                       className="flex items-center justify-center gap-2 px-3 py-1.5 text-sm bg-muted/40 text-muted-foreground rounded-lg hover:bg-muted/60 disabled:opacity-50 disabled:cursor-not-allowed transition-colors w-auto"
                       title="친구 삭제"
@@ -326,7 +326,7 @@ export function FriendsTabPage() {
                           <p>{friendStatusById[friend.userId].plan?.name ?? "공유된 계획이 없습니다"}</p>
                         </div>
                         <div>
-                          <p className="text-sm text-muted-foreground">달성률</p>
+                          <p className="text-sm text-muted-foreground">진행률</p>
                           <div className="flex items-center gap-3">
                             <div className="flex-1 bg-muted rounded-full h-3">
                               <div
@@ -338,8 +338,8 @@ export function FriendsTabPage() {
                             </div>
                             <span>
                               {friendStatusById[friend.userId].totalDays > 0
-                                ? `${friendStatusById[friend.userId].completedDays}/${friendStatusById[friend.userId].totalDays}`
-                                : "0/0"}
+                                ? `${Math.round(friendStatusById[friend.userId].achievementRate)}%`
+                                : "0%"}
                             </span>
                           </div>
                         </div>

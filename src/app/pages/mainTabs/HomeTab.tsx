@@ -30,6 +30,7 @@ export function HomeTab() {
     queryKey: ["friends", userId],
     queryFn: friendService.getFriends,
     enabled: !!userId,
+    refetchInterval: 30000, // 30초마다 갱신
   });
 
   const incomingRequestsCount = friendsData?.incomingRequests?.length ?? 0;

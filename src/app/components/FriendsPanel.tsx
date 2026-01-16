@@ -191,8 +191,13 @@ export function FriendsPanel({ onClose, currentPlanId }: FriendsPanelProps) {
                       />
                     </div>
                     <span>
-                      {friendProgress.progress.completedDays.length}/
-                      {friendProgress.plan.totalDays}
+                      {friendProgress.plan.totalDays > 0
+                        ? `${Math.round(
+                            (friendProgress.progress.completedDays.length /
+                              friendProgress.plan.totalDays) *
+                              100
+                          )}%`
+                        : "0%"}
                     </span>
                   </div>
                 </div>
