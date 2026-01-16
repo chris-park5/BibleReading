@@ -83,11 +83,11 @@ export async function getProgress(planId: string): Promise<{ success: boolean; p
 
     if (planRow.is_custom) {
       const scheduleRows = await fetchAll<any>(
-        (from, to) =>
-          supabase
+        async (from, to) =>
+          await supabase
             .from("plan_schedules")
             .select("day")
-            .eq("plan_id", planId)
+            .eq("plan_id", planRow.id)
             .order("day", { ascending: true })
             .range(from, to),
         1000
@@ -100,8 +100,8 @@ export async function getProgress(planId: string): Promise<{ success: boolean; p
       });
     } else if (planRow.preset_id) {
       const scheduleRows = await fetchAll<any>(
-        (from, to) =>
-          supabase
+        async (from, to) =>
+          await supabase
             .from("preset_schedules")
             .select("day")
             .eq("preset_id", planRow.preset_id)

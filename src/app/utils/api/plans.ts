@@ -64,8 +64,8 @@ export async function getPlans(): Promise<{ success: boolean; plans: Plan[] }> {
 
   if (customPlanIds.length > 0) {
     const customRows = await fetchAll<any>(
-      (from, to) =>
-        supabase
+      async (from, to) =>
+        await supabase
           .from("plan_schedules")
           .select("plan_id, day, book, chapters")
           .in("plan_id", customPlanIds)
@@ -87,8 +87,8 @@ export async function getPlans(): Promise<{ success: boolean; plans: Plan[] }> {
 
   if (presetIds.length > 0) {
     const presetRows = await fetchAll<any>(
-      (from, to) =>
-        supabase
+      async (from, to) =>
+        await supabase
           .from("preset_schedules")
           .select("preset_id, day, book, chapters")
           .in("preset_id", presetIds)
