@@ -1,6 +1,6 @@
 import type { Plan } from "../../../types/domain";
-import { fetchAPI } from "./_internal";
-import { disambiguateScheduleForDb } from "../scheduleUniq";
+import { fetchAPI, fetchAll, supabase } from "./_internal";
+import { disambiguateScheduleForDb, stripZeroWidth } from "../scheduleUniq";
 
 // ============================================================================
 // Plan APIs
@@ -34,7 +34,114 @@ export async function createPlan(planData: {
 }
 
 export async function getPlans(): Promise<{ success: boolean; plans: Plan[] }> {
-  return fetchAPI("/plans", {}, true, 60_000);
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) throw new Error("로그인이 필요합니다.");
+
+  const { data: plansData, error } = await supabase
+    .from("plans")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("display_order", { ascending: true });
+
+  if (error) throw error;
+
+  // Avoid N+1: fetch all schedules in bulk.
+  const customPlanIds = (plansData ?? [])
+    .filter((p: any) => Boolean(p?.is_custom))
+    .map((p: any) => p.id)
+    .filter(Boolean);
+
+  const presetIds = Array.from(
+    new Set(
+      (plansData ?? [])
+        .filter((p: any) => !p?.is_custom && Boolean(p?.preset_id))
+        .map((p: any) => p.preset_id)
+    )
+  );
+
+  const customScheduleByPlanId = new Map<string, Array<{ day: number; book: string; chapters: string }>>();
+  const presetScheduleByPresetId = new Map<string, Array<{ day: number; book: string; chapters: string }>>();
+
+  if (customPlanIds.length > 0) {
+    const customRows = await fetchAll<any>(
+      (from, to) =>
+        supabase
+          .from("plan_schedules")
+          .select("plan_id, day, book, chapters")
+          .in("plan_id", customPlanIds)
+          // Deterministic ordering for stable pagination
+          .order("plan_id", { ascending: true })
+          .order("day", { ascending: true })
+          .order("book", { ascending: true })
+          .order("chapters", { ascending: true })
+          .range(from, to),
+      1000
+    );
+
+    (customRows ?? []).forEach((r: any) => {
+      const pid = String(r.plan_id);
+      if (!customScheduleByPlanId.has(pid)) customScheduleByPlanId.set(pid, []);
+      customScheduleByPlanId.get(pid)!.push({ day: r.day, book: r.book, chapters: r.chapters });
+    });
+  }
+
+  if (presetIds.length > 0) {
+    const presetRows = await fetchAll<any>(
+      (from, to) =>
+        supabase
+          .from("preset_schedules")
+          .select("preset_id, day, book, chapters")
+          .in("preset_id", presetIds)
+          // Deterministic ordering for stable pagination
+          .order("preset_id", { ascending: true })
+          .order("day", { ascending: true })
+          .order("book", { ascending: true })
+          .order("chapters", { ascending: true })
+          .range(from, to),
+      1000
+    );
+
+    (presetRows ?? []).forEach((r: any) => {
+      const pid = String(r.preset_id);
+      if (!presetScheduleByPresetId.has(pid)) presetScheduleByPresetId.set(pid, []);
+      presetScheduleByPresetId.get(pid)!.push({ day: r.day, book: r.book, chapters: r.chapters });
+    });
+  }
+
+  const buildSchedule = (rows: Array<{ day: number; book: string; chapters: string }>) => {
+    const scheduleMap = new Map<number, Array<{ book: string; chapters: string }>>();
+    (rows ?? []).forEach((s: any) => {
+      const dayNum = Number(s.day);
+      if (!Number.isFinite(dayNum)) return;
+      if (!scheduleMap.has(dayNum)) scheduleMap.set(dayNum, []);
+      scheduleMap.get(dayNum)!.push({ book: s.book, chapters: stripZeroWidth(s.chapters) });
+    });
+    return Array.from(scheduleMap.entries())
+      .map(([day, readings]) => ({ day, readings }))
+      .sort((a, b) => a.day - b.day);
+  };
+
+  const plans = (plansData ?? []).map((p: any) => {
+    const rows = p.is_custom
+      ? customScheduleByPlanId.get(String(p.id)) ?? []
+      : presetScheduleByPresetId.get(String(p.preset_id)) ?? [];
+
+    return {
+      id: p.id,
+      userId: p.user_id,
+      presetId: p.preset_id,
+      name: p.name,
+      startDate: p.start_date,
+      endDate: p.end_date,
+      totalDays: p.total_days,
+      isCustom: p.is_custom,
+      displayOrder: p.display_order,
+      createdAt: p.created_at,
+      schedule: buildSchedule(rows),
+    };
+  });
+
+  return { success: true, plans };
 }
 
 export async function seedPresetSchedules(

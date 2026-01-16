@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { projectId, publicAnonKey } from "../../../../utils/supabase/info";
+import { projectId, publicAnonKey } from "../../../../utils/supabase/info.tsx";
 
 // ============================================================================
 // Configuration
@@ -174,3 +174,33 @@ export async function fetchAPI(
 }
 
 export const SESSION_TIMEOUT_MS = SESSION_RECOVERY_TIMEOUT_MS;
+
+/**
+ * Fetch all rows from a Supabase query using range-based pagination.
+ * Needed because Supabase limits rows (usually 1000) per request.
+ * 
+ * @param queryFactory Function that returns a Supabase query with .range() applied
+ * @param pageSize Default 1000
+ */
+export async function fetchAll<T>(
+  queryFactory: (from: number, to: number) => Promise<{ data: any; error: any }>,
+  pageSize = 1000
+): Promise<T[]> {
+  const allRows: T[] = [];
+  let from = 0;
+  
+  while (true) {
+    const to = from + pageSize - 1;
+    const { data, error } = await queryFactory(from, to);
+    
+    if (error) throw error;
+    if (!data || data.length === 0) break;
+    
+    allRows.push(...(data as T[]));
+    
+    if (data.length < pageSize) break;
+    from += pageSize;
+  }
+  
+  return allRows;
+}
