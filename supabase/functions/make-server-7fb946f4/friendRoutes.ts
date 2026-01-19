@@ -504,3 +504,90 @@ export async function deleteFriend(c: Context) {
   }
 }
 
+export async function getLeaderboard(c: Context) {
+  try {
+    const userId = c.get("userId");
+
+    // 1. Get all friends (accepted)
+    const { data: friendships, error: fsError } = await supabase
+      .from("friendships")
+      .select("user_id, friend_id")
+      .eq("status", "accepted")
+      .or(`user_id.eq.${userId},friend_id.eq.${userId}`);
+
+    if (fsError) throw fsError;
+
+    const friendIds = (friendships || []).map((f: any) =>
+      f.user_id === userId ? f.friend_id : f.user_id
+    );
+
+    // Include current user in the set
+    const allUserIds = Array.from(new Set([...friendIds, userId]));
+
+    if (allUserIds.length === 0) {
+      return c.json({ success: true, leaderboard: [] });
+    }
+
+    // 2. Get Users + Shared Plan ID
+    const { data: users, error: usersError } = await supabase
+      .from("users")
+      .select("id, email, name, username, shared_plan_id")
+      .in("id", allUserIds);
+
+    if (usersError) throw usersError;
+
+    // 3. Calculate stats for each user
+    const leaderboard = await Promise.all(
+      (users || []).map(async (u: any) => {
+        if (!u.shared_plan_id) {
+          return {
+            user: { id: u.id, name: u.name, username: u.username, email: u.email },
+            plan: null,
+            achievementRate: 0,
+            completedDays: 0,
+            totalDays: 0,
+          };
+        }
+
+        // Fetch Plan
+        const { data: plan, error: planError } = await supabase
+          .from("plans")
+          .select("id, name, total_days")
+          .eq("id", u.shared_plan_id)
+          .maybeSingle();
+
+        if (!plan) {
+          return {
+            user: { id: u.id, name: u.name, username: u.username, email: u.email },
+            plan: null,
+            achievementRate: 0,
+            completedDays: 0,
+            totalDays: 0,
+          };
+        }
+
+        // Fetch Progress
+        const progress = await fetchUserProgress(u.id, plan.id);
+        const completedDays = progress.completedDays.length;
+        const totalDays = Number(plan.total_days) || 0;
+        const achievementRate = totalDays > 0 ? (completedDays / totalDays) * 100 : 0;
+
+        return {
+          user: { id: u.id, name: u.name, username: u.username, email: u.email },
+          plan: { id: plan.id, name: plan.name, totalDays },
+          achievementRate,
+          completedDays,
+          totalDays,
+        };
+      })
+    );
+
+    // Sort by achievement rate desc
+    leaderboard.sort((a, b) => b.achievementRate - a.achievementRate);
+
+    return c.json({ success: true, leaderboard });
+  } catch (error) {
+    return c.json(handleError(error, "Failed to get leaderboard"), 500);
+  }
+}
+
