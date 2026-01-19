@@ -31,6 +31,11 @@ export function DashboardPage({ embedded = false }: { embedded?: boolean }) {
   const selectedPlan = usePlan(selectedPlanId);
   const { progress, toggleReading } = useProgress(selectedPlanId);
 
+  const { totalChapters, completedChapters } = useMemo(() => {
+    if (!selectedPlan || !progress) return { totalChapters: 0, completedChapters: 0 };
+    return computeChaptersTotals({ schedule: selectedPlan.schedule, progress });
+  }, [selectedPlan, progress]);
+
   if (!selectedPlan || !progress) {
     return (
       <div className="min-h-screen bg-muted/30 flex items-center justify-center">
@@ -67,10 +72,6 @@ export function DashboardPage({ embedded = false }: { embedded?: boolean }) {
       prevDay();
     }
   };
-
-  const { totalChapters, completedChapters } = useMemo(() => {
-    return computeChaptersTotals({ schedule: selectedPlan.schedule, progress });
-  }, [selectedPlan.schedule, progress]);
 
   return (
     <div className="min-h-screen bg-muted/30">

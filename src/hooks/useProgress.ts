@@ -88,18 +88,20 @@ export function useProgress(planId: string | null) {
       readingIndex,
       completed,
       readingCount,
+      completedChapters,
     }: {
       day: number;
       readingIndex: number;
       completed: boolean;
       readingCount: number;
+      completedChapters?: string[];
     }) => {
       if (typeof navigator !== 'undefined' && navigator && navigator.onLine === false) {
         throw new OfflineError();
       }
-      return progressService.updateReadingProgress(planId!, day, readingIndex, completed, readingCount);
+      return progressService.updateReadingProgress(planId!, day, readingIndex, completed, readingCount, completedChapters);
     },
-    onMutate: ({ day, readingIndex, completed, readingCount }) => {
+    onMutate: ({ day, readingIndex, completed, readingCount, completedChapters }) => {
       toggleReadingSeqRef.current += 1;
       const seq = toggleReadingSeqRef.current;
 
@@ -113,10 +115,12 @@ export function useProgress(planId: string | null) {
 
         const prevProgress = current.progress;
         const key = String(day);
+        
+        // Update Completed Readings (Full Completion)
         const prevMap = prevProgress.completedReadingsByDay ?? {};
         const prevList = Array.isArray(prevMap[key]) ? prevMap[key] : [];
-
         const nextSet = new Set(prevList);
+        
         if (completed) nextSet.add(readingIndex);
         else nextSet.delete(readingIndex);
 
@@ -125,6 +129,28 @@ export function useProgress(planId: string | null) {
           ...prevMap,
           [key]: nextList,
         };
+
+        // Update Detailed Chapters (Partial Completion)
+        const prevChaptersMap = prevProgress.completedChaptersByDay ?? {};
+        const prevDayChapters = prevChaptersMap[key] ?? {};
+        const nextDayChapters = { ...prevDayChapters };
+
+        if (completed) {
+          // If fully completed, we can remove the partial record (or keep it sync? backend sets it to null)
+          // Let's remove it to keep it clean.
+          delete nextDayChapters[readingIndex];
+        } else if (completedChapters && completedChapters.length > 0) {
+          nextDayChapters[readingIndex] = completedChapters;
+        } else {
+          // Cancelled (no full, no partial)
+          delete nextDayChapters[readingIndex];
+        }
+
+        const nextCompletedChaptersByDay = {
+            ...prevChaptersMap,
+            [key]: nextDayChapters,
+        };
+
 
         const nextCompletedDays = new Set(prevProgress.completedDays ?? []);
         const isDayCompleted = readingCount > 0 && nextList.length >= readingCount;
@@ -136,6 +162,7 @@ export function useProgress(planId: string | null) {
           progress: {
             ...prevProgress,
             completedReadingsByDay: nextCompletedReadingsByDay,
+            completedChaptersByDay: nextCompletedChaptersByDay,
             completedDays: Array.from(nextCompletedDays),
             lastUpdated: new Date().toISOString(),
           },

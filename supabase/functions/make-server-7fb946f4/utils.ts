@@ -104,7 +104,7 @@ export async function fetchUserProgress(userId: string, planId: string) {
   
   const { data, error } = await supabase
     .from("reading_progress")
-    .select("day, reading_index")
+    .select("day, reading_index, completed_chapters")
     .eq("user_id", userId)
     .eq("plan_id", planId);
 
@@ -112,6 +112,7 @@ export async function fetchUserProgress(userId: string, planId: string) {
 
   // 완료된 읽기를 day별로 그룹화
   const completedReadingsByDay: Record<string, number[]> = {};
+  const completedChaptersByDay: Record<string, Record<number, string[]>> = {};
   const completedSetsByDay = new Map<number, Set<number>>();
 
   (data ?? []).forEach((item: any) => {
@@ -120,15 +121,59 @@ export async function fetchUserProgress(userId: string, planId: string) {
     if (!Number.isFinite(dayNum) || !Number.isFinite(idx)) return;
 
     const dayStr = String(dayNum);
-    if (!completedReadingsByDay[dayStr]) {
-      completedReadingsByDay[dayStr] = [];
-    }
-    completedReadingsByDay[dayStr].push(idx);
+    
+    // Reading Level Progress (Legacy & Full completion check)
+    // If completed_chapters is NULL or empty, it might be a legacy full completion.
+    // However, if we are moving to granular, presence of row implies something happened.
+    // We treat it as "completed reading" ONLY if we don't have partial data OR logic elsewhere handles it.
+    // For backward compatibility: if row exists, we put it in completedReadingsByDay initially?
+    // No, strictly speaking:
+    // If completed_chapters is NULL -> It is fully complete (Legacy).
+    // If completed_chapters is present -> It is partial or full.
+    // The frontend decides if it's fully complete based on comparison with total chapters.
+    // But backend `completedDays` calculation relies on `completedSetsByDay`.
+    // We should only add to `completedSetsByDay` if it is FULLY complete.
+    // Problem: We don't know the full set of chapters here easily without querying the plan schedule again.
+    // BUT, the existing logic assumes "Row Exists = Complete". 
+    // If I start inserting partial rows, I BREAK `completedDays` logic.
+    // FIX: Only add to `completedReadingsByDay` and `completedSetsByDay` if `completed_chapters` is NULL.
+    // If it is NOT NULL, it is partial.
+    // WAIT, what if I finish all chapters? I update `completed_chapters` to include all? 
+    // Or do I set it to NULL?
+    // Let's decide: **NULL = Fully Complete**. **Array = Partial**.
+    
+    let chapters = item.completed_chapters;
 
-    if (!completedSetsByDay.has(dayNum)) {
-      completedSetsByDay.set(dayNum, new Set());
+    // Handle potential string return from Postgres (e.g. "{1,2}")
+    if (typeof chapters === 'string') {
+      const clean = chapters.replace(/^\{|\}$/g, '').trim();
+      if (clean.length === 0) {
+        chapters = [];
+      } else {
+        // Handle quoted strings if necessary, but for simple chapter numbers split is usually enough
+        chapters = clean.split(',').map((s: string) => s.replace(/^"|"$/g, '').trim());
+      }
     }
-    completedSetsByDay.get(dayNum)!.add(idx);
+
+    if (chapters === null) {
+      // Legacy / Fully Complete
+      if (!completedReadingsByDay[dayStr]) {
+        completedReadingsByDay[dayStr] = [];
+      }
+      completedReadingsByDay[dayStr].push(idx);
+
+      if (!completedSetsByDay.has(dayNum)) {
+        completedSetsByDay.set(dayNum, new Set());
+      }
+      completedSetsByDay.get(dayNum)!.add(idx);
+    } else {
+      // Partial Progress
+      if (!completedChaptersByDay[dayStr]) {
+        completedChaptersByDay[dayStr] = {};
+      }
+      // Ensure it is an array
+      completedChaptersByDay[dayStr][idx] = Array.isArray(chapters) ? chapters : [];
+    }
   });
 
   // completedDays는 "해당 day의 모든 readingIndex가 완료"인 경우만 포함
@@ -146,6 +191,7 @@ export async function fetchUserProgress(userId: string, planId: string) {
       planId,
       completedDays: [],
       completedReadingsByDay,
+      completedChaptersByDay,
       lastUpdated: new Date().toISOString(),
     };
   }
@@ -203,6 +249,7 @@ export async function fetchUserProgress(userId: string, planId: string) {
     planId,
     completedDays: completedDays.sort((a, b) => a - b),
     completedReadingsByDay,
+    completedChaptersByDay,
     lastUpdated: new Date().toISOString(),
   };
 }

@@ -20,6 +20,7 @@ type CombinedReading = {
   book: string;
   chapters: string;
   completed: boolean;
+  completedChapters: string[];
 };
 
 export function HomeTab() {
@@ -97,6 +98,7 @@ export function HomeTab() {
       readingIndex: number;
       completed: boolean;
       readingCount: number;
+      completedChapters?: string[];
     }) => {
       if (typeof navigator !== "undefined" && navigator && navigator.onLine === false) {
         throw new OfflineError();
@@ -106,7 +108,8 @@ export function HomeTab() {
         vars.day,
         vars.readingIndex,
         vars.completed,
-        vars.readingCount
+        vars.readingCount,
+        vars.completedChapters
       );
     },
     onMutate: (vars) => {
@@ -138,6 +141,24 @@ export function HomeTab() {
           ...prevMap,
           [dayKey]: nextList,
         };
+        
+        // Optimistic update for chapters (partial progress)
+        const prevChaptersMap = prevProgress.completedChaptersByDay ?? {};
+        const prevDayChapters = prevChaptersMap[dayKey] ?? {};
+        const nextDayChapters = { ...prevDayChapters };
+
+        if (vars.completed) {
+            delete nextDayChapters[vars.readingIndex];
+        } else if (vars.completedChapters && vars.completedChapters.length > 0) {
+            nextDayChapters[vars.readingIndex] = vars.completedChapters;
+        } else {
+            delete nextDayChapters[vars.readingIndex];
+        }
+        
+        const nextCompletedChaptersByDay = {
+            ...prevChaptersMap,
+            [dayKey]: nextDayChapters,
+        };
 
         const nextCompletedDays = new Set<number>(prevProgress.completedDays ?? []);
         const isDayCompleted = vars.readingCount > 0 && nextList.length >= vars.readingCount;
@@ -149,6 +170,7 @@ export function HomeTab() {
           progress: {
             ...prevProgress,
             completedReadingsByDay: nextCompletedReadingsByDay,
+            completedChaptersByDay: nextCompletedChaptersByDay,
             completedDays: Array.from(nextCompletedDays),
             lastUpdated: new Date().toISOString(),
           },
@@ -199,10 +221,16 @@ export function HomeTab() {
       const isDayCompleted = progress?.completedDays?.includes(day) ?? false;
       const completedIndices = progress?.completedReadingsByDay?.[String(day)] ?? [];
       const completedSet = new Set<number>(completedIndices);
+      
+      // Get detailed chapters progress
+      const dayChaptersMap = progress?.completedChaptersByDay?.[String(day)] ?? {};
+      
       const readingCount = reading.readings.length;
 
       for (let readingIndex = 0; readingIndex < reading.readings.length; readingIndex++) {
         const r = reading.readings[readingIndex];
+        const completedChapters = dayChaptersMap[readingIndex] ?? [];
+        
         rows.push({
           planId: plan.id,
           planName: plan.name,
@@ -212,6 +240,7 @@ export function HomeTab() {
           book: r.book,
           chapters: r.chapters,
           completed: isDayCompleted || completedSet.has(readingIndex),
+          completedChapters: completedChapters,
         });
       }
     }
@@ -224,6 +253,7 @@ export function HomeTab() {
     [combined]
   );
   const completedByIndex = useMemo(() => combined.map((c) => c.completed), [combined]);
+  const completedChaptersByIndex = useMemo(() => combined.map((c) => c.completedChapters), [combined]);
 
   if (!plans.length) {
     return (
@@ -388,7 +418,8 @@ export function HomeTab() {
       <TodayReading
         readings={readings}
         completedByIndex={completedByIndex}
-        onToggleReading={(index, completed) => {
+        completedChaptersByIndex={completedChaptersByIndex}
+        onToggleReading={(index, completed, completedChapters) => {
           const target = combined[index];
           if (!target) return;
           updateReadingMutation.mutate({
@@ -397,6 +428,7 @@ export function HomeTab() {
             readingIndex: target.readingIndex,
             completed,
             readingCount: target.readingCount,
+            completedChapters,
           });
         }}
       />
