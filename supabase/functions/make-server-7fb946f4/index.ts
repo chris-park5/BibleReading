@@ -65,6 +65,7 @@ api.get("/friend-progress", requireAuth, async (c) => (await import("./friendRou
 api.post("/friend-requests/respond", requireAuth, async (c) => (await import("./friendRoutes.ts")).respondFriendRequest(c));
 api.post("/friend-requests/cancel", requireAuth, async (c) => (await import("./friendRoutes.ts")).cancelFriendRequest(c));
 api.get("/friend-status", requireAuth, async (c) => (await import("./friendRoutes.ts")).getFriendStatus(c));
+api.get("/leaderboard", requireAuth, async (c) => (await import("./friendRoutes.ts")).getLeaderboard(c));
 api.get("/share-plan", requireAuth, async (c) => (await import("./friendRoutes.ts")).getSharePlan(c));
 api.post("/share-plan", requireAuth, async (c) => (await import("./friendRoutes.ts")).setSharePlan(c));
 

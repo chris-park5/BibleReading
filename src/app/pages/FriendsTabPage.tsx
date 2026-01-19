@@ -1,359 +1,547 @@
 import { useState } from "react";
-import { Check, Trash2, TrendingUp, UserPlus, UsersRound, X } from "lucide-react";
+import {
+  Check,
+  Trash2,
+  TrendingUp,
+  UserPlus,
+  UsersRound,
+  X,
+  Trophy,
+  Medal,
+  Search,
+} from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as friendService from "../../services/friendService";
 import { useAuthStore } from "../../stores/auth.store";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../components/ui/dialog";
+import { Progress } from "../components/ui/progress";
+import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
+import { Badge } from "../components/ui/badge";
+import { cn } from "../components/ui/utils";
 
 export function FriendsTabPage() {
   const userId = useAuthStore((s) => s.user?.id ?? null);
   const queryClient = useQueryClient();
-  const [friendUsername, setFriendUsername] = useState("");
-  const [error, setError] = useState("");
-  const [expandedFriendIds, setExpandedFriendIds] = useState<Set<string>>(() => new Set());
-  const [friendStatusById, setFriendStatusById] = useState<Record<string, friendService.FriendStatus>>({});
+  const [isAddFriendOpen, setIsAddFriendOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("leaderboard");
 
-  // 친구 목록 및 요청 쿼리 (Polling 추가)
+  // 1. Fetch Friends & Requests
   const { data: friendsData, isLoading: loadingFriends } = useQuery({
     queryKey: ["friends", userId],
     queryFn: friendService.getFriends,
     enabled: !!userId,
-    refetchInterval: 15000, // 15초마다 자동 갱신
+    refetchInterval: 30000,
+  });
+
+  // 2. Fetch Leaderboard (includes progress for all friends + self)
+  const { data: leaderboardData, isLoading: loadingLeaderboard } = useQuery({
+    queryKey: ["leaderboard", userId],
+    queryFn: friendService.getLeaderboard,
+    enabled: !!userId,
+    refetchInterval: 30000,
   });
 
   const friends = friendsData?.friends || [];
   const incomingRequests = friendsData?.incomingRequests || [];
   const outgoingRequests = friendsData?.outgoingRequests || [];
+  const leaderboard = leaderboardData?.leaderboard || [];
 
-  // 친구 추가 Mutation
+  return (
+    <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-6 pb-24">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="p-3 bg-primary/10 rounded-lg">
+            <UsersRound className="w-6 h-6 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold">친구</h1>
+            <p className="text-muted-foreground text-sm">함께 읽으며 격려하세요</p>
+          </div>
+        </div>
+
+        {/* Add Friend Button */}
+        <Dialog open={isAddFriendOpen} onOpenChange={setIsAddFriendOpen}>
+          <DialogTrigger asChild>
+            <button className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-full hover:opacity-90 transition-colors shadow-sm">
+              <UserPlus className="w-5 h-5" />
+              <span className="hidden sm:inline">친구 추가</span>
+            </button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>친구 추가</DialogTitle>
+            </DialogHeader>
+            <AddFriendForm onSuccess={() => setIsAddFriendOpen(false)} />
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-3 mb-6 bg-muted/50 p-1 rounded-xl">
+          <TabsTrigger value="leaderboard">랭킹</TabsTrigger>
+          <TabsTrigger value="friends">친구 목록</TabsTrigger>
+          <TabsTrigger value="requests">
+            요청
+            {(incomingRequests.length > 0) && (
+              <span className="ml-2 bg-primary text-primary-foreground text-[10px] px-1.5 py-0.5 rounded-full">
+                {incomingRequests.length}
+              </span>
+            )}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="leaderboard" className="mt-0">
+          <LeaderboardView
+            leaderboard={leaderboard}
+            loading={loadingLeaderboard}
+            currentUserId={userId}
+          />
+        </TabsContent>
+
+        <TabsContent value="friends" className="mt-0">
+          <FriendsListView
+            friends={friends}
+            leaderboard={leaderboard}
+            loading={loadingFriends || loadingLeaderboard}
+          />
+        </TabsContent>
+
+        <TabsContent value="requests" className="mt-0">
+          <RequestsView
+            incoming={incomingRequests}
+            outgoing={outgoingRequests}
+            loading={loadingFriends}
+          />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
+// ============================================================================
+// Sub-Components
+// ============================================================================
+
+function AddFriendForm({ onSuccess }: { onSuccess: () => void }) {
+  const [friendUsername, setFriendUsername] = useState("");
+  const [error, setError] = useState("");
+  const queryClient = useQueryClient();
+  const userId = useAuthStore((s) => s.user?.id);
+
   const addFriendMutation = useMutation({
     mutationFn: (username: string) => friendService.addFriend(username),
     onSuccess: () => {
       setFriendUsername("");
       void queryClient.invalidateQueries({ queryKey: ["friends", userId] });
+      void queryClient.invalidateQueries({ queryKey: ["leaderboard", userId] });
+      onSuccess();
+      alert("친구 요청을 보냈습니다!");
     },
     onError: (err: any) => {
       setError(err.message || "친구 추가에 실패했습니다");
     },
   });
 
-  // 친구 삭제 Mutation
-  const deleteFriendMutation = useMutation({
-    mutationFn: (friendId: string) => friendService.deleteFriend(friendId),
-    onSuccess: (_, friendId) => {
-      setExpandedFriendIds((prev) => {
-        const next = new Set(prev);
-        next.delete(friendId);
-        return next;
-      });
-      setFriendStatusById((prev) => {
-        const { [friendId]: _removed, ...rest } = prev;
-        return rest;
-      });
-      void queryClient.invalidateQueries({ queryKey: ["friends", userId] });
-    },
-    onError: (err: any) => {
-      setError(err.message || "친구 삭제에 실패했습니다");
-    },
-  });
-
-  // 요청 수락/거부 Mutation
-  const respondMutation = useMutation({
-    mutationFn: ({ requestId, action }: { requestId: string; action: "accept" | "decline" }) =>
-      friendService.respondFriendRequest(requestId, action),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["friends", userId] });
-    },
-    onError: (err: any) => {
-      setError(err.message || "요청 처리에 실패했습니다");
-    },
-  });
-
-  // 요청 취소 Mutation
-  const cancelMutation = useMutation({
-    mutationFn: (requestId: string) => friendService.cancelFriendRequest(requestId),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["friends", userId] });
-    },
-    onError: (err: any) => {
-      setError(err.message || "요청 취소에 실패했습니다");
-    },
-  });
-
-  const handleSendFriendRequest = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     addFriendMutation.mutate(friendUsername.trim());
   };
 
-  const handleViewStatus = async (friend: friendService.Friend) => {
-    const isExpanded = expandedFriendIds.has(friend.userId);
-    if (isExpanded) {
-      setExpandedFriendIds((prev) => {
-        const next = new Set(prev);
-        next.delete(friend.userId);
-        return next;
-      });
-      return;
-    }
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4 pt-4">
+      <div className="space-y-2">
+        <input
+          type="text"
+          value={friendUsername}
+          onChange={(e) => setFriendUsername(e.target.value)}
+          className="w-full px-4 py-3 border border-border rounded-lg bg-input-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          placeholder="이메일 또는 아이디 입력"
+          required
+        />
+        {error && <p className="text-destructive text-sm">{error}</p>}
+      </div>
+      <button
+        type="submit"
+        disabled={addFriendMutation.isPending}
+        className="w-full py-3 bg-primary text-primary-foreground rounded-lg hover:opacity-90 disabled:opacity-50 transition-colors font-medium"
+      >
+        {addFriendMutation.isPending ? "요청 중..." : "요청 보내기"}
+      </button>
+    </form>
+  );
+}
 
-    setExpandedFriendIds((prev) => {
-      const next = new Set(prev);
-      next.add(friend.userId);
-      return next;
-    });
+function LeaderboardView({
+  leaderboard,
+  loading,
+  currentUserId,
+}: {
+  leaderboard: any[];
+  loading: boolean;
+  currentUserId: string | null;
+}) {
+  const [metric, setMetric] = useState<"rate" | "count">("rate");
 
-    if (friendStatusById[friend.userId]) return;
+  // Sort based on metric
+  const sortedLeaderboard = [...leaderboard].sort((a, b) => {
+    if (metric === "rate") return b.achievementRate - a.achievementRate;
+    return b.completedDays - a.completedDays;
+  });
 
-    try {
-      const result = await friendService.getFriendStatus(friend.userId);
-      if (result?.friendStatus) {
-        setFriendStatusById((prev) => ({ ...prev, [friend.userId]: result.friendStatus }));
-      }
-    } catch (err: any) {
-      alert("친구 정보를 불러올 수 없습니다");
-      console.error(err);
-    }
-  };
+  const top10 = sortedLeaderboard.slice(0, 10);
+  const myRankIndex = sortedLeaderboard.findIndex(
+    (item) => item.user.id === currentUserId
+  );
+  const me = myRankIndex !== -1 ? sortedLeaderboard[myRankIndex] : null;
+  const amIOffChart = myRankIndex >= 10;
 
-  const handleDeleteFriend = (friend: friendService.Friend) => {
-    if (!window.confirm("친구를 삭제할까요?")) return;
-    setError("");
-    deleteFriendMutation.mutate(friend.userId);
-  };
-
-  const handleRespond = (requestId: string, action: "accept" | "decline") => {
-    setError("");
-    respondMutation.mutate({ requestId, action });
-  };
-
-  const handleCancel = (requestId: string) => {
-    setError("");
-    cancelMutation.mutate(requestId);
-  };
+  if (loading) return <div className="text-center py-12 text-muted-foreground">불러오는 중...</div>;
 
   return (
-    <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-6">
-      <div className="flex items-center gap-3">
-        <div className="p-3 bg-primary/10 rounded-lg">
-          <UsersRound className="w-6 h-6 text-primary" />
-        </div>
-        <div>
-          <h1>친구</h1>
-          <p className="text-muted-foreground">친구를 추가하고 진도 현황을 확인하세요</p>
+    <div className="space-y-4">
+      {/* Sub-tabs for Leaderboard */}
+      <div className="flex justify-center mb-6">
+        <div className="bg-muted rounded-full p-1 flex items-center">
+          <button
+            onClick={() => setMetric("rate")}
+            className={cn(
+              "px-4 py-1.5 rounded-full text-sm font-medium transition-all",
+              metric === "rate"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            달성률
+          </button>
+          <button
+            onClick={() => setMetric("count")}
+            className={cn(
+              "px-4 py-1.5 rounded-full text-sm font-medium transition-all",
+              metric === "count"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            읽은 장수
+          </button>
         </div>
       </div>
 
-      {loadingFriends ? (
-        <div className="bg-card text-card-foreground border border-border rounded-xl p-6">
-          <h2 className="mb-3">받은 친구 요청 (불러오는 중)</h2>
-          <div className="text-center py-8 text-muted-foreground">불러오는 중...</div>
-        </div>
-      ) : incomingRequests.length > 0 ? (
-        <div className="bg-card text-card-foreground border border-border rounded-xl p-6">
-          <h2 className="mb-3">받은 친구 요청 ({incomingRequests.length})</h2>
-          <div className="space-y-2">
-            {incomingRequests.map((req) => (
-              <div
-                key={req.requestId}
-                className="p-4 border border-border rounded-lg"
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div>
-                    <p>
-                      {req.fromUser.name}
-                      {req.fromUser.username ? (
-                        <span className="text-sm text-muted-foreground"> (#{req.fromUser.username})</span>
-                      ) : null}
-                    </p>
-                    <p className="text-sm text-muted-foreground">{req.fromUser.email}</p>
-                  </div>
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
-                    <button
-                      type="button"
-                      disabled={respondMutation.isPending}
-                      onClick={() => handleRespond(req.requestId, "accept")}
-                      className="flex items-center justify-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors w-full sm:w-auto"
-                    >
-                      <Check className="w-4 h-4" />
-                      수락
-                    </button>
-                    <button
-                      type="button"
-                      disabled={respondMutation.isPending}
-                      onClick={() => handleRespond(req.requestId, "decline")}
-                      className="flex items-center justify-center gap-2 px-4 py-2 bg-card text-muted-foreground border border-border rounded-lg hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors w-full sm:w-auto"
-                    >
-                      <X className="w-4 h-4" />
-                      거부
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
+      <div className="space-y-3">
+        {top10.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground border border-dashed border-border rounded-xl">
+            데이터가 없습니다
+          </div>
+        ) : (
+          top10.map((item, index) => (
+            <LeaderboardItem
+              key={item.user.id}
+              item={item}
+              rank={index + 1}
+              metric={metric}
+              isMe={item.user.id === currentUserId}
+            />
+          ))
+        )}
+      </div>
+
+      {/* Sticky My Rank if not in top 10 */}
+      {amIOffChart && me && (
+        <div className="fixed bottom-20 left-4 right-4 sm:left-auto sm:right-auto sm:max-w-4xl sm:w-full mx-auto z-10">
+          <div className="bg-primary/90 backdrop-blur text-primary-foreground p-4 rounded-xl shadow-lg border border-primary/20 animate-in slide-in-from-bottom-5">
+            <LeaderboardItem
+              item={me}
+              rank={myRankIndex + 1}
+              metric={metric}
+              isMe={true}
+              isSticky
+            />
           </div>
         </div>
-      ) : null}
+      )}
+    </div>
+  );
+}
 
-      {loadingFriends ? (
-        <div className="bg-card text-card-foreground border border-border rounded-xl p-6">
-          <h2 className="mb-3">내가 보낸 요청 (불러오는 중)</h2>
-          <div className="text-center py-8 text-muted-foreground">불러오는 중...</div>
+function LeaderboardItem({
+  item,
+  rank,
+  metric,
+  isMe,
+  isSticky = false,
+}: {
+  item: any;
+  rank: number;
+  metric: "rate" | "count";
+  isMe?: boolean;
+  isSticky?: boolean;
+}) {
+  const isTop3 = rank <= 3;
+  
+  return (
+    <div
+      className={cn(
+        "flex items-center gap-4 p-4 rounded-xl transition-colors",
+        isSticky
+          ? "text-primary-foreground"
+          : isMe
+          ? "bg-primary/5 border border-primary/20"
+          : "bg-card border border-border"
+      )}
+    >
+      <div className="flex-shrink-0 w-8 text-center font-bold text-lg">
+        {rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : rank}
+      </div>
+      
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span className={cn("font-medium truncate", isSticky ? "text-white" : "")}>
+            {item.user.name}
+            {isMe && " (나)"}
+          </span>
+          {isTop3 && !isSticky && (
+            <Badge variant="secondary" className="text-[10px] px-1.5 h-5">
+              TOP {rank}
+            </Badge>
+          )}
         </div>
-      ) : outgoingRequests.length > 0 ? (
-        <div className="bg-card text-card-foreground border border-border rounded-xl p-6">
-          <h2 className="mb-3">내가 보낸 요청 ({outgoingRequests.length})</h2>
-          <div className="space-y-2">
-            {outgoingRequests.map((req) => (
-              <div
-                key={req.requestId}
-                className="p-4 border border-border rounded-lg"
+        <p className={cn("text-xs truncate", isSticky ? "text-white/80" : "text-muted-foreground")}>
+           {item.plan?.name ?? "계획 없음"}
+        </p>
+      </div>
+
+      <div className="text-right">
+        <div className={cn("font-bold text-lg", isSticky ? "text-white" : "text-primary")}>
+          {metric === "rate"
+            ? `${Math.round(item.achievementRate)}%`
+            : `${item.completedDays}장`}
+        </div>
+        <p className={cn("text-xs", isSticky ? "text-white/80" : "text-muted-foreground")}>
+          {metric === "rate" ? "달성률" : "완료"}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function FriendsListView({
+  friends,
+  leaderboard,
+  loading,
+}: {
+  friends: friendService.Friend[];
+  leaderboard: any[];
+  loading: boolean;
+}) {
+  const [search, setSearch] = useState("");
+  const queryClient = useQueryClient();
+  const userId = useAuthStore((s) => s.user?.id);
+
+  const deleteFriendMutation = useMutation({
+    mutationFn: (friendId: string) => friendService.deleteFriend(friendId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["friends", userId] });
+      void queryClient.invalidateQueries({ queryKey: ["leaderboard", userId] });
+    },
+  });
+
+  const handleDelete = (friendId: string) => {
+    if (confirm("정말 삭제하시겠습니까?")) {
+      deleteFriendMutation.mutate(friendId);
+    }
+  };
+
+  // Merge friend basic info with leaderboard progress
+  const friendsWithProgress = friends.map((f) => {
+    const status = leaderboard.find((l) => l.user.id === f.userId);
+    return {
+      ...f,
+      achievementRate: status?.achievementRate ?? 0,
+      completedDays: status?.completedDays ?? 0,
+      planName: status?.plan?.name ?? "계획 없음",
+    };
+  });
+
+  const filteredFriends = friendsWithProgress.filter((f) =>
+    f.name.toLowerCase().includes(search.toLowerCase()) ||
+    (f.username && f.username.toLowerCase().includes(search.toLowerCase()))
+  );
+
+  if (loading) return <div className="text-center py-12 text-muted-foreground">불러오는 중...</div>;
+
+  return (
+    <div className="space-y-4">
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+        <input
+          type="text"
+          placeholder="친구 검색..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full pl-9 pr-4 py-2 bg-card border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+        />
+      </div>
+
+      <div className="space-y-2">
+        {filteredFriends.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground">친구가 없습니다</div>
+        ) : (
+          filteredFriends.map((friend) => (
+            <div
+              key={friend.userId}
+              className="bg-card border border-border p-4 rounded-xl flex items-center justify-between group"
+            >
+              <div className="flex-1 min-w-0 mr-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-medium">{friend.name}</span>
+                  {friend.username && (
+                    <span className="text-xs text-muted-foreground">@{friend.username}</span>
+                  )}
+                </div>
+                
+                {/* Progress Bar */}
+                <div className="flex items-center gap-2">
+                  <Progress value={friend.achievementRate} className="h-2 flex-1" />
+                  <span className="text-xs font-medium w-10 text-right">
+                    {Math.round(friend.achievementRate)}%
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1 truncate">
+                  {friend.planName}
+                </p>
+              </div>
+
+              <button
+                onClick={() => handleDelete(friend.userId)}
+                className="p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive rounded-lg transition-colors"
+                title="친구 삭제"
               >
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div>
-                    <p>
-                      {req.toUser.name}
-                      {req.toUser.username ? (
-                        <span className="text-sm text-muted-foreground"> (#{req.toUser.username})</span>
-                      ) : null}
-                    </p>
-                    <p className="text-sm text-muted-foreground">{req.toUser.email}</p>
-                  </div>
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+function RequestsView({
+  incoming,
+  outgoing,
+  loading,
+}: {
+  incoming: friendService.IncomingFriendRequest[];
+  outgoing: friendService.OutgoingFriendRequest[];
+  loading: boolean;
+}) {
+  const queryClient = useQueryClient();
+  const userId = useAuthStore((s) => s.user?.id);
+
+  const respondMutation = useMutation({
+    mutationFn: ({ requestId, action }: { requestId: string; action: "accept" | "decline" }) =>
+      friendService.respondFriendRequest(requestId, action),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["friends", userId] });
+      void queryClient.invalidateQueries({ queryKey: ["leaderboard", userId] });
+    },
+  });
+
+  const cancelMutation = useMutation({
+    mutationFn: (requestId: string) => friendService.cancelFriendRequest(requestId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["friends", userId] });
+    },
+  });
+
+  if (loading) return <div className="text-center py-12 text-muted-foreground">불러오는 중...</div>;
+
+  return (
+    <div className="space-y-8">
+      {/* Incoming */}
+      <section>
+        <h3 className="font-semibold mb-4 flex items-center gap-2">
+          받은 요청
+          <span className="bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full">
+            {incoming.length}
+          </span>
+        </h3>
+        {incoming.length === 0 ? (
+          <div className="text-sm text-muted-foreground text-center py-4 bg-muted/20 rounded-lg">
+            받은 요청이 없습니다
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {incoming.map((req) => (
+              <div key={req.requestId} className="bg-card border border-border p-4 rounded-xl flex flex-col sm:flex-row gap-3 sm:items-center justify-between">
+                <div>
+                  <div className="font-medium">{req.fromUser.name}</div>
+                  <div className="text-xs text-muted-foreground">{req.fromUser.email}</div>
+                </div>
+                <div className="flex gap-2">
                   <button
-                    type="button"
-                    disabled={cancelMutation.isPending}
-                    onClick={() => handleCancel(req.requestId)}
-                    className="flex items-center justify-center gap-2 px-4 py-2 bg-card text-muted-foreground border border-border rounded-lg hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors w-full sm:w-auto"
+                    onClick={() => respondMutation.mutate({ requestId: req.requestId, action: "accept" })}
+                    disabled={respondMutation.isPending}
+                    className="flex-1 sm:flex-none bg-primary text-primary-foreground text-sm px-4 py-2 rounded-lg hover:opacity-90"
                   >
-                    <X className="w-4 h-4" />
-                    취소
+                    수락
+                  </button>
+                  <button
+                    onClick={() => respondMutation.mutate({ requestId: req.requestId, action: "decline" })}
+                    disabled={respondMutation.isPending}
+                    className="flex-1 sm:flex-none bg-muted text-muted-foreground text-sm px-4 py-2 rounded-lg hover:bg-muted/80"
+                  >
+                    거절
                   </button>
                 </div>
               </div>
             ))}
           </div>
-        </div>
-      ) : null}
+        )}
+      </section>
 
-      <div className="bg-card text-card-foreground border border-border rounded-xl p-6">
-        <h2 className="mb-3">친구 추가</h2>
-        <form onSubmit={handleSendFriendRequest} className="flex flex-col sm:flex-row gap-2">
-          <input
-            type="text"
-            value={friendUsername}
-            onChange={(e) => setFriendUsername(e.target.value)}
-            className="flex-1 px-4 py-3 border border-border rounded-lg bg-input-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            placeholder="친구 아이디(Username) 입력"
-            required
-          />
-          <button
-            type="submit"
-            disabled={addFriendMutation.isPending}
-            className="flex items-center justify-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors w-full sm:w-auto"
-          >
-            <UserPlus className="w-5 h-5" />
-            요청
-          </button>
-        </form>
-        {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
-      </div>
-
-      <div className="bg-card text-card-foreground border border-border rounded-xl p-6">
-        <h2 className="mb-3">친구 목록 ({loadingFriends ? "불러오는 중" : friends.length})</h2>
-        {loadingFriends ? (
-          <div className="text-center py-8 text-muted-foreground">불러오는 중...</div>
-        ) : friends.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">아직 추가된 친구가 없습니다</div>
+      {/* Outgoing */}
+      <section>
+        <h3 className="font-semibold mb-4 flex items-center gap-2">
+          보낸 요청
+          <span className="bg-muted text-muted-foreground text-xs px-2 py-0.5 rounded-full">
+            {outgoing.length}
+          </span>
+        </h3>
+        {outgoing.length === 0 ? (
+          <div className="text-sm text-muted-foreground text-center py-4 bg-muted/20 rounded-lg">
+            보낸 요청이 없습니다
+          </div>
         ) : (
           <div className="space-y-2">
-            {friends.map((friend) => (
-              <div
-                key={friend.userId}
-                className="p-4 border border-border rounded-lg hover:bg-accent/40 transition-colors"
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div>
-                    <p>{friend.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {friend.username ? `#${friend.username} · ` : ""}
-                      {friend.email}
-                    </p>
-                  </div>
-                  <div className="flex flex-row flex-wrap sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
-                    <button
-                      type="button"
-                      onClick={() => handleViewStatus(friend)}
-                      className="flex items-center justify-center gap-2 px-3 py-1.5 text-sm bg-primary/10 text-primary rounded-lg hover:bg-primary/15 transition-colors w-auto"
-                    >
-                      <TrendingUp className="w-4 h-4" />
-                      {expandedFriendIds.has(friend.userId) ? "닫기" : "보기"}
-                    </button>
-                    <button
-                      type="button"
-                      disabled={deleteFriendMutation.isPending}
-                      onClick={() => handleDeleteFriend(friend)}
-                      className="flex items-center justify-center gap-2 px-3 py-1.5 text-sm bg-muted/40 text-muted-foreground rounded-lg hover:bg-muted/60 disabled:opacity-50 disabled:cursor-not-allowed transition-colors w-auto"
-                      title="친구 삭제"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      삭제
-                    </button>
-                  </div>
+            {outgoing.map((req) => (
+              <div key={req.requestId} className="bg-card border border-border p-4 rounded-xl flex items-center justify-between">
+                <div>
+                  <div className="font-medium">{req.toUser.name}</div>
+                  <div className="text-xs text-muted-foreground">{req.toUser.email}</div>
                 </div>
-
-                {expandedFriendIds.has(friend.userId) && (
-                  <div className="mt-4 bg-card border border-border rounded-xl p-4">
-                    <div className="flex items-center justify-between gap-3 mb-3">
-                      <h2>{friend.name}님</h2>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setExpandedFriendIds((prev) => {
-                            const next = new Set(prev);
-                            next.delete(friend.userId);
-                            return next;
-                          });
-                        }}
-                        className="px-3 py-1.5 text-sm bg-muted/40 text-muted-foreground rounded-lg hover:bg-muted/60 transition-colors"
-                      >
-                        닫기
-                      </button>
-                    </div>
-
-                    {friendStatusById[friend.userId] ? (
-                      <div className="space-y-3">
-                        <div>
-                          <p className="text-sm text-muted-foreground">계획</p>
-                          <p>{friendStatusById[friend.userId].plan?.name ?? "공유된 계획이 없습니다"}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">진행률</p>
-                          <div className="flex items-center gap-3">
-                            <div className="flex-1 bg-muted rounded-full h-3">
-                              <div
-                                className="bg-primary h-3 rounded-full transition-all"
-                                style={{
-                                  width: `${Math.max(0, Math.min(100, friendStatusById[friend.userId].achievementRate))}%`,
-                                }}
-                              />
-                            </div>
-                            <span>
-                              {friendStatusById[friend.userId].totalDays > 0
-                                ? `${Math.round(friendStatusById[friend.userId].achievementRate)}%`
-                                : "0%"}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">불러오는 중...</p>
-                    )}
-                  </div>
-                )}
+                <button
+                  onClick={() => cancelMutation.mutate(req.requestId)}
+                  disabled={cancelMutation.isPending}
+                  className="text-muted-foreground hover:bg-muted p-2 rounded-lg"
+                  title="요청 취소"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
             ))}
           </div>
         )}
-      </div>
+      </section>
     </div>
   );
 }

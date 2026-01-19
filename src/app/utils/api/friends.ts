@@ -155,3 +155,16 @@ export async function cancelFriendRequest(requestId: string) {
 export async function getFriendStatus(friendUserId: string) {
   return fetchAPI(`/friend-status?friendUserId=${friendUserId}`);
 }
+
+export async function getLeaderboard(): Promise<{
+  success: boolean;
+  leaderboard: {
+    user: { id: string; email: string; name: string; username?: string };
+    plan: { id: string; name: string; totalDays: number } | null;
+    achievementRate: number;
+    completedDays: number;
+    totalDays: number;
+  }[];
+}> {
+  return fetchAPI("/leaderboard");
+}
