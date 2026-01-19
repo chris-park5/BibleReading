@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as planService from '../services/planService';
 import type { Plan } from '../types/domain';
@@ -10,7 +10,7 @@ export function usePlans() {
   const seededPresetIdsRef = useRef<Set<string>>(new Set());
   const userId = useAuthStore((s) => s.user?.id ?? null);
 
-  const plansQueryKey = ['plans', userId] as const;
+  const plansQueryKey = useMemo(() => ['plans', userId] as const, [userId]);
 
   const makeOptimisticId = () => {
     const g: any = globalThis as any;

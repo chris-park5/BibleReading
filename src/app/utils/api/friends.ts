@@ -52,7 +52,7 @@ export async function getFriends(): Promise<{
   });
 
   // 3. Fetch user details in bulk
-  let userMap = new Map<string, any>();
+  const userMap = new Map<string, any>();
   if (relatedUserIds.size > 0) {
     const { data: users, error: userError } = await supabase
       .from("users")

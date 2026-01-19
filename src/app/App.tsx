@@ -313,7 +313,7 @@ export default function App() {
     }, 200);
 
     return () => window.clearTimeout(t);
-  }, [hash]);
+  }, [hash, isOnline]);
 
   useEffect(() => {
     if (!isOnline) {

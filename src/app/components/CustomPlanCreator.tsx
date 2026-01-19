@@ -184,7 +184,7 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
 
   const applyCountForBook = (list: string[], bookName: string, desiredCountRaw: number) => {
     const desiredCount = clampRepeat(desiredCountRaw);
-    let next = [...list];
+    const next = [...list];
     const currentCount = next.reduce((acc, n) => acc + (n === bookName ? 1 : 0), 0);
 
     if (desiredCount > currentCount) {

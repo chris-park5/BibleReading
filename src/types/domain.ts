@@ -22,5 +22,7 @@ export interface Progress {
   // day(숫자)를 key로, 완료한 reading index 배열을 저장
   // 예: { "1": [0,2], "2": [1] }
   completedReadingsByDay?: Record<string, number[]>;
+  // day(숫자) -> readingIndex -> completed chapters array
+  completedChaptersByDay?: Record<string, Record<number, string[]>>;
   lastUpdated: string;
 }
