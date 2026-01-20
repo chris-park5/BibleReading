@@ -162,6 +162,7 @@ export async function getLeaderboard(): Promise<{
     user: { id: string; email: string; name: string; username?: string };
     plan: { id: string; name: string; totalDays: number } | null;
     achievementRate: number;
+    progressRate: number;
     completedDays: number;
     totalDays: number;
   }[];

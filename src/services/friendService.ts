@@ -52,6 +52,7 @@ export interface FriendStatus {
     startDate?: string | null;
   } | null;
   achievementRate: number;
+  progressRate?: number;
   completedDays: number;
   totalDays: number;
 }
@@ -69,6 +70,8 @@ export interface FriendProgress {
   progress: {
     completedDays: number[];
   };
+  achievementRate?: number;
+  progressRate?: number;
 }
 
 /**
