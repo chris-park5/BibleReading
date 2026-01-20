@@ -27,14 +27,16 @@ export async function updateReadingProgress(
   day: number,
   readingIndex: number,
   completed: boolean,
-  readingCount: number
+  readingCount: number,
+  completedChapters?: string[]
 ): Promise<{ success: boolean; progress: Progress }> {
   return api.updateReadingProgress(
     planId,
     day,
     readingIndex,
     completed,
-    readingCount
+    readingCount,
+    completedChapters
   );
 }
 

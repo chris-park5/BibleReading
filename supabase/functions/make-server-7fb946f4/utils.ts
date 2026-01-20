@@ -104,7 +104,7 @@ export async function fetchUserProgress(userId: string, planId: string) {
   
   const { data, error } = await supabase
     .from("reading_progress")
-    .select("day, reading_index")
+    .select("day, reading_index, completed_chapters")
     .eq("user_id", userId)
     .eq("plan_id", planId);
 
@@ -112,6 +112,7 @@ export async function fetchUserProgress(userId: string, planId: string) {
 
   // 완료된 읽기를 day별로 그룹화
   const completedReadingsByDay: Record<string, number[]> = {};
+  const completedChaptersByDay: Record<string, Record<number, string[]>> = {};
   const completedSetsByDay = new Map<number, Set<number>>();
 
   (data ?? []).forEach((item: any) => {
@@ -120,15 +121,59 @@ export async function fetchUserProgress(userId: string, planId: string) {
     if (!Number.isFinite(dayNum) || !Number.isFinite(idx)) return;
 
     const dayStr = String(dayNum);
-    if (!completedReadingsByDay[dayStr]) {
-      completedReadingsByDay[dayStr] = [];
-    }
-    completedReadingsByDay[dayStr].push(idx);
+    
+    // Reading Level Progress (Legacy & Full completion check)
+    // If completed_chapters is NULL or empty, it might be a legacy full completion.
+    // However, if we are moving to granular, presence of row implies something happened.
+    // We treat it as "completed reading" ONLY if we don't have partial data OR logic elsewhere handles it.
+    // For backward compatibility: if row exists, we put it in completedReadingsByDay initially?
+    // No, strictly speaking:
+    // If completed_chapters is NULL -> It is fully complete (Legacy).
+    // If completed_chapters is present -> It is partial or full.
+    // The frontend decides if it's fully complete based on comparison with total chapters.
+    // But backend `completedDays` calculation relies on `completedSetsByDay`.
+    // We should only add to `completedSetsByDay` if it is FULLY complete.
+    // Problem: We don't know the full set of chapters here easily without querying the plan schedule again.
+    // BUT, the existing logic assumes "Row Exists = Complete". 
+    // If I start inserting partial rows, I BREAK `completedDays` logic.
+    // FIX: Only add to `completedReadingsByDay` and `completedSetsByDay` if `completed_chapters` is NULL.
+    // If it is NOT NULL, it is partial.
+    // WAIT, what if I finish all chapters? I update `completed_chapters` to include all? 
+    // Or do I set it to NULL?
+    // Let's decide: **NULL = Fully Complete**. **Array = Partial**.
+    
+    let chapters = item.completed_chapters;
 
-    if (!completedSetsByDay.has(dayNum)) {
-      completedSetsByDay.set(dayNum, new Set());
+    // Handle potential string return from Postgres (e.g. "{1,2}")
+    if (typeof chapters === 'string') {
+      const clean = chapters.replace(/^\{|\}$/g, '').trim();
+      if (clean.length === 0) {
+        chapters = [];
+      } else {
+        // Handle quoted strings if necessary, but for simple chapter numbers split is usually enough
+        chapters = clean.split(',').map((s: string) => s.replace(/^"|"$/g, '').trim());
+      }
     }
-    completedSetsByDay.get(dayNum)!.add(idx);
+
+    if (chapters === null) {
+      // Legacy / Fully Complete
+      if (!completedReadingsByDay[dayStr]) {
+        completedReadingsByDay[dayStr] = [];
+      }
+      completedReadingsByDay[dayStr].push(idx);
+
+      if (!completedSetsByDay.has(dayNum)) {
+        completedSetsByDay.set(dayNum, new Set());
+      }
+      completedSetsByDay.get(dayNum)!.add(idx);
+    } else {
+      // Partial Progress
+      if (!completedChaptersByDay[dayStr]) {
+        completedChaptersByDay[dayStr] = {};
+      }
+      // Ensure it is an array
+      completedChaptersByDay[dayStr][idx] = Array.isArray(chapters) ? chapters : [];
+    }
   });
 
   // completedDays는 "해당 day의 모든 readingIndex가 완료"인 경우만 포함
@@ -146,6 +191,7 @@ export async function fetchUserProgress(userId: string, planId: string) {
       planId,
       completedDays: [],
       completedReadingsByDay,
+      completedChaptersByDay,
       lastUpdated: new Date().toISOString(),
     };
   }
@@ -203,6 +249,7 @@ export async function fetchUserProgress(userId: string, planId: string) {
     planId,
     completedDays: completedDays.sort((a, b) => a - b),
     completedReadingsByDay,
+    completedChaptersByDay,
     lastUpdated: new Date().toISOString(),
   };
 }
@@ -234,4 +281,204 @@ export function handleError(error: unknown, message: string) {
   const full = extra ? `${parts.join(" - ")} ${extra}` : parts.join(" - ");
 
   return { error: full };
+}
+
+/**
+ * 성경 장 수 계산 (문자열 파싱)
+ */
+export function countChapters(raw: string): number {
+  const s = String(raw ?? "").trim();
+  if (!s) return 0;
+
+  // "1", "1-3", "1,2,4-6" 등의 패턴 지원
+  const cleaned = s
+    .replace(/장/g, "")
+    .replace(/[^0-9,\-\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!cleaned) return 0;
+  const parts = cleaned
+    .split(",")
+    .map((p) => p.trim())
+    .filter(Boolean);
+
+  let total = 0;
+  for (const part of parts) {
+    const m = part.match(/^(\d+)(?:\s*-\s*(\d+))?$/);
+    if (!m) {
+      total += 1;
+      continue;
+    }
+    const a = Number(m[1]);
+    const b = m[2] ? Number(m[2]) : a;
+    if (!Number.isFinite(a) || !Number.isFinite(b)) {
+      total += 1;
+      continue;
+    }
+    total += Math.abs(b - a) + 1;
+  }
+  return total;
+}
+
+/**
+ * 장 단위 달성률 계산
+ */
+export function computeChaptersTotals({
+  schedule,
+  progress,
+  upToDay,
+}: {
+  schedule: any[];
+  progress: any;
+  upToDay?: number;
+}): { totalChapters: number; completedChapters: number } {
+  const completedReadingsByDay = progress.completedReadingsByDay || {};
+  const completedChaptersByDay = progress.completedChaptersByDay || {};
+  // Backend progress structure uses completedDays array
+  const completedDaysSet = new Set(progress.completedDays || []);
+
+  let totalChapters = 0;
+  let completedChapters = 0;
+
+  for (const entry of schedule) {
+    if (!entry) continue;
+    const day = Number(entry.day);
+    if (!Number.isFinite(day)) continue;
+    if (typeof upToDay === "number" && day > upToDay) continue;
+
+    // schedule data structure from DB: { day, readings: [...] }
+    const readings = Array.isArray(entry.readings) ? entry.readings : [];
+    const forcedComplete = completedDaysSet.has(day);
+    const dayStr = String(day);
+    const completedIndices = completedReadingsByDay[dayStr] || [];
+    const completedSet = forcedComplete ? new Set(readings.map((_, i) => i)) : new Set(completedIndices);
+    
+    // Partial chapters for this day
+    const dayPartialMap = completedChaptersByDay[dayStr] || {};
+
+    for (let i = 0; i < readings.length; i++) {
+      const r = readings[i];
+      const totalInUnit = countChapters(r?.chapters ?? "");
+      totalChapters += totalInUnit;
+      
+      if (completedSet.has(i)) {
+        completedChapters += totalInUnit;
+      } else if (dayPartialMap[i]) {
+        // Partial chapters check
+        const partialList = dayPartialMap[i];
+        if (Array.isArray(partialList)) {
+          completedChapters += partialList.length;
+        }
+      }
+    }
+  }
+
+  if (completedChapters > totalChapters) completedChapters = totalChapters;
+  return { totalChapters, completedChapters };
+}
+
+/**
+ * 계획의 일정을 가져와서 Day별로 그룹화하여 반환
+ */
+export async function fetchGroupedSchedule(
+  supabase: SupabaseClient,
+  plan: { id: string; is_custom: boolean; preset_id: string }
+): Promise<any[]> {
+  let scheduleRows: any[] = [];
+  if (plan.is_custom) {
+    const { data } = await supabase
+      .from("plan_schedules")
+      .select("day, chapters")
+      .eq("plan_id", plan.id)
+      .order("day", { ascending: true });
+    scheduleRows = data || [];
+  } else {
+    const { data } = await supabase
+      .from("preset_schedules")
+      .select("day, chapters")
+      .eq("preset_id", plan.preset_id)
+      .order("day", { ascending: true });
+    scheduleRows = data || [];
+  }
+
+  const groupedSchedule: any[] = [];
+  const dayMap = new Map<number, any>();
+  scheduleRows.forEach((row: any) => {
+    const d = Number(row.day);
+    if (!dayMap.has(d)) {
+      const entry = { day: d, readings: [] };
+      dayMap.set(d, entry);
+      groupedSchedule.push(entry);
+    }
+    dayMap.get(d).readings.push({ chapters: row.chapters });
+  });
+
+  return groupedSchedule;
+}
+
+/**
+ * 계획의 현재 달성률(Achievement Rate) 계산
+ * 달성률 = (전체 완료한 장 수) / (오늘까지 읽었어야 하는 총 장 수) * 100
+ * 진도율 탭(ProgressTab)의 계산 방식과 일치시킵니다.
+ */
+export async function calculateAchievementRate(
+  supabase: SupabaseClient,
+  userId: string,
+  plan: { id: string; start_date: string; total_days: number; is_custom: boolean; preset_id: string },
+  progress: any,
+  groupedSchedule?: any[]
+): Promise<number> {
+  const schedule = groupedSchedule || await fetchGroupedSchedule(supabase, plan);
+
+  // Calculate Today in KST
+  const now = new Date();
+  const kstTime = now.getTime() + (9 * 60 * 60 * 1000);
+  const kstDate = new Date(kstTime);
+  const todayKST = new Date(kstDate.getUTCFullYear(), kstDate.getUTCMonth(), kstDate.getUTCDate());
+
+  // Calculate elapsedDays
+  const [sy, sm, sd] = plan.start_date.split("-").map(Number);
+  const start = new Date(sy, sm - 1, sd);
+  const diffMs = todayKST.getTime() - start.getTime();
+  const diffDays = Math.floor(diffMs / (24 * 60 * 60 * 1000));
+  const elapsedDays = Math.max(0, Math.min(plan.total_days, diffDays + 1));
+
+  // Compute Totals
+  const { completedChapters: totalCompleted } = computeChaptersTotals({ 
+    schedule, 
+    progress 
+  });
+  
+  const { totalChapters: elapsedTarget } = computeChaptersTotals({
+    schedule,
+    progress,
+    upToDay: elapsedDays,
+  });
+
+  if (elapsedTarget === 0) return 0;
+  return (totalCompleted / elapsedTarget) * 100;
+}
+
+/**
+ * 계획의 전체 진행률(Overall Progress Rate) 계산
+ * 진행률 = (전체 완료한 장 수) / (계획 전체의 총 장 수) * 100
+ */
+export async function calculateProgressRate(
+  supabase: SupabaseClient,
+  userId: string,
+  plan: { id: string; is_custom: boolean; preset_id: string },
+  progress: any,
+  groupedSchedule?: any[]
+): Promise<number> {
+  const schedule = groupedSchedule || await fetchGroupedSchedule(supabase, plan);
+
+  // Compute Totals
+  const { totalChapters, completedChapters } = computeChaptersTotals({ 
+    schedule, 
+    progress 
+  });
+
+  if (totalChapters === 0) return 0;
+  return (completedChapters / totalChapters) * 100;
 }

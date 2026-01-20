@@ -11,14 +11,14 @@ const supabase = getSupabaseClient();
 export async function updateProgress(c: Context) {
   try {
     const userId = c.get("userId");
-    const { planId, day, completed, readingIndex } = (await c.req.json()) as UpdateProgressRequest;
+    const { planId, day, completed, readingIndex, completedChapters } = (await c.req.json()) as UpdateProgressRequest;
 
     if (!planId || day === undefined || readingIndex === undefined) {
       return c.json({ error: "Plan ID, day, and reading index required" }, 400);
     }
 
     if (completed) {
-      // 완료 표시
+      // 완료 표시 (전체 완료는 completed_chapters = null)
       const { error } = await supabase.from("reading_progress").upsert(
         {
           user_id: userId,
@@ -26,10 +26,25 @@ export async function updateProgress(c: Context) {
           day,
           reading_index: readingIndex,
           completed_at: new Date().toISOString(),
+          completed_chapters: null,
         },
         { onConflict: "user_id, plan_id, day, reading_index" }
       );
 
+      if (error) throw error;
+    } else if (completedChapters && completedChapters.length > 0) {
+       // 부분 완료 (세분화된 체크)
+       const { error } = await supabase.from("reading_progress").upsert(
+        {
+          user_id: userId,
+          plan_id: planId,
+          day,
+          reading_index: readingIndex,
+          completed_at: new Date().toISOString(),
+          completed_chapters: completedChapters,
+        },
+        { onConflict: "user_id, plan_id, day, reading_index" }
+      );
       if (error) throw error;
     } else {
       // 완료 취소

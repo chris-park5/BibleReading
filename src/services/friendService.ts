@@ -52,6 +52,7 @@ export interface FriendStatus {
     startDate?: string | null;
   } | null;
   achievementRate: number;
+  progressRate?: number;
   completedDays: number;
   totalDays: number;
 }
@@ -69,6 +70,8 @@ export interface FriendProgress {
   progress: {
     completedDays: number[];
   };
+  achievementRate?: number;
+  progressRate?: number;
 }
 
 /**
@@ -131,4 +134,8 @@ export async function getSharePlan(): Promise<{ success: boolean; sharedPlanId: 
 
 export async function setSharePlan(planId: string | null): Promise<{ success: boolean }> {
   return api.setSharePlan(planId);
+}
+
+export async function getLeaderboard() {
+  return api.getLeaderboard();
 }

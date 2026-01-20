@@ -36,6 +36,7 @@ export interface UpdateProgressRequest {
   completed: boolean;
   readingIndex: number;
   readingCount: number;
+  completedChapters?: string[];
 }
 
 export interface Progress {
@@ -43,6 +44,7 @@ export interface Progress {
   planId: string;
   completedDays: number[];
   completedReadingsByDay: Record<string, number[]>;
+  completedChaptersByDay?: Record<string, Record<number, string[]>>;
   lastUpdated: string;
 }
 
