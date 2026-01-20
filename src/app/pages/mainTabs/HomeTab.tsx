@@ -27,10 +27,17 @@ export function HomeTab() {
   const { plans } = usePlans();
   const userId = useAuthStore((s) => s.user?.id ?? null);
 
+  // Priority Loading: Defer secondary data (friend requests)
+  const [isIdle, setIsIdle] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setIsIdle(true), 1000);
+    return () => clearTimeout(timer);
+  }, []);
+
   const { data: friendsData } = useQuery({
     queryKey: ["friends", userId],
     queryFn: friendService.getFriends,
-    enabled: !!userId,
+    enabled: !!userId && isIdle,
     refetchInterval: 30000, // 30초마다 갱신
   });
 
