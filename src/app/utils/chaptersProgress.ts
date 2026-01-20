@@ -47,6 +47,7 @@ export function computeChaptersTotals({
 }): { totalChapters: number; completedChapters: number } {
   const completedDaysSet = new Set(progress.completedDays || []);
   const completedReadingsByDay = progress.completedReadingsByDay || {};
+  const completedChaptersByDay = progress.completedChaptersByDay || {};
 
   let totalChapters = 0;
   let completedChapters = 0;
@@ -59,14 +60,25 @@ export function computeChaptersTotals({
 
     const readings = Array.isArray(entry.readings) ? entry.readings : [];
     const forcedComplete = completedDaysSet.has(day);
-    const completedIndices = completedReadingsByDay[String(day)] || [];
+    const dayStr = String(day);
+    const completedIndices = completedReadingsByDay[dayStr] || [];
     const completedSet = forcedComplete ? new Set(readings.map((_, i) => i)) : new Set(completedIndices);
+    
+    const dayPartialMap = completedChaptersByDay[dayStr] || {};
 
     for (let i = 0; i < readings.length; i++) {
       const r = readings[i];
-      const chapters = countChapters(r?.chapters ?? "");
-      totalChapters += chapters;
-      if (completedSet.has(i)) completedChapters += chapters;
+      const totalInUnit = countChapters(r?.chapters ?? "");
+      totalChapters += totalInUnit;
+      
+      if (completedSet.has(i)) {
+        completedChapters += totalInUnit;
+      } else if (dayPartialMap[i]) {
+        const partialList = dayPartialMap[i];
+        if (Array.isArray(partialList)) {
+          completedChapters += partialList.length;
+        }
+      }
     }
   }
 

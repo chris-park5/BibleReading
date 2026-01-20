@@ -325,7 +325,7 @@ function LeaderboardItem({
             : `${item.completedDays}장`}
         </div>
         <p className={cn("text-xs", isSticky ? "text-white/80" : "text-muted-foreground")}>
-          {metric === "rate" ? "달성률" : "완료"}
+          {metric === "rate" ? "달성률" : "읽은 장수"}
         </p>
       </div>
     </div>
@@ -365,6 +365,7 @@ function FriendsListView({
     return {
       ...f,
       achievementRate: status?.achievementRate ?? 0,
+      progressRate: status?.progressRate ?? 0,
       completedDays: status?.completedDays ?? 0,
       planName: status?.plan?.name ?? "계획 없음",
     };
@@ -410,9 +411,9 @@ function FriendsListView({
                 
                 {/* Progress Bar */}
                 <div className="flex items-center gap-2">
-                  <Progress value={friend.achievementRate} className="h-2 flex-1" />
+                  <Progress value={friend.progressRate} className="h-2 flex-1" />
                   <span className="text-xs font-medium w-10 text-right">
-                    {Math.round(friend.achievementRate)}%
+                    {Math.round(friend.progressRate)}%
                   </span>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1 truncate">
