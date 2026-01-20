@@ -11,6 +11,19 @@ import { parseTabFromHash, setHashTab } from "./mainTabs/tabHash";
 export function MainTabsPage() {
   const defaultTab: TabKey = "home";
   const [tab, setTab] = useState<TabKey>(() => parseTabFromHash(window.location.hash) ?? defaultTab);
+  
+  // Lazy render: keep track of which tabs have been visited
+  const [visitedTabs, setVisitedTabs] = useState<Set<TabKey>>(() => {
+    const t = parseTabFromHash(window.location.hash) ?? defaultTab;
+    return new Set(["home", t]);
+  });
+
+  useEffect(() => {
+    setVisitedTabs((prev) => {
+      if (prev.has(tab)) return prev;
+      return new Set(prev).add(tab);
+    });
+  }, [tab]);
 
   const swipeStateRef = useRef<{
     startX: number;
@@ -119,16 +132,16 @@ export function MainTabsPage() {
           <HomeTab />
         </div>
         <div hidden={tab !== "progress"}>
-          <ProgressTab />
+          {visitedTabs.has("progress") && <ProgressTab />}
         </div>
         <div hidden={tab !== "add"}>
-          <PlanSelectorPage embedded />
+          {visitedTabs.has("add") && <PlanSelectorPage embedded />}
         </div>
         <div hidden={tab !== "friends"}>
-          <FriendsTabPage />
+          {visitedTabs.has("friends") && <FriendsTabPage isActive={tab === "friends"} />}
         </div>
         <div hidden={tab !== "settings"}>
-          <SettingsTabPage />
+          {visitedTabs.has("settings") && <SettingsTabPage />}
         </div>
       </main>
 

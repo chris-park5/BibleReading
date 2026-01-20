@@ -26,7 +26,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
 import { Badge } from "../components/ui/badge";
 import { cn } from "../components/ui/utils";
 
-export function FriendsTabPage() {
+export function FriendsTabPage({ isActive = true }: { isActive?: boolean }) {
   const userId = useAuthStore((s) => s.user?.id ?? null);
   const queryClient = useQueryClient();
   const [isAddFriendOpen, setIsAddFriendOpen] = useState(false);
@@ -36,7 +36,7 @@ export function FriendsTabPage() {
   const { data: friendsData, isLoading: loadingFriends } = useQuery({
     queryKey: ["friends", userId],
     queryFn: friendService.getFriends,
-    enabled: !!userId,
+    enabled: !!userId && isActive,
     refetchInterval: 30000,
   });
 
@@ -44,7 +44,7 @@ export function FriendsTabPage() {
   const { data: leaderboardData, isLoading: loadingLeaderboard } = useQuery({
     queryKey: ["leaderboard", userId],
     queryFn: friendService.getLeaderboard,
-    enabled: !!userId,
+    enabled: !!userId && isActive,
     refetchInterval: 30000,
   });
 
