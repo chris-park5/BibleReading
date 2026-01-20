@@ -74,6 +74,19 @@ export function normalizeSchedule(
   const normalizeChapters = (value: string) => {
     const v = String(value ?? "").trim();
     if (!v) return v;
+
+    // Handle "18:9-16" -> "18장 9-16절" or "18:9" -> "18장 9절"
+    // Regex matches: start with digits, colon, digits, optionally dash and digits.
+    const verseMatch = v.match(/^(\d+):(\d+)(?:-(\d+))?$/);
+    if (verseMatch) {
+      const chapter = verseMatch[1];
+      const startVerse = verseMatch[2];
+      const endVerse = verseMatch[3];
+      return endVerse 
+        ? `${chapter}장 ${startVerse}-${endVerse}절`
+        : `${chapter}장 ${startVerse}절`;
+    }
+
     if (v.includes("장") || v.includes("절")) return v;
     return `${v}장`;
   };

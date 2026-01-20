@@ -35,6 +35,7 @@ export {
   respondFriendRequest,
   cancelFriendRequest,
   getFriendStatus,
+  getLeaderboard,
 } from "./api/friends";
 
 export { saveNotification, getNotifications } from "./api/notifications";

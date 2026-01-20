@@ -10,7 +10,8 @@ export async function updateReadingProgress(
   day: number,
   readingIndex: number,
   completed: boolean,
-  readingCount: number
+  readingCount: number,
+  completedChapters?: string[]
 ): Promise<{ success: boolean; progress: Progress }> {
   if (!planId) throw new Error("Plan ID is required");
   if (!Number.isFinite(day)) throw new Error("day is required");
@@ -18,7 +19,7 @@ export async function updateReadingProgress(
 
   return fetchAPI("/progress", {
     method: "POST",
-    body: JSON.stringify({ planId, day, readingIndex, completed, readingCount }),
+    body: JSON.stringify({ planId, day, readingIndex, completed, readingCount, completedChapters }),
   });
 }
 
@@ -40,7 +41,7 @@ export async function getProgress(planId: string): Promise<{ success: boolean; p
   // 1. Fetch user progress
   const { data, error } = await supabase
     .from("reading_progress")
-    .select("day, reading_index")
+    .select("day, reading_index, completed_chapters")
     .eq("user_id", user.id)
     .eq("plan_id", planId);
 
@@ -48,6 +49,7 @@ export async function getProgress(planId: string): Promise<{ success: boolean; p
 
   // 2. Group completed readings by day
   const completedReadingsByDay: Record<string, number[]> = {};
+  const completedChaptersByDay: Record<string, Record<number, string[]>> = {};
   const completedSetsByDay = new Map<number, Set<number>>();
 
   (data ?? []).forEach((item: any) => {
@@ -56,15 +58,24 @@ export async function getProgress(planId: string): Promise<{ success: boolean; p
     if (!Number.isFinite(dayNum) || !Number.isFinite(idx)) return;
 
     const dayStr = String(dayNum);
-    if (!completedReadingsByDay[dayStr]) {
-      completedReadingsByDay[dayStr] = [];
-    }
-    completedReadingsByDay[dayStr].push(idx);
+    const chapters = item.completed_chapters as string[] | null;
 
-    if (!completedSetsByDay.has(dayNum)) {
-      completedSetsByDay.set(dayNum, new Set());
+    if (chapters === null) {
+      if (!completedReadingsByDay[dayStr]) {
+        completedReadingsByDay[dayStr] = [];
+      }
+      completedReadingsByDay[dayStr].push(idx);
+
+      if (!completedSetsByDay.has(dayNum)) {
+        completedSetsByDay.set(dayNum, new Set());
+      }
+      completedSetsByDay.get(dayNum)!.add(idx);
+    } else {
+      if (!completedChaptersByDay[dayStr]) {
+        completedChaptersByDay[dayStr] = {};
+      }
+      completedChaptersByDay[dayStr][idx] = chapters;
     }
-    completedSetsByDay.get(dayNum)!.add(idx);
   });
 
   // 3. Fetch Plan info (to know schedule)
@@ -133,6 +144,7 @@ export async function getProgress(planId: string): Promise<{ success: boolean; p
       planId,
       completedDays: completedDays.sort((a, b) => a - b),
       completedReadingsByDay,
+      completedChaptersByDay,
       lastUpdated: new Date().toISOString(),
     },
   };

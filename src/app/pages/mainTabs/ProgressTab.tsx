@@ -109,12 +109,12 @@ export function ProgressTab() {
 
   const elapsedDays = Math.max(0, Math.min(plan.totalDays, rawTodayDay));
   const { totalChapters, completedChapters } = computeChaptersTotals({ schedule: plan.schedule, progress });
-  const { totalChapters: elapsedChapters, completedChapters: completedChaptersUpToToday } = computeChaptersTotals({
+  const { totalChapters: elapsedChapters } = computeChaptersTotals({
     schedule: plan.schedule,
     progress,
     upToDay: elapsedDays,
   });
-  const completionRateElapsed = elapsedChapters === 0 ? 0 : Math.round((completedChaptersUpToToday / elapsedChapters) * 100);
+  const completionRateElapsed = elapsedChapters === 0 ? 0 : Math.round((completedChapters / elapsedChapters) * 100);
 
   const completionMessage =
     completionRateElapsed >= 100
@@ -159,7 +159,7 @@ export function ProgressTab() {
         <p className="text-sm text-muted-foreground">달성률</p>
         <p className="text-2xl font-semibold">{completionRateElapsed}%</p>
         <p className="text-sm text-muted-foreground mt-1">
-          오늘까지 {elapsedChapters}장 중 {completedChaptersUpToToday}장 완료
+          오늘까지 {elapsedChapters}장 중 {completedChapters}장 완료
         </p>
         <p className="text-muted-foreground mt-1">{completionMessage}</p>
       </div>
@@ -264,7 +264,11 @@ export function ProgressTab() {
             const completedIndices = progress.completedReadingsByDay?.[String(day)] ?? [];
             const completedSet = new Set(completedIndices);
 
+            // NEW: Get detailed chapters progress
+            const dayChaptersMap = progress.completedChaptersByDay?.[String(day)] ?? {};
+
             const completedByIndex = readings.map((_, i) => isDayCompleted || completedSet.has(i));
+            const completedChaptersByIndex = readings.map((_, i) => dayChaptersMap[i] ?? []);
 
             return (
               <div ref={historyDetailRef} className="pt-2">
@@ -277,13 +281,15 @@ export function ProgressTab() {
                     day={day}
                     readings={readings}
                     completedByIndex={completedByIndex}
+                    completedChaptersByIndex={completedChaptersByIndex}
                     subtitle={null}
-                    onToggleReading={(readingIndex, completed) =>
+                    onToggleReading={(readingIndex, completed, completedChapters) =>
                       toggleReading({
                         day,
                         readingIndex,
                         completed,
                         readingCount,
+                        completedChapters,
                       })
                     }
                   />

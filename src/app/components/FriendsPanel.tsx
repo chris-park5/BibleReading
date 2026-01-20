@@ -13,6 +13,8 @@ interface FriendProgress {
   user: { id: string; email: string; name: string };
   plan: { name: string; totalDays: number };
   progress: { completedDays: number[] };
+  achievementRate?: number;
+  progressRate?: number;
 }
 
 interface FriendsPanelProps {
@@ -71,7 +73,11 @@ export function FriendsPanel({ onClose, currentPlanId }: FriendsPanelProps) {
 
     try {
       const result = await api.getFriendProgress(friend.userId, currentPlanId);
-      setFriendProgress(result.friendProgress);
+      setFriendProgress({
+        ...result.friendProgress,
+        achievementRate: result.achievementRate,
+        progressRate: result.progressRate,
+      });
       setSelectedFriend(friend.userId);
     } catch (err: any) {
       alert("친구의 진도를 불러올 수 없습니다");
@@ -182,22 +188,12 @@ export function FriendsPanel({ onClose, currentPlanId }: FriendsPanelProps) {
                       <div
                         className="bg-primary h-3 rounded-full transition-all"
                         style={{
-                          width: `${
-                            (friendProgress.progress.completedDays.length /
-                              friendProgress.plan.totalDays) *
-                            100
-                          }%`,
+                          width: `${Math.round(friendProgress.progressRate ?? 0)}%`,
                         }}
                       />
                     </div>
                     <span>
-                      {friendProgress.plan.totalDays > 0
-                        ? `${Math.round(
-                            (friendProgress.progress.completedDays.length /
-                              friendProgress.plan.totalDays) *
-                              100
-                          )}%`
-                        : "0%"}
+                      {Math.round(friendProgress.progressRate ?? 0)}%
                     </span>
                   </div>
                 </div>

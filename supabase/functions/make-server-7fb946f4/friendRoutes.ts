@@ -3,7 +3,15 @@
  */
 
 import { Context } from "npm:hono";
-import { getSupabaseClient, fetchUserProgress, handleError } from "./utils.ts";
+import {
+  getSupabaseClient,
+  fetchUserProgress,
+  handleError,
+  computeChaptersTotals,
+  calculateAchievementRate,
+  calculateProgressRate,
+  fetchGroupedSchedule,
+} from "./utils.ts";
 import type {
   AddFriendRequest,
   CancelFriendRequest,
@@ -392,7 +400,7 @@ export async function getFriendStatus(c: Context) {
 
     const { data: plan, error: planError } = await supabase
       .from("plans")
-      .select("id, name, total_days, start_date")
+      .select("id, name, total_days, start_date, is_custom, preset_id")
       .eq("id", selectedPlanId)
       .maybeSingle();
 
@@ -412,9 +420,15 @@ export async function getFriendStatus(c: Context) {
     }
 
     const progress = await fetchUserProgress(friendUserId, plan.id);
-    const completedDays = progress.completedDays.length;
-    const totalDays = Number(plan.total_days) || 0;
-    const achievementRate = totalDays > 0 ? (completedDays / totalDays) * 100 : 0;
+    const groupedSchedule = await fetchGroupedSchedule(supabase, plan);
+    
+    const achievementRate = await calculateAchievementRate(supabase, friendUserId, plan, progress, groupedSchedule);
+    const progressRate = await calculateProgressRate(supabase, friendUserId, plan, progress, groupedSchedule);
+
+    const { completedChapters } = computeChaptersTotals({ 
+      schedule: groupedSchedule, 
+      progress 
+    });
 
     return c.json({
       success: true,
@@ -423,12 +437,13 @@ export async function getFriendStatus(c: Context) {
         plan: {
           id: plan.id,
           name: plan.name,
-          totalDays,
+          totalDays: plan.total_days,
           startDate: plan.start_date,
         },
         achievementRate,
-        completedDays,
-        totalDays,
+        progressRate,
+        completedDays: completedChapters, // Using chapters count here as requested by UI
+        totalDays: plan.total_days,
       },
     });
   } catch (error) {
@@ -464,7 +479,23 @@ export async function getFriendProgress(c: Context) {
 
     // 친구의 진도 조회
     const progress = await fetchUserProgress(friendUserId, planId);
-    return c.json({ success: true, friendProgress: progress });
+
+    // Fetch plan details for achievement rate
+    const { data: plan } = await supabase
+      .from("plans")
+      .select("id, start_date, total_days, is_custom, preset_id")
+      .eq("id", planId)
+      .maybeSingle();
+
+    let achievementRate = 0;
+    let progressRate = 0;
+    if (plan) {
+      const groupedSchedule = await fetchGroupedSchedule(supabase, plan);
+      achievementRate = await calculateAchievementRate(supabase, friendUserId, plan, progress, groupedSchedule);
+      progressRate = await calculateProgressRate(supabase, friendUserId, plan, progress, groupedSchedule);
+    }
+
+    return c.json({ success: true, friendProgress: progress, achievementRate, progressRate });
   } catch (error) {
     return c.json(handleError(error, "Failed to get friend progress"), 500);
   }
@@ -501,6 +532,110 @@ export async function deleteFriend(c: Context) {
     return c.json({ success: true });
   } catch (error) {
     return c.json(handleError(error, "Failed to delete friend"), 500);
+  }
+}
+
+export async function getLeaderboard(c: Context) {
+  try {
+    const userId = c.get("userId");
+
+    // 1. Get all friends (accepted)
+    const { data: friendships, error: fsError } = await supabase
+      .from("friendships")
+      .select("user_id, friend_id")
+      .eq("status", "accepted")
+      .or(`user_id.eq.${userId},friend_id.eq.${userId}`);
+
+    if (fsError) throw fsError;
+
+    const friendIds = (friendships || []).map((f: any) =>
+      f.user_id === userId ? f.friend_id : f.user_id
+    );
+
+    // Include current user in the set
+    const allUserIds = Array.from(new Set([...friendIds, userId]));
+
+    if (allUserIds.length === 0) {
+      return c.json({ success: true, leaderboard: [] });
+    }
+
+    // 2. Get Users + Shared Plan ID
+    const { data: users, error: usersError } = await supabase
+      .from("users")
+      .select("id, email, name, username, shared_plan_id")
+      .in("id", allUserIds);
+
+    if (usersError) throw usersError;
+
+    // 3. Calculate stats for each user
+    // To match Progress Tab's "Achievement Rate (달성률)", we need:
+    // (Completed Chapters / Chapters scheduled until today) * 100
+    
+    // Calculate Today in KST
+    const now = new Date();
+    const kstOffset = 9 * 60 * 60 * 1000;
+    const kstDate = new Date(now.getTime() + kstOffset);
+    const today = new Date(kstDate.getUTCFullYear(), kstDate.getUTCMonth(), kstDate.getUTCDate());
+
+    const leaderboard = await Promise.all(
+      (users || []).map(async (u: any) => {
+        if (!u.shared_plan_id) {
+          return {
+            user: { id: u.id, name: u.name, username: u.username, email: u.email },
+            plan: null,
+            achievementRate: 0,
+            completedDays: 0,
+            totalDays: 0,
+          };
+        }
+
+        // Fetch Plan with details
+        const { data: plan, error: planError } = await supabase
+          .from("plans")
+          .select("id, name, total_days, start_date, is_custom, preset_id")
+          .eq("id", u.shared_plan_id)
+          .maybeSingle();
+
+        if (planError || !plan) {
+          return {
+            user: { id: u.id, name: u.name, username: u.username, email: u.email },
+            plan: null,
+            achievementRate: 0,
+            completedDays: 0,
+            totalDays: 0,
+          };
+        }
+
+        // Fetch Progress
+        const progress = await fetchUserProgress(u.id, plan.id);
+        const groupedSchedule = await fetchGroupedSchedule(supabase, plan);
+
+        // Compute Totals
+        const { completedChapters: totalCompleted } = computeChaptersTotals({ 
+          schedule: groupedSchedule, 
+          progress 
+        });
+
+        const achievementRate = await calculateAchievementRate(supabase, u.id, plan, progress, groupedSchedule);
+        const progressRate = await calculateProgressRate(supabase, u.id, plan, progress, groupedSchedule);
+
+        return {
+          user: { id: u.id, name: u.name, username: u.username, email: u.email },
+          plan: { id: plan.id, name: plan.name, totalDays: plan.total_days },
+          achievementRate,
+          progressRate,
+          completedDays: totalCompleted, // Using total chapters count for "count" metric
+          totalDays: plan.total_days,
+        };
+      })
+    );
+
+    // Sort by achievement rate desc
+    leaderboard.sort((a, b) => b.achievementRate - a.achievementRate);
+
+    return c.json({ success: true, leaderboard });
+  } catch (error) {
+    return c.json(handleError(error, "Failed to get leaderboard"), 500);
   }
 }
 

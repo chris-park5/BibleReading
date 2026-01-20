@@ -116,7 +116,7 @@ export async function getSession() {
         window.history.replaceState({}, document.title, `${window.location.pathname}${window.location.hash}`);
       }
     } catch (e) {
-      // eslint-disable-next-line no-console
+       
       console.error("OAuth callback handling failed:", e);
     }
   }
