@@ -1,16 +1,41 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { BarChart3, ChevronLeft, ChevronRight, Home, PlusSquare, Settings, UsersRound } from "lucide-react";
-import { PlanSelectorPage } from "./PlanSelectorPage";
-import { FriendsTabPage } from "./FriendsTabPage";
-import { SettingsTabPage } from "./SettingsTabPage";
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
+import { BarChart3, Home, PlusSquare, Settings, UsersRound } from "lucide-react";
 import { HomeTab } from "./mainTabs/HomeTab";
-import { ProgressTab } from "./mainTabs/ProgressTab";
 import type { TabKey } from "./mainTabs/tabHash";
 import { parseTabFromHash, setHashTab } from "./mainTabs/tabHash";
+import { Skeleton } from "../components/ui/skeleton";
+
+// Lazy load other tabs
+const ProgressTab = lazy(() => import("./mainTabs/ProgressTab").then(m => ({ default: m.ProgressTab })));
+const PlanSelectorPage = lazy(() => import("./PlanSelectorPage").then(m => ({ default: m.PlanSelectorPage })));
+const FriendsTabPage = lazy(() => import("./FriendsTabPage").then(m => ({ default: m.FriendsTabPage })));
+const SettingsTabPage = lazy(() => import("./SettingsTabPage").then(m => ({ default: m.SettingsTabPage })));
+
+function TabLoading() {
+  return (
+    <div className="max-w-4xl mx-auto p-6 space-y-4">
+      <Skeleton className="h-12 w-full rounded-xl" />
+      <Skeleton className="h-64 w-full rounded-xl" />
+    </div>
+  );
+}
 
 export function MainTabsPage() {
   const defaultTab: TabKey = "home";
   const [tab, setTab] = useState<TabKey>(() => parseTabFromHash(window.location.hash) ?? defaultTab);
+  
+  // Lazy render: keep track of which tabs have been visited
+  const [visitedTabs, setVisitedTabs] = useState<Set<TabKey>>(() => {
+    const t = parseTabFromHash(window.location.hash) ?? defaultTab;
+    return new Set(["home", t]);
+  });
+
+  useEffect(() => {
+    setVisitedTabs((prev) => {
+      if (prev.has(tab)) return prev;
+      return new Set(prev).add(tab);
+    });
+  }, [tab]);
 
   const swipeStateRef = useRef<{
     startX: number;
@@ -119,16 +144,24 @@ export function MainTabsPage() {
           <HomeTab />
         </div>
         <div hidden={tab !== "progress"}>
-          <ProgressTab />
+          <Suspense fallback={<TabLoading />}>
+            {visitedTabs.has("progress") && <ProgressTab />}
+          </Suspense>
         </div>
         <div hidden={tab !== "add"}>
-          <PlanSelectorPage embedded />
+          <Suspense fallback={<TabLoading />}>
+            {visitedTabs.has("add") && <PlanSelectorPage embedded />}
+          </Suspense>
         </div>
         <div hidden={tab !== "friends"}>
-          <FriendsTabPage />
+          <Suspense fallback={<TabLoading />}>
+            {visitedTabs.has("friends") && <FriendsTabPage isActive={tab === "friends"} />}
+          </Suspense>
         </div>
         <div hidden={tab !== "settings"}>
-          <SettingsTabPage />
+          <Suspense fallback={<TabLoading />}>
+            {visitedTabs.has("settings") && <SettingsTabPage />}
+          </Suspense>
         </div>
       </main>
 
