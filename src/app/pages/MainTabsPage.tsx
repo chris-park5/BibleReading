@@ -72,7 +72,7 @@ export function MainTabsPage() {
       [
         { key: "home" as const, label: "읽기", icon: Home },
         { key: "progress" as const, label: "진행률", icon: BarChart3 },
-        { key: "add" as const, label: "계획 추가", icon: BookOpen },
+        { key: "add" as const, label: "계획", icon: BookOpen },
         { key: "friends" as const, label: "친구", icon: UsersRound },
         { key: "settings" as const, label: "설정", icon: Settings },
       ],
