@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
-import { BarChart3, Home, PlusSquare, Settings, UsersRound } from "lucide-react";
+import { BarChart3, Home, BookOpen, Settings, UsersRound } from "lucide-react";
 import { HomeTab } from "./mainTabs/HomeTab";
 import type { TabKey } from "./mainTabs/tabHash";
 import { parseTabFromHash, setHashTab } from "./mainTabs/tabHash";
@@ -71,8 +71,8 @@ export function MainTabsPage() {
     () =>
       [
         { key: "home" as const, label: "홈", icon: Home },
-        { key: "progress" as const, label: "진도율", icon: BarChart3 },
-        { key: "add" as const, label: "계획 추가", icon: PlusSquare },
+        { key: "progress" as const, label: "진행률", icon: BarChart3 },
+        { key: "add" as const, label: "계획", icon: BookOpen },
         { key: "friends" as const, label: "친구", icon: UsersRound },
         { key: "settings" as const, label: "설정", icon: Settings },
       ],
@@ -149,7 +149,7 @@ export function MainTabsPage() {
         </div>
         <div hidden={tab !== "add"}>
           <Suspense fallback={<TabLoading />}>
-            {visitedTabs.has("add") && <PlanSelectorPage embedded />}
+            {visitedTabs.has("add") && <PlanSelectorPage />}
           </Suspense>
         </div>
         <div hidden={tab !== "friends"}>

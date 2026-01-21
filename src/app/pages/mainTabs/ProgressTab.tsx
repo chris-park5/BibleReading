@@ -10,6 +10,15 @@ import { computeTodayDay, startOfTodayLocal } from "./dateUtils";
 import { computeChaptersTotals, countChapters } from "../../utils/chaptersProgress";
 import { Search } from "lucide-react";
 import { bookMatchesQuery } from "../../utils/bookSearch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../components/ui/select";
+
+import { ScrollArea } from "../../components/ui/scroll-area";
 
 export function ProgressTab() {
   const { plans } = usePlans();
@@ -98,9 +107,14 @@ export function ProgressTab() {
 
   if (!activePlanId || !plan || !progress) {
     return (
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="bg-card text-card-foreground border border-border rounded-xl p-6 text-center">
-          <p>진도율을 보려면 계획을 선택해주세요.</p>
+      <div className="min-h-screen">
+        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-md border-b border-border shadow-sm">
+          <div className="max-w-4xl mx-auto px-4 py-3">
+            <h2 className="text-xl font-bold">내 계획</h2>
+          </div>
+        </div>
+        <div className="max-w-4xl mx-auto p-6 text-center">
+          <p>내 계획을 보려면 계획을 선택해주세요.</p>
           <p className="text-muted-foreground text-sm mt-1">계획 추가 탭에서 계획을 추가할 수 있습니다.</p>
         </div>
       </div>
@@ -128,219 +142,219 @@ export function ProgressTab() {
             : "지금부터 시작해도 괜찮아요. 오늘 한 항목부터!";
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-4">
-      {plans.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          {plans.map((p) => (
-            <button
-              key={p.id}
-              type="button"
-              onClick={() => selectPlan(p.id)}
-              className={`shrink-0 px-3 py-2 rounded-lg border text-sm transition-colors ${
-                p.id === activePlanId
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border bg-card text-muted-foreground hover:bg-accent"
-              }`}
-            >
-              <span className="block max-w-[10rem] text-center text-xs leading-snug whitespace-normal break-words line-clamp-2">
-                {p.name}
-              </span>
-            </button>
-          ))}
-        </div>
-      )}
-
-      <div className="bg-card text-card-foreground border border-border rounded-xl p-4">
-        <p className="text-sm text-muted-foreground">진도율</p>
-        <p className="text-lg">{plan.name}</p>
-      </div>
-
-      <div className="bg-card text-card-foreground border border-border rounded-xl p-4">
-        <p className="text-sm text-muted-foreground">달성률</p>
-        <p className="text-2xl font-semibold">{completionRateElapsed}%</p>
-        <p className="text-sm text-muted-foreground mt-1">
-          오늘까지 {elapsedChapters}장 중 {completedChapters}장 완료
-        </p>
-        <p className="text-muted-foreground mt-1">{completionMessage}</p>
-      </div>
-
-      <ProgressChart totalChapters={totalChapters} completedChapters={completedChapters} />
-
-      <div className="bg-card text-card-foreground border border-border rounded-xl p-2 flex gap-2">
-        <button
-          type="button"
-          onClick={() => setViewMode("day")}
-          className={`flex-1 px-3 py-2 rounded-lg border text-sm transition-colors ${
-            viewMode === "day" ? "border-primary bg-primary/10 text-primary" : "border-border bg-card hover:bg-accent"
-          }`}
-        >
-          일자별
-        </button>
-        <button
-          type="button"
-          onClick={() => setViewMode("book")}
-          className={`flex-1 px-3 py-2 rounded-lg border text-sm transition-colors ${
-            viewMode === "book" ? "border-primary bg-primary/10 text-primary" : "border-border bg-card hover:bg-accent"
-          }`}
-        >
-          성경별
-        </button>
-      </div>
-
-      {viewMode === "day" ? (
-        <>
-          <ReadingHistory
-            schedule={plan.schedule}
-            completedDays={(() => {
-              const completed = new Set<number>();
-              const completedReadingsByDay = progress.completedReadingsByDay || {};
-              const completedDaysSet = new Set(progress.completedDays || []);
-
-              for (let day = 1; day <= plan.totalDays; day++) {
-                const reading = plan.schedule.find((s) => s.day === day);
-                if (!reading) continue;
-
-                const totalReadings = reading.readings.length;
-                if (totalReadings <= 0) continue;
-
-                if (completedDaysSet.has(day)) {
-                  completed.add(day);
-                  continue;
-                }
-
-                const completedIndices = completedReadingsByDay[String(day)] || [];
-                const completedCount = completedIndices.length;
-                if (completedCount === totalReadings) completed.add(day);
-              }
-
-              return completed;
-            })()}
-            partialDays={(() => {
-              const partial = new Set<number>();
-              const completedReadingsByDay = progress.completedReadingsByDay || {};
-              const completedDaysSet = new Set(progress.completedDays || []);
-
-              for (let day = 1; day <= plan.totalDays; day++) {
-                if (completedDaysSet.has(day)) continue;
-
-                const reading = plan.schedule.find((s) => s.day === day);
-                if (!reading) continue;
-
-                const totalReadings = reading.readings.length;
-                if (totalReadings <= 0) continue;
-
-                const completedIndices = completedReadingsByDay[String(day)] || [];
-                const completedCount = completedIndices.length;
-                if (completedCount > 0 && completedCount < totalReadings) partial.add(day);
-              }
-
-              return partial;
-            })()}
-            // "오늘" 표시(하이라이트)는 실제 오늘 날짜 기준 day를 사용합니다.
-            currentDay={todayDay}
-            selectedDay={selectedHistoryDay}
-            onDayClick={(day) => {
-              setSelectedHistoryDay(day);
-              setIsPinnedHistoryDay(true);
-
-              // Scroll to the checkbox list (TodayReading) below.
-              if (typeof window !== "undefined") {
-                window.requestAnimationFrame(() => {
-                  historyDetailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-                });
-              }
-            }}
-            startDate={plan.startDate}
-            totalDays={plan.totalDays}
-          />
-
-          {(() => {
-            const day = selectedHistoryDay;
-            const entry = plan.schedule.find((s) => s.day === day);
-            const readings = entry?.readings ?? [];
-            const readingCount = readings.length;
-
-            const isDayCompleted = progress.completedDays.includes(day);
-            const completedIndices = progress.completedReadingsByDay?.[String(day)] ?? [];
-            const completedSet = new Set(completedIndices);
-
-            // NEW: Get detailed chapters progress
-            const dayChaptersMap = progress.completedChaptersByDay?.[String(day)] ?? {};
-
-            const completedByIndex = readings.map((_, i) => isDayCompleted || completedSet.has(i));
-            const completedChaptersByIndex = readings.map((_, i) => dayChaptersMap[i] ?? []);
-
-            return (
-              <div ref={historyDetailRef} className="pt-2">
-                {readings.length === 0 ? (
-                  <div className="bg-card text-card-foreground border border-border rounded-xl p-4 text-sm text-muted-foreground">
-                    선택한 날짜에 읽기 항목이 없습니다.
-                  </div>
-                ) : (
-                  <TodayReading
-                    day={day}
-                    readings={readings}
-                    completedByIndex={completedByIndex}
-                    completedChaptersByIndex={completedChaptersByIndex}
-                    subtitle={null}
-                    onToggleReading={(readingIndex, completed, completedChapters) =>
-                      toggleReading({
-                        day,
-                        readingIndex,
-                        completed,
-                        readingCount,
-                        completedChapters,
-                      })
-                    }
-                  />
-                )}
-              </div>
-            );
-          })()}
-        </>
-      ) : (
-        <div className="bg-card text-card-foreground border border-border rounded-xl p-4">
-          <div className="text-sm text-muted-foreground mb-3">책별 진행</div>
-
-          <div className="mb-3 flex items-center gap-2">
-            <div className="relative flex-1 min-w-0">
-              <Search className="w-4 h-4 text-muted-foreground/60 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                value={bookQuery}
-                onChange={(e) => setBookQuery(e.target.value)}
-                placeholder="책 이름 검색 (예: 히브리서)"
-                className="w-full pl-9 pr-3 py-2 border border-border rounded-lg bg-input-background text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              />
-            </div>
-            {normalizedBookQuery && (
-              <div className="text-xs text-muted-foreground whitespace-nowrap">{filteredBookRows.length}권</div>
-            )}
-          </div>
-
-          {bookProgressRows.length === 0 ? (
-            <div className="text-sm text-muted-foreground">표시할 데이터가 없습니다.</div>
-          ) : filteredBookRows.length === 0 ? (
-            <div className="text-sm text-muted-foreground">검색 결과가 없습니다.</div>
-          ) : (
-            <div className="space-y-2">
-              {filteredBookRows.map((row) => (
-                <div key={row.book} className="border border-border rounded-lg p-3 bg-card">
-                  <div className="flex items-center justify-between gap-3 min-w-0">
-                    <div className="min-w-0">
-                      <div className="text-sm truncate">{row.book}</div>
-                      <div className="text-xs text-muted-foreground">{row.completed}/{row.total}장</div>
-                    </div>
-                    <div className="text-sm font-medium text-muted-foreground shrink-0">{row.percent}%</div>
-                  </div>
-                  <div className="mt-2 w-full bg-muted rounded-full h-2">
-                    <div className="bg-primary h-2 rounded-full" style={{ width: `${row.percent}%` }} />
-                  </div>
-                </div>
-              ))}
+    <div className="min-h-screen pb-24">
+      {/* Sticky Header with Plan Selection */}
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-md border-b border-border shadow-sm">
+        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+          <h2 className="text-xl font-bold whitespace-nowrap">진행률</h2>
+          {plans.length > 0 && (
+            <div className="flex-1 max-w-[200px]">
+              <Select
+                value={activePlanId ?? undefined}
+                onValueChange={selectPlan}
+              >
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="계획 선택" />
+                </SelectTrigger>
+                <SelectContent>
+                  {plans.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           )}
         </div>
-      )}
+      </div>
+
+      <div className="max-w-4xl mx-auto p-4 space-y-6 pt-6">
+        <div className="bg-card text-card-foreground border border-border rounded-xl p-4">
+          <p className="text-sm text-muted-foreground">달성률</p>
+          <p className="text-2xl font-semibold">{completionRateElapsed}%</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            오늘까지 {elapsedChapters}장 중 {completedChapters}장 완료
+          </p>
+          <p className="text-muted-foreground mt-1">{completionMessage}</p>
+        </div>
+
+        <ProgressChart totalChapters={totalChapters} completedChapters={completedChapters} />
+
+        {/* Reading History Section Header */}
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold">읽기 기록</h2>
+          <div className="w-32">
+            <Select value={viewMode} onValueChange={(v) => setViewMode(v as "day" | "book")}>
+              <SelectTrigger className="h-8 text-xs bg-card">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="day" className="text-xs">일자별</SelectItem>
+                <SelectItem value="book" className="text-xs">성경별</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {viewMode === "day" ? (
+          <div className="bg-card text-card-foreground border border-border rounded-xl p-4 space-y-4">
+            <ReadingHistory
+              schedule={plan.schedule}
+              completedDays={(() => {
+                const completed = new Set<number>();
+                const completedReadingsByDay = progress.completedReadingsByDay || {};
+                const completedDaysSet = new Set(progress.completedDays || []);
+
+                for (let day = 1; day <= plan.totalDays; day++) {
+                  const reading = plan.schedule.find((s) => s.day === day);
+                  if (!reading) continue;
+
+                  const totalReadings = reading.readings.length;
+                  if (totalReadings <= 0) continue;
+
+                  if (completedDaysSet.has(day)) {
+                    completed.add(day);
+                    continue;
+                  }
+
+                  const completedIndices = completedReadingsByDay[String(day)] || [];
+                  const completedCount = completedIndices.length;
+                  if (completedCount === totalReadings) completed.add(day);
+                }
+
+                return completed;
+              })()}
+              partialDays={(() => {
+                const partial = new Set<number>();
+                const completedReadingsByDay = progress.completedReadingsByDay || {};
+                const completedDaysSet = new Set(progress.completedDays || []);
+
+                for (let day = 1; day <= plan.totalDays; day++) {
+                  if (completedDaysSet.has(day)) continue;
+
+                  const reading = plan.schedule.find((s) => s.day === day);
+                  if (!reading) continue;
+
+                  const totalReadings = reading.readings.length;
+                  if (totalReadings <= 0) continue;
+
+                  const completedIndices = completedReadingsByDay[String(day)] || [];
+                  const completedCount = completedIndices.length;
+                  if (completedCount > 0 && completedCount < totalReadings) partial.add(day);
+                }
+
+                return partial;
+              })()}
+              // "오늘" 표시(하이라이트)는 실제 오늘 날짜 기준 day를 사용합니다.
+              currentDay={todayDay}
+              selectedDay={selectedHistoryDay}
+              onDayClick={(day) => {
+                setSelectedHistoryDay(day);
+                setIsPinnedHistoryDay(true);
+
+                // Scroll to the checkbox list (TodayReading) below.
+                if (typeof window !== "undefined") {
+                  window.requestAnimationFrame(() => {
+                    historyDetailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  });
+                }
+              }}
+              startDate={plan.startDate}
+              totalDays={plan.totalDays}
+              // Remove border and shadow from inner component
+              className="border-none shadow-none p-0 bg-transparent"
+              hideHeader={true}
+            />
+
+            {(() => {
+              const day = selectedHistoryDay;
+              const entry = plan.schedule.find((s) => s.day === day);
+              const readings = entry?.readings ?? [];
+              const readingCount = readings.length;
+
+              const isDayCompleted = progress.completedDays.includes(day);
+              const completedIndices = progress.completedReadingsByDay?.[String(day)] ?? [];
+              const completedSet = new Set(completedIndices);
+
+              // NEW: Get detailed chapters progress
+              const dayChaptersMap = progress.completedChaptersByDay?.[String(day)] ?? {};
+
+              const completedByIndex = readings.map((_, i) => isDayCompleted || completedSet.has(i));
+              const completedChaptersByIndex = readings.map((_, i) => dayChaptersMap[i] ?? []);
+
+              return (
+                <div ref={historyDetailRef}>
+                  {readings.length === 0 ? (
+                    <div className="bg-card text-card-foreground border border-border rounded-xl p-4 text-sm text-muted-foreground">
+                      선택한 날짜에 읽기 항목이 없습니다.
+                    </div>
+                  ) : (
+                    <TodayReading
+                      day={day}
+                      readings={readings}
+                      completedByIndex={completedByIndex}
+                      completedChaptersByIndex={completedChaptersByIndex}
+                      subtitle={null}
+                      onToggleReading={(readingIndex, completed, completedChapters) =>
+                        toggleReading({
+                          day,
+                          readingIndex,
+                          completed,
+                          readingCount,
+                          completedChapters,
+                        })
+                      }
+                    />
+                  )}
+                </div>
+              );
+            })()}
+          </div>
+        ) : (
+          <div className="bg-card text-card-foreground border border-border rounded-xl p-4 overflow-hidden">
+            <div className="mb-3 flex items-center gap-2">
+              <div className="relative flex-1 min-w-0">
+                <Search className="w-4 h-4 text-muted-foreground/60 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  value={bookQuery}
+                  onChange={(e) => setBookQuery(e.target.value)}
+                  placeholder="책 이름 검색 (예: 히브리서)"
+                  className="w-full pl-9 pr-3 py-2 border border-border rounded-lg bg-input-background text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                />
+              </div>
+              {normalizedBookQuery && (
+                <div className="text-xs text-muted-foreground whitespace-nowrap">{filteredBookRows.length}권</div>
+              )}
+            </div>
+
+            {bookProgressRows.length === 0 ? (
+              <div className="text-sm text-muted-foreground">표시할 데이터가 없습니다.</div>
+            ) : filteredBookRows.length === 0 ? (
+              <div className="text-sm text-muted-foreground">검색 결과가 없습니다.</div>
+            ) : (
+              <ScrollArea className="h-[400px] pr-4">
+                <div className="space-y-2 pr-2">
+                  {filteredBookRows.map((row) => (
+                    <div key={row.book} className="border border-border rounded-lg p-3 bg-card">
+                      <div className="flex items-center justify-between gap-3 min-w-0">
+                        <div className="min-w-0">
+                          <div className="text-sm truncate">{row.book}</div>
+                          <div className="text-xs text-muted-foreground">{row.completed}/{row.total}장</div>
+                        </div>
+                        <div className="text-sm font-medium text-muted-foreground shrink-0">{row.percent}%</div>
+                      </div>
+                      <div className="mt-2 w-full bg-muted rounded-full h-2">
+                        <div className="bg-primary h-2 rounded-full" style={{ width: `${row.percent}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

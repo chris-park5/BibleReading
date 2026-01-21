@@ -1,35 +1,38 @@
 import { TrendingUp } from "lucide-react";
+import { cn } from "./ui/utils";
 
 interface ProgressChartProps {
   totalChapters: number;
   completedChapters: number;
+  className?: string;
 }
 
 export function ProgressChart({
   totalChapters,
   completedChapters,
+  className,
 }: ProgressChartProps) {
   const percentage = totalChapters <= 0 ? 0 : Math.round((completedChapters / totalChapters) * 100);
 
   return (
-    <div className="bg-card text-card-foreground rounded-xl border border-border p-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className={cn("bg-card text-card-foreground rounded-xl border border-border p-4", className)}>
+      <div className="flex items-center justify-between mb-4">
         <div>
-          <h2>진행 상황</h2>
-          <p className="text-muted-foreground">
+          <p className="text-sm text-muted-foreground">진행상황</p>
+          <p className="text-lg font-semibold">
             {completedChapters}장 / {totalChapters}장 완료
           </p>
         </div>
-        <div className="flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-lg">
-          <TrendingUp className="w-5 h-5 text-primary" />
-          <span className="text-primary">{percentage}%</span>
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-lg">
+          <TrendingUp className="w-4 h-4 text-primary" />
+          <span className="text-sm font-bold text-primary">{percentage}%</span>
         </div>
       </div>
 
-      <div className="mb-4">
-        <div className="w-full bg-muted rounded-full h-3">
+      <div className="mb-2">
+        <div className="w-full bg-muted rounded-full h-2.5">
           <div
-            className="bg-primary h-3 rounded-full transition-all"
+            className="bg-primary h-2.5 rounded-full transition-all duration-500"
             style={{ width: `${percentage}%` }}
           />
         </div>
