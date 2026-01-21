@@ -117,3 +117,10 @@ export function setAccessToken(token: string | null) {
 export function getAccessToken() {
   return api.getAccessToken();
 }
+
+/**
+ * 연속 접속일(Streak) 확인 및 갱신
+ */
+export async function checkStreak() {
+  return api.checkStreak();
+}

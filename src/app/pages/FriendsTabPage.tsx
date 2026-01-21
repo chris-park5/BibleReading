@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Check,
   Trash2,
@@ -9,6 +9,10 @@ import {
   Trophy,
   Medal,
   Search,
+  Loader2,
+  Calendar,
+  BookOpen,
+  Flame,
 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as friendService from "../../services/friendService";
@@ -26,11 +30,25 @@ import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
 import { Badge } from "../components/ui/badge";
 import { cn } from "../components/ui/utils";
 
+import { usePlans } from "../../hooks/usePlans";
+import { parseTabFromHash } from "../pages/mainTabs/tabHash";
+
 export function FriendsTabPage({ isActive = true }: { isActive?: boolean }) {
   const userId = useAuthStore((s) => s.user?.id ?? null);
   const queryClient = useQueryClient();
   const [isAddFriendOpen, setIsAddFriendOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("leaderboard");
+  const [selectedFriendId, setSelectedFriendId] = useState<string | null>(null);
+
+  // Sync activeTab with hash sub-path
+  useEffect(() => {
+    if (isActive) {
+      const { sub } = parseTabFromHash(window.location.hash);
+      if (sub === "requests") {
+        setActiveTab("requests");
+      }
+    }
+  }, [isActive]);
 
   // 1. Fetch Friends & Requests
   const { data: friendsData, isLoading: loadingFriends } = useQuery({
@@ -102,14 +120,17 @@ export function FriendsTabPage({ isActive = true }: { isActive?: boolean }) {
             leaderboard={leaderboard}
             loading={loadingLeaderboard}
             currentUserId={userId}
+            onSelectFriend={setSelectedFriendId}
           />
         </TabsContent>
 
-        <TabsContent value="friends" className="mt-0">
+        <TabsContent value="friends" className="mt-0 space-y-6">
+          <SharedPlanSettings />
           <FriendsListView
             friends={friends}
             leaderboard={leaderboard}
             loading={loadingFriends || loadingLeaderboard}
+            onSelectFriend={setSelectedFriendId}
           />
         </TabsContent>
 
@@ -121,6 +142,12 @@ export function FriendsTabPage({ isActive = true }: { isActive?: boolean }) {
           />
         </TabsContent>
       </Tabs>
+
+      {/* Friend Profile Dialog */}
+      <FriendProfileDialog 
+        friendId={selectedFriendId} 
+        onClose={() => setSelectedFriendId(null)} 
+      />
     </div>
   );
 }
@@ -128,6 +155,189 @@ export function FriendsTabPage({ isActive = true }: { isActive?: boolean }) {
 // ============================================================================
 // Sub-Components
 // ============================================================================
+
+function SharedPlanSettings() {
+  const { plans } = usePlans();
+  const [sharedPlanId, setSharedPlanId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const userId = useAuthStore((s) => s.user?.id);
+
+  // Initial fetch
+  useQuery({
+    queryKey: ["sharedPlan", userId],
+    queryFn: async () => {
+      const res = await friendService.getSharePlan();
+      setSharedPlanId(res.sharedPlanId);
+      return res;
+    },
+    enabled: !!userId,
+  });
+
+  const handleChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newVal = e.target.value || null;
+    setLoading(true);
+    try {
+      await friendService.setSharePlan(newVal);
+      setSharedPlanId(newVal);
+    } catch (err) {
+      console.error(err);
+      alert("공유 계획 설정에 실패했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (plans.length === 0) return null;
+
+  return (
+    <div className="bg-card border border-border rounded-xl p-4 shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h3 className="font-semibold flex items-center gap-2">
+            <BookOpen className="w-4 h-4 text-primary" />
+            공유할 계획
+          </h3>
+          <p className="text-xs text-muted-foreground mt-1">
+            친구들에게 보여질 나의 진행 중인 계획을 선택하세요.
+          </p>
+        </div>
+        <div className="min-w-[200px]">
+          <select
+            value={sharedPlanId ?? ""}
+            onChange={handleChange}
+            disabled={loading}
+            className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            <option value="">공유 안 함</option>
+            {plans.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+function FriendProfileDialog({ friendId, onClose }: { friendId: string | null; onClose: () => void }) {
+  const queryClient = useQueryClient();
+  const userId = useAuthStore((s) => s.user?.id);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["friendStatus", friendId],
+    queryFn: () => friendService.getFriendStatus(friendId!),
+    enabled: !!friendId,
+  });
+
+  const deleteFriendMutation = useMutation({
+    mutationFn: (id: string) => friendService.deleteFriend(id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["friends", userId] });
+      void queryClient.invalidateQueries({ queryKey: ["leaderboard", userId] });
+      onClose();
+    },
+  });
+
+  const handleDelete = () => {
+    if (confirm("정말 이 친구를 삭제하시겠습니까?")) {
+      deleteFriendMutation.mutate(friendId!);
+    }
+  };
+
+  const status = data?.friendStatus;
+  const isMe = status?.user.id === userId;
+
+  return (
+    <Dialog open={!!friendId} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{isMe ? "내 프로필" : "친구 프로필"}</DialogTitle>
+        </DialogHeader>
+        
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-12 space-y-4">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <p className="text-muted-foreground text-sm">정보를 불러오는 중입니다...</p>
+          </div>
+        ) : status ? (
+          <div className="space-y-6 py-4">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-2xl font-bold text-primary">
+                {status.user.name[0]}
+              </div>
+              <div className="flex-1">
+                <h3 className="text-xl font-bold">{status.user.name}{isMe && " (나)"}</h3>
+                <p className="text-muted-foreground text-sm">{status.user.email}</p>
+              </div>
+              {!isMe && (
+                <button
+                  onClick={handleDelete}
+                  className="p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive rounded-lg transition-colors"
+                  title="친구 삭제"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-muted/50 p-4 rounded-xl space-y-2">
+                <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                  <TrendingUp className="w-4 h-4" />
+                  <span>진행률</span>
+                </div>
+                <div className="text-2xl font-bold text-primary">
+                  {Math.round(status.progressRate ?? 0)}%
+                </div>
+              </div>
+              <div className="bg-muted/50 p-4 rounded-xl space-y-2">
+                <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                  <Medal className="w-4 h-4" />
+                  <span>달성률</span>
+                </div>
+                <div className="text-2xl font-bold text-primary">
+                  {Math.round(status.achievementRate)}%
+                </div>
+              </div>
+              <div className="bg-muted/50 p-4 rounded-xl space-y-2">
+                <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                  <BookOpen className="w-4 h-4" />
+                  <span>읽은 페이지</span>
+                </div>
+                <div className="text-xl font-bold text-primary">
+                  {status.completedDays} / {status.totalDays} 장
+                </div>
+              </div>
+              <div className="bg-muted/50 p-4 rounded-xl space-y-2">
+                <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                  <Flame className="w-4 h-4 text-orange-500" />
+                  <span>연속 접속</span>
+                </div>
+                <div className="text-xl font-bold text-primary">
+                  {(status as any).currentStreak ?? 0}일
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-card border border-border p-4 rounded-xl">
+              <div className="text-sm text-muted-foreground mb-1">현재 진행 중인 계획</div>
+              <div className="font-medium">
+                {status.plan?.name ?? "계획 없음"}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="text-center py-8 text-muted-foreground">
+            정보를 불러올 수 없습니다.
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 function AddFriendForm({ onSuccess }: { onSuccess: () => void }) {
   const [friendUsername, setFriendUsername] = useState("");
@@ -183,10 +393,12 @@ function LeaderboardView({
   leaderboard,
   loading,
   currentUserId,
+  onSelectFriend,
 }: {
   leaderboard: any[];
   loading: boolean;
   currentUserId: string | null;
+  onSelectFriend: (friendId: string) => void;
 }) {
   const [metric, setMetric] = useState<"rate" | "count">("rate");
 
@@ -248,6 +460,7 @@ function LeaderboardView({
               rank={index + 1}
               metric={metric}
               isMe={item.user.id === currentUserId}
+              onClick={() => onSelectFriend(item.user.id)}
             />
           ))
         )}
@@ -263,6 +476,7 @@ function LeaderboardView({
               metric={metric}
               isMe={true}
               isSticky
+              onClick={() => onSelectFriend(me.user.id)}
             />
           </div>
         </div>
@@ -277,19 +491,22 @@ function LeaderboardItem({
   metric,
   isMe,
   isSticky = false,
+  onClick,
 }: {
   item: any;
   rank: number;
   metric: "rate" | "count";
   isMe?: boolean;
   isSticky?: boolean;
+  onClick: () => void;
 }) {
   const isTop3 = rank <= 3;
   
   return (
     <div
+      onClick={onClick}
       className={cn(
-        "flex items-center gap-4 p-4 rounded-xl transition-colors",
+        "flex items-center gap-4 p-4 rounded-xl transition-colors cursor-pointer hover:opacity-80",
         isSticky
           ? "text-primary-foreground"
           : isMe
@@ -336,28 +553,16 @@ function FriendsListView({
   friends,
   leaderboard,
   loading,
+  onSelectFriend,
 }: {
   friends: friendService.Friend[];
   leaderboard: any[];
   loading: boolean;
+  onSelectFriend: (friendId: string) => void;
 }) {
   const [search, setSearch] = useState("");
   const queryClient = useQueryClient();
   const userId = useAuthStore((s) => s.user?.id);
-
-  const deleteFriendMutation = useMutation({
-    mutationFn: (friendId: string) => friendService.deleteFriend(friendId),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["friends", userId] });
-      void queryClient.invalidateQueries({ queryKey: ["leaderboard", userId] });
-    },
-  });
-
-  const handleDelete = (friendId: string) => {
-    if (confirm("정말 삭제하시겠습니까?")) {
-      deleteFriendMutation.mutate(friendId);
-    }
-  };
 
   // Merge friend basic info with leaderboard progress
   const friendsWithProgress = friends.map((f) => {
@@ -399,7 +604,8 @@ function FriendsListView({
           filteredFriends.map((friend) => (
             <div
               key={friend.userId}
-              className="bg-card border border-border p-4 rounded-xl flex items-center justify-between group"
+              onClick={() => onSelectFriend(friend.userId)}
+              className="bg-card border border-border p-4 rounded-xl flex items-center justify-between group cursor-pointer hover:bg-accent/50 transition-colors"
             >
               <div className="flex-1 min-w-0 mr-4">
                 <div className="flex items-center gap-2 mb-1">
@@ -409,25 +615,11 @@ function FriendsListView({
                   )}
                 </div>
                 
-                {/* Progress Bar */}
-                <div className="flex items-center gap-2">
-                  <Progress value={friend.progressRate} className="h-2 flex-1" />
-                  <span className="text-xs font-medium w-10 text-right">
-                    {Math.round(friend.progressRate)}%
-                  </span>
-                </div>
+                {/* Simplified view - no progress bar, just plan name */}
                 <p className="text-xs text-muted-foreground mt-1 truncate">
                   {friend.planName}
                 </p>
               </div>
-
-              <button
-                onClick={() => handleDelete(friend.userId)}
-                className="p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive rounded-lg transition-colors"
-                title="친구 삭제"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
             </div>
           ))
         )}

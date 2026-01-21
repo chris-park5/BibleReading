@@ -19,6 +19,7 @@ export {
   getMyProfile,
   updateUsername,
   updatePassword,
+  checkStreak,
 } from "./api/auth";
 
 export { createPlan, getPlans, seedPresetSchedules, deletePlan, updatePlanOrder } from "./api/plans";

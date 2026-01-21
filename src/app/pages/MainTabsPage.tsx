@@ -22,11 +22,11 @@ function TabLoading() {
 
 export function MainTabsPage() {
   const defaultTab: TabKey = "home";
-  const [tab, setTab] = useState<TabKey>(() => parseTabFromHash(window.location.hash) ?? defaultTab);
+  const [tab, setTab] = useState<TabKey>(() => parseTabFromHash(window.location.hash).tab ?? defaultTab);
   
   // Lazy render: keep track of which tabs have been visited
   const [visitedTabs, setVisitedTabs] = useState<Set<TabKey>>(() => {
-    const t = parseTabFromHash(window.location.hash) ?? defaultTab;
+    const t = parseTabFromHash(window.location.hash).tab ?? defaultTab;
     return new Set(["home", t]);
   });
 
@@ -40,21 +40,20 @@ export function MainTabsPage() {
   const swipeStateRef = useRef<{
     startX: number;
     startY: number;
-    startAt: number;
-    active: boolean;
+    startAt: number; active: boolean;
   }>({ startX: 0, startY: 0, startAt: 0, active: false });
 
   useEffect(() => {
     // 요구사항: 앱이 열릴 때 기본 탭은 항상 홈
-    if (window.location.hash !== "#/home") {
+    if (!parseTabFromHash(window.location.hash).tab) {
       setHashTab("home");
     }
   }, []);
 
   useEffect(() => {
     const onHashChange = () => {
-      const next = parseTabFromHash(window.location.hash);
-      if (next) setTab(next);
+      const { tab: nextTab } = parseTabFromHash(window.location.hash);
+      if (nextTab) setTab(nextTab);
     };
     window.addEventListener("hashchange", onHashChange);
     return () => window.removeEventListener("hashchange", onHashChange);
@@ -62,8 +61,8 @@ export function MainTabsPage() {
 
   useEffect(() => {
     // 잘못된 hash인 경우 기본 탭으로 정리
-    const parsed = parseTabFromHash(window.location.hash);
-    if (!parsed) {
+    const { tab: parsedTab } = parseTabFromHash(window.location.hash);
+    if (!parsedTab) {
       setHashTab(defaultTab);
     }
   }, [tab, defaultTab]);
