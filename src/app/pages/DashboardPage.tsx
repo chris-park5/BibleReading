@@ -93,23 +93,6 @@ export function DashboardPage({ embedded = false }: { embedded?: boolean }) {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-6 py-8">
-        {incomingRequestsCount > 0 && (
-          <div className="bg-card text-card-foreground border border-border rounded-xl p-4 mb-6 flex items-center justify-between gap-4">
-            <div>
-              <p>새 친구 요청이 있습니다</p>
-              <p className="text-sm text-muted-foreground">{incomingRequestsCount}개</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                window.location.hash = "#/friends";
-              }}
-              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-colors"
-            >
-              확인하기
-            </button>
-          </div>
-        )}
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Left Column */}
           <div className="lg:col-span-2 space-y-6">
