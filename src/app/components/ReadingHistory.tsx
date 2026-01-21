@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Calendar, CheckCircle, Circle, CircleDashed, Search } from "lucide-react";
 import { bookMatchesQuery } from "../utils/bookSearch";
 
+import { cn } from "./ui/utils";
 import { ScrollArea } from "./ui/scroll-area";
 
 interface ReadingHistoryProps {
@@ -18,6 +19,7 @@ interface ReadingHistoryProps {
   onQueryChange?: (query: string) => void;
   hideCalendar?: boolean;
   hideHeader?: boolean;
+  className?: string;
 }
 
 export function ReadingHistory({
@@ -34,6 +36,7 @@ export function ReadingHistory({
   onQueryChange,
   hideCalendar = false,
   hideHeader = false,
+  className,
 }: ReadingHistoryProps) {
   const [internalQuery, setInternalQuery] = useState("");
 
@@ -123,7 +126,7 @@ export function ReadingHistory({
   }, [visibleDaysSet]);
 
   return (
-    <div className="bg-card text-card-foreground rounded-xl border border-border p-6">
+    <div className={cn("bg-card text-card-foreground rounded-xl border border-border p-6", className)}>
       {!hideHeader && (
         <div className="flex items-center gap-3 mb-6">
           <div className="p-3 bg-primary/10 rounded-lg">
@@ -156,6 +159,27 @@ export function ReadingHistory({
       {/* Search Empty State */}
       {hasSearch && normalizedQuery && matchCount === 0 && (
         <div className="text-sm text-muted-foreground mb-3">검색 결과가 없습니다.</div>
+      )}
+
+      {!hideCalendar && (
+        <div className="mb-4 flex items-center gap-4 justify-center text-sm flex-wrap">
+          <div className="flex items-center gap-2">
+            <CheckCircle className="w-4 h-4 text-green-500" />
+            <span className="text-muted-foreground">완료</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <CircleDashed className="w-4 h-4 text-yellow-500" />
+            <span className="text-muted-foreground">일부 완료</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 border border-primary rounded bg-primary/10" />
+            <span className="text-muted-foreground">오늘</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Circle className="w-4 h-4 text-muted-foreground/40" />
+            <span className="text-muted-foreground">미완료</span>
+          </div>
+        </div>
       )}
 
       {/* Content */}

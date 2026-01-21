@@ -18,6 +18,8 @@ import {
   SelectValue,
 } from "../../components/ui/select";
 
+import { ScrollArea } from "../../components/ui/scroll-area";
+
 export function ProgressTab() {
   const { plans } = usePlans();
   const selectedPlanId = usePlanStore((s) => s.selectedPlanId);
@@ -108,7 +110,7 @@ export function ProgressTab() {
       <div className="min-h-screen">
         <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-md border-b border-border shadow-sm">
           <div className="max-w-4xl mx-auto px-4 py-3">
-            <h2 className="text-lg font-bold">진행률</h2>
+            <h2 className="text-xl font-bold">내 계획</h2>
           </div>
         </div>
         <div className="max-w-4xl mx-auto p-6 text-center">
@@ -144,7 +146,7 @@ export function ProgressTab() {
       {/* Sticky Header with Plan Selection */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-md border-b border-border shadow-sm">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
-          <h2 className="text-lg font-bold whitespace-nowrap">진행률</h2>
+          <h2 className="text-xl font-bold whitespace-nowrap">진행률</h2>
           {plans.length > 0 && (
             <div className="flex-1 max-w-[200px]">
               <Select
@@ -177,34 +179,26 @@ export function ProgressTab() {
           <p className="text-muted-foreground mt-1">{completionMessage}</p>
         </div>
 
-        <div className="bg-card text-card-foreground border border-border rounded-xl p-4">
-          <p className="text-sm text-muted-foreground mb-4">진행상황</p>
-          <ProgressChart totalChapters={totalChapters} completedChapters={completedChapters} />
-        </div>
+        <ProgressChart totalChapters={totalChapters} completedChapters={completedChapters} />
 
-        <div className="bg-card text-card-foreground border border-border rounded-xl p-2 flex gap-2">
-          <button
-            type="button"
-            onClick={() => setViewMode("day")}
-            className={`flex-1 px-3 py-2 rounded-lg border text-sm transition-colors ${
-              viewMode === "day" ? "border-primary bg-primary/10 text-primary" : "border-border bg-card hover:bg-accent"
-            }`}
-          >
-            일자별
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode("book")}
-            className={`flex-1 px-3 py-2 rounded-lg border text-sm transition-colors ${
-              viewMode === "book" ? "border-primary bg-primary/10 text-primary" : "border-border bg-card hover:bg-accent"
-            }`}
-          >
-            성경별
-          </button>
+        {/* Reading History Section Header */}
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold">읽기 기록</h2>
+          <div className="w-32">
+            <Select value={viewMode} onValueChange={(v) => setViewMode(v as "day" | "book")}>
+              <SelectTrigger className="h-8 text-xs bg-card">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="day" className="text-xs">일자별</SelectItem>
+                <SelectItem value="book" className="text-xs">성경별</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {viewMode === "day" ? (
-          <>
+          <div className="bg-card text-card-foreground border border-border rounded-xl p-4 space-y-4">
             <ReadingHistory
               schedule={plan.schedule}
               completedDays={(() => {
@@ -268,6 +262,9 @@ export function ProgressTab() {
               }}
               startDate={plan.startDate}
               totalDays={plan.totalDays}
+              // Remove border and shadow from inner component
+              className="border-none shadow-none p-0 bg-transparent"
+              hideHeader={true}
             />
 
             {(() => {
@@ -287,7 +284,7 @@ export function ProgressTab() {
               const completedChaptersByIndex = readings.map((_, i) => dayChaptersMap[i] ?? []);
 
               return (
-                <div ref={historyDetailRef} className="pt-2">
+                <div ref={historyDetailRef}>
                   {readings.length === 0 ? (
                     <div className="bg-card text-card-foreground border border-border rounded-xl p-4 text-sm text-muted-foreground">
                       선택한 날짜에 읽기 항목이 없습니다.
@@ -313,11 +310,9 @@ export function ProgressTab() {
                 </div>
               );
             })()}
-          </>
+          </div>
         ) : (
-          <div className="bg-card text-card-foreground border border-border rounded-xl p-4">
-            <div className="text-sm text-muted-foreground mb-3">책별 진행</div>
-
+          <div className="bg-card text-card-foreground border border-border rounded-xl p-4 overflow-hidden">
             <div className="mb-3 flex items-center gap-2">
               <div className="relative flex-1 min-w-0">
                 <Search className="w-4 h-4 text-muted-foreground/60 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -338,22 +333,24 @@ export function ProgressTab() {
             ) : filteredBookRows.length === 0 ? (
               <div className="text-sm text-muted-foreground">검색 결과가 없습니다.</div>
             ) : (
-              <div className="space-y-2">
-                {filteredBookRows.map((row) => (
-                  <div key={row.book} className="border border-border rounded-lg p-3 bg-card">
-                    <div className="flex items-center justify-between gap-3 min-w-0">
-                      <div className="min-w-0">
-                        <div className="text-sm truncate">{row.book}</div>
-                        <div className="text-xs text-muted-foreground">{row.completed}/{row.total}장</div>
+              <ScrollArea className="h-[400px] pr-4">
+                <div className="space-y-2 pr-2">
+                  {filteredBookRows.map((row) => (
+                    <div key={row.book} className="border border-border rounded-lg p-3 bg-card">
+                      <div className="flex items-center justify-between gap-3 min-w-0">
+                        <div className="min-w-0">
+                          <div className="text-sm truncate">{row.book}</div>
+                          <div className="text-xs text-muted-foreground">{row.completed}/{row.total}장</div>
+                        </div>
+                        <div className="text-sm font-medium text-muted-foreground shrink-0">{row.percent}%</div>
                       </div>
-                      <div className="text-sm font-medium text-muted-foreground shrink-0">{row.percent}%</div>
+                      <div className="mt-2 w-full bg-muted rounded-full h-2">
+                        <div className="bg-primary h-2 rounded-full" style={{ width: `${row.percent}%` }} />
+                      </div>
                     </div>
-                    <div className="mt-2 w-full bg-muted rounded-full h-2">
-                      <div className="bg-primary h-2 rounded-full" style={{ width: `${row.percent}%` }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              </ScrollArea>
             )}
           </div>
         )}

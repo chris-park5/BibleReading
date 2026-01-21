@@ -91,15 +91,6 @@ export function useHomeLogic() {
     return viewDate.getTime() === today.getTime();
   }, [viewDate, today]);
 
-  // Static 'Today' labels for the sticky header
-  const todayDateLabel = useMemo(() => {
-    return new Intl.DateTimeFormat("ko-KR", {
-      month: "long",
-      day: "numeric",
-      weekday: "short",
-    }).format(today);
-  }, [today]);
-
   const todayDayLabel = useMemo(() => {
     // Find the first active plan for today
     const activePlan = plans.find(p => {
@@ -358,7 +349,6 @@ export function useHomeLogic() {
     combined,
 
     // UI Labels
-    todayDateLabel,
     todayDayLabel,
     viewDateLabel,
     viewDayLabel,

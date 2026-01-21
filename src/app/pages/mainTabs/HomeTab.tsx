@@ -21,7 +21,6 @@ export function HomeTab() {
     displayDay,
     viewPlans,
     combined,
-    todayDateLabel,
     isToday,
     setViewDate,
     handlePrevDay,
@@ -34,7 +33,6 @@ export function HomeTab() {
   return (
     <div className="min-h-screen pb-20 relative">
       <HomeHeader
-        todayDateLabel={todayDateLabel}
         incomingRequestsCount={incomingRequestsCount}
         streak={streak ?? 0}
       />

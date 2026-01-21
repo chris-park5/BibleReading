@@ -87,7 +87,7 @@ export function ReadingHistorySection() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
             <BookOpen className="w-5 h-5 text-primary" />
-            <h2 className="text-lg font-bold">책별 읽기</h2>
+            <h2 className="text-lg font-bold">성경별 읽기</h2>
         </div>
         {plans.length > 0 && (
           <div className="w-40">
