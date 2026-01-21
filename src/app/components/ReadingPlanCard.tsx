@@ -141,8 +141,8 @@ export function ReadingPlanCard({
             </div>
           </div>
 
-          <p className="text-muted-foreground mb-2">{description}</p>
-          <p className="text-primary">{duration}</p>
+          {description && <p className="text-muted-foreground mb-2">{description}</p>}
+          {duration && <p className="text-primary">{duration}</p>}
 
           {footer && <div className="mt-4">{footer}</div>}
         </div>
