@@ -183,18 +183,26 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
                 </button>
               </div>
             ) : (
-              <div className="grid gap-4 md:grid-cols-2">
-                {plans.map((plan) => (
-                  <ReadingPlanCard
-                    key={plan.id}
-                    id={plan.id}
-                    title={plan.name}
-                    description="" // Hide description in list
-                    duration=""    // Hide duration in list
-                    isSelected={false}
-                    onSelect={() => setSelectedMyPlan(plan)}
-                  />
-                ))}
+              <div>
+                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <span className="bg-primary/10 text-primary p-1 rounded-md">
+                    <BookOpen className="w-4 h-4" />
+                  </span>
+                  나의 계획
+                </h2>
+                <div className="grid gap-4 md:grid-cols-2">
+                  {plans.map((plan) => (
+                    <ReadingPlanCard
+                      key={plan.id}
+                      id={plan.id}
+                      title={plan.name}
+                      description="" // Hide description in list
+                      duration=""    // Hide duration in list
+                      isSelected={false}
+                      onSelect={() => setSelectedMyPlan(plan)}
+                    />
+                  ))}
+                </div>
               </div>
             )}
           </TabsContent>
