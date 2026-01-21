@@ -17,8 +17,6 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
   const logout = useAuthStore((state) => state.logout);
   const selectedPlanId = usePlanStore((state) => state.selectedPlanId);
 
-  const [sharedPlanId, setSharedPlanId] = useState<string | null>(null);
-  const [isSavingSharedPlan, setIsSavingSharedPlan] = useState(false);
   const [addingPresetId, setAddingPresetId] = useState<string | null>(null);
   const [deletingPlanId, setDeletingPlanId] = useState<string | null>(null);
   const [presetStartDates, setPresetStartDates] = useState<Record<string, string>>({});
@@ -27,31 +25,6 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
 
   // 개발자 페이지에서 등록한 프리셋(로컬 저장)도 추천 목록에 포함
   const presetPlans = [...bundledPresetPlans, ...api.getDeveloperPresetPlans()];
-
-  useEffect(() => {
-    if (!plans.length) return;
-    void (async () => {
-      try {
-        const res = await friendService.getSharePlan();
-        setSharedPlanId(res.sharedPlanId);
-      } catch {
-        // ignore
-      }
-    })();
-  }, [plans.length]);
-
-  const handleChangeSharedPlan = async (nextPlanId: string | null) => {
-    setIsSavingSharedPlan(true);
-    try {
-      await friendService.setSharePlan(nextPlanId);
-      setSharedPlanId(nextPlanId);
-    } catch (err) {
-      console.error('Failed to set shared plan:', err);
-      alert('공유할 계획 설정에 실패했습니다');
-    } finally {
-      setIsSavingSharedPlan(false);
-    }
-  };
 
   const handleSignOut = async () => {
     await authService.signOut();
@@ -162,29 +135,6 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
           <div className="mb-8">
             <h2 className="mb-4">내 계획</h2>
 
-            <div className="mb-4 bg-card text-card-foreground border border-border rounded-xl p-4">
-              <p className="text-sm text-muted-foreground">친구에게 공유할 계획</p>
-              <div className="mt-2 flex gap-2 items-center">
-                <select
-                  value={sharedPlanId ?? ''}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    void handleChangeSharedPlan(v ? v : null);
-                  }}
-                  disabled={isSavingSharedPlan}
-                  className="flex-1 px-4 py-3 border border-border rounded-lg bg-input-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <option value="">공유 안 함</option>
-                  {plans.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">선택한 계획만 친구에게 표시됩니다.</p>
-            </div>
-
             <div className="grid gap-4 md:grid-cols-2">
               {plans.map((plan, index) => (
                 <ReadingPlanCard
@@ -212,14 +162,6 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
                       // 선택된 계획이면 즉시 해제해서 UI가 빠르게 반응하도록 함
                       if (selectedPlanId === plan.id) {
                         deselectPlan();
-                      }
-
-                      // 공유 계획이면 로컬 상태를 먼저 정리(드롭다운 값 불일치 방지)
-                      if (sharedPlanId === plan.id) {
-                        setSharedPlanId(null);
-                        void friendService.setSharePlan(null).catch(() => {
-                          // ignore
-                        });
                       }
 
                       await deletePlanAsync(plan.id);

@@ -360,22 +360,24 @@ export async function getFriendStatus(c: Context) {
       return c.json({ error: "friendUserId is required" }, 400);
     }
 
-    // 수락된 친구 관계 확인
-    const { data: friendship, error: friendshipError } = await supabase
-      .from("friendships")
-      .select("id")
-      .eq("status", "accepted")
-      .or(
-        `and(user_id.eq.${userId},friend_id.eq.${friendUserId}),and(user_id.eq.${friendUserId},friend_id.eq.${userId})`
-      )
-      .maybeSingle();
+    // 수락된 친구 관계 확인 (나 자신인 경우 패스)
+    if (friendUserId !== userId) {
+      const { data: friendship, error: friendshipError } = await supabase
+        .from("friendships")
+        .select("id")
+        .eq("status", "accepted")
+        .or(
+          `and(user_id.eq.${userId},friend_id.eq.${friendUserId}),and(user_id.eq.${friendUserId},friend_id.eq.${userId})`
+        )
+        .maybeSingle();
 
-    if (friendshipError) throw friendshipError;
-    if (!friendship) return c.json({ error: "Not friends" }, 403);
+      if (friendshipError) throw friendshipError;
+      if (!friendship) return c.json({ error: "Not friends" }, 403);
+    }
 
     const { data: friendUser, error: friendUserError } = await supabase
       .from("users")
-      .select("id, email, name, username, shared_plan_id")
+      .select("id, email, name, username, shared_plan_id, current_streak")
       .eq("id", friendUserId)
       .maybeSingle();
 
@@ -394,6 +396,7 @@ export async function getFriendStatus(c: Context) {
           achievementRate: 0,
           completedDays: 0,
           totalDays: 0,
+          currentStreak: friendUser.current_streak ?? 0,
         },
       });
     }
@@ -415,6 +418,7 @@ export async function getFriendStatus(c: Context) {
           achievementRate: 0,
           completedDays: 0,
           totalDays: 0,
+          currentStreak: friendUser.current_streak ?? 0,
         },
       });
     }
@@ -444,6 +448,7 @@ export async function getFriendStatus(c: Context) {
         progressRate,
         completedDays: completedChapters, // Using chapters count here as requested by UI
         totalDays: plan.total_days,
+        currentStreak: friendUser.current_streak ?? 0,
       },
     });
   } catch (error) {
