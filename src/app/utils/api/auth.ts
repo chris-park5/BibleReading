@@ -135,7 +135,7 @@ export async function getSession() {
 
 export async function getMyProfile(): Promise<{
   success: true;
-  profile: { id: string; email: string; name: string; username: string };
+  profile: { id: string; email: string; name: string; username: string; currentStreak?: number };
 }> {
   const {
     data: { user },
@@ -147,7 +147,7 @@ export async function getMyProfile(): Promise<{
 
   const { data: profileRow, error: profileError } = await supabase
     .from("users")
-    .select("id, email, name, username")
+    .select("id, email, name, username, current_streak")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -161,8 +161,29 @@ export async function getMyProfile(): Promise<{
       email: profileRow.email ?? user.email ?? "",
       name: profileRow.name ?? "",
       username: profileRow.username ?? "",
+      currentStreak: profileRow.current_streak ?? 0,
     },
   };
+}
+
+export async function checkStreak(): Promise<number> {
+  const { error } = await supabase.rpc('update_user_streak');
+  if (error) {
+    console.error("Streak update failed:", error);
+    // Ignore error, just fetch current streak
+  }
+  
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return 0;
+
+  const { data, error: fetchError } = await supabase
+    .from('users')
+    .select('current_streak')
+    .eq('id', user.id)
+    .single();
+    
+  if (fetchError) throw fetchError;
+  return data?.current_streak ?? 0;
 }
 
 export async function updateUsername(newUsername: string): Promise<{ success: true }> {

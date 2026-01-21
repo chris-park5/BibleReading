@@ -1,4 +1,4 @@
-import { BookOpenCheck, CheckCircle, Circle, MinusCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { BookOpenCheck, CheckCircle, Circle, CircleDashed, ChevronDown, ChevronUp } from "lucide-react";
 import { useState, useMemo } from "react";
 
 interface Reading {
@@ -172,7 +172,7 @@ function ReadingItem({
                       {isFullyCompleted ? (
                           <CheckCircle className="w-6 h-6 text-green-600" />
                       ) : isPartial ? (
-                          <MinusCircle className="w-6 h-6 text-amber-600" />
+                          <CircleDashed className="w-6 h-6 text-amber-600" />
                       ) : (
                           <Circle className="w-6 h-6 text-muted-foreground/60" />
                       )}
