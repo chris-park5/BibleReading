@@ -19,18 +19,7 @@ function timeHHMM(value: string) {
   return `${hh}:${mm}`;
 }
 
-function isTimeWithinWindow(target: string, now: string, windowMinutes = 2) {
-  // target, now: "HH:MM"
-  const [th, tm] = target.split(":").map(Number);
-  const [nh, nm] = now.split(":").map(Number);
-  const targetMinutes = th * 60 + tm;
-  const nowMinutes = nh * 60 + nm;
-  return Math.abs(targetMinutes - nowMinutes) <= windowMinutes;
-}
-
-function nowInSeoul() {
-  // Supabase Edge runs in UTC. We normalize to Asia/Seoul for scheduling.
-  const now = new Date();
+function getSeoulDateParts(date: Date) {
   const dtf = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Seoul",
     year: "numeric",
@@ -40,7 +29,7 @@ function nowInSeoul() {
     minute: "2-digit",
     hour12: false,
   });
-  const parts = dtf.formatToParts(now);
+  const parts = dtf.formatToParts(date);
   const get = (type: string) => parts.find((p) => p.type === type)?.value;
   const yyyy = get("year") ?? "";
   const mm = get("month") ?? "";
@@ -51,6 +40,10 @@ function nowInSeoul() {
     date: `${yyyy}-${mm}-${dd}`,
     hhmm: `${hour}:${minute}`,
   };
+}
+
+function nowInSeoul() {
+  return getSeoulDateParts(new Date());
 }
 
 function requireCronSecret(c: Context) {
@@ -292,26 +285,27 @@ export async function sendScheduledNotifications(c: Context) {
 
     const dueFiltered = (due ?? []).filter((row: any) => {
       const rawTime = row.time.split(':').slice(0, 2).join(':'); 
-      const t = timeHHMM(rawTime); // 이제 "20:10"만 들어가서 안전합니다.
+      const t = timeHHMM(rawTime); 
       console.log(`[debug] Checking row: ${row.id}, targetTime: ${t}, nowTime: ${hhmm}`);
-      if (!t || !isTimeWithinWindow(t, hhmm, WINDOW_MINUTES)) return false;
+      
+      if (!t) return false;
 
-      // last_sent_at 중복 방지: 같은 날짜+시각에 이미 발송된 경우 스킵
+      // Parse target time
+      const [th, tm] = t.split(":").map(Number);
+      const targetMinutes = th * 60 + tm;
+      
+      // Check window: 0 <= (now - target) <= 15
+      // This ensures we start EXACTLY at the time (diff=0) or retry up to 15 mins later.
+      // We do NOT send if diff < 0 (too early).
+      const diff = nowMinutes - targetMinutes;
+      if (diff < 0 || diff > WINDOW_MINUTES) return false;
+
+      // last_sent_at 중복 방지: 같은 날짜에 이미 발송된 경우 스킵
       const last = row.last_sent_at ? new Date(row.last_sent_at) : null;
       if (!last) return true;
 
-      const lastDate = new Intl.DateTimeFormat("en-CA", {
-        timeZone: "Asia/Seoul",
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-      }).format(last);
-
-      // last_sent_at이 오늘이고, last_sent_at의 시각이 현재 시각 윈도우 내에 있으면 중복 발송 방지
-      const lastH = last.getHours();
-      const lastM = last.getMinutes();
-      const lastMinutes = lastH * 60 + lastM;
-      if (lastDate === date && Math.abs(lastMinutes - nowMinutes) <= WINDOW_MINUTES) return false;
+      const seoulLast = getSeoulDateParts(last);
+      if (seoulLast.date === date) return false; // Already sent today
 
       return true;
     });
