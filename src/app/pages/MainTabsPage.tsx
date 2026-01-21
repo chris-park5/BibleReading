@@ -70,7 +70,7 @@ export function MainTabsPage() {
   const tabs = useMemo(
     () =>
       [
-        { key: "home" as const, label: "읽기", icon: Home },
+        { key: "home" as const, label: "홈", icon: Home },
         { key: "progress" as const, label: "진행률", icon: BarChart3 },
         { key: "add" as const, label: "계획", icon: BookOpen },
         { key: "friends" as const, label: "친구", icon: UsersRound },
@@ -149,7 +149,7 @@ export function MainTabsPage() {
         </div>
         <div hidden={tab !== "add"}>
           <Suspense fallback={<TabLoading />}>
-            {visitedTabs.has("add") && <PlanSelectorPage embedded />}
+            {visitedTabs.has("add") && <PlanSelectorPage />}
           </Suspense>
         </div>
         <div hidden={tab !== "friends"}>

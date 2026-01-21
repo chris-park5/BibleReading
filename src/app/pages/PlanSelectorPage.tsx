@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BookOpen, LogOut, Plus } from 'lucide-react';
+import { BookOpen, Plus } from 'lucide-react';
 import { usePlans } from '../../hooks/usePlans';
 import { usePlanStore } from '../../stores/plan.store';
 import { useAuthStore } from '../../stores/auth.store';
@@ -8,7 +8,14 @@ import { CustomPlanCreator } from '../components/CustomPlanCreator';
 import * as authService from '../../services/authService';
 import * as api from '../utils/api';
 import { bundledPresetPlans, normalizeSchedule } from '../plans/bundledPresets';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Tabs, TabsContent } from '../components/ui/tabs';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/select';
 
 export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
   const { plans, createPlanAsync, deletePlanAsync, isCreating, isDeleting } = usePlans();
@@ -16,6 +23,7 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
   const logout = useAuthStore((state) => state.logout);
   const selectedPlanId = usePlanStore((state) => state.selectedPlanId);
 
+  const [activeTab, setActiveTab] = useState("my-plans");
   const [addingPresetId, setAddingPresetId] = useState<string | null>(null);
   const [deletingPlanId, setDeletingPlanId] = useState<string | null>(null);
   const [presetStartDates, setPresetStartDates] = useState<Record<string, string>>({});
@@ -52,9 +60,7 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
         presetId: presetPlan.id,
       });
       selectPlan(result.plan.id);
-      // Switch to 'my-plans' tab logic could be added here if we had access to the tabs state, 
-      // but strictly following the request, we just add it. 
-      // User might want to see it in "My Plans" tab.
+      setActiveTab("my-plans"); // Switch to my plans after adding
     } catch (err: any) {
       console.error('Failed to create plan from preset:', err);
       const errorMessage = err.message || '계획 생성에 실패했습니다';
@@ -76,6 +82,7 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
       const result = await createPlanAsync(planData);
       selectPlan(result.plan.id);
       toggleCustomPlanCreator(false);
+      setActiveTab("my-plans"); // Switch to my plans after adding
     } catch (err: any) {
       console.error('Failed to create custom plan:', err);
       const errorMessage = err.message || '계획 생성에 실패했습니다';
@@ -84,29 +91,31 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
   };
 
   return (
-    <div className={embedded ? "p-4 sm:p-6" : "min-h-screen bg-muted/30 p-6"}>
-      <div className="max-w-4xl mx-auto">
-        {!embedded && (
-          <div className="flex justify-between items-start mb-8">
-            <div className="text-center flex-1">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-2xl mb-4">
-                <BookOpen className="w-8 h-8 text-white" />
-              </div>
-              <h1 className="mb-2">성경 읽기 계획</h1>
-              <p className="text-muted-foreground">읽기 계획을 선택하거나 새로 만들어보세요</p>
+    <div className={embedded ? "" : "min-h-screen pb-24"}>
+      {!embedded && (
+        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-md border-b border-border shadow-sm transition-all duration-200">
+          <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div>
+              <p className="text-xl font-bold text-foreground">계획</p>
             </div>
-            <button
-              onClick={handleSignOut}
-              className="flex items-center gap-2 px-4 py-2 bg-card text-muted-foreground border border-border hover:bg-accent rounded-lg transition-colors"
-            >
-              <LogOut className="w-5 h-5" />
-              로그아웃
-            </button>
+            <div className="w-32">
+              <Select value={activeTab} onValueChange={setActiveTab}>
+                <SelectTrigger className="h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="my-plans">나의 계획</SelectItem>
+                  <SelectItem value="add-plan">계획 추가</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-        )}
+        </div>
+      )}
 
+      <div className={embedded ? "p-4 sm:p-6" : "max-w-4xl mx-auto p-4 sm:p-6 space-y-6 pt-6"}>
         {!embedded && devPageEnabled && (
-          <div className="mb-4 flex justify-end">
+          <div className="flex justify-end">
             <button
               onClick={() => {
                 window.location.hash = '#/dev';
@@ -118,13 +127,8 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
           </div>
         )}
 
-        <Tabs defaultValue="my-plans" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6 h-12">
-            <TabsTrigger value="my-plans" className="h-full text-base">나의 계획</TabsTrigger>
-            <TabsTrigger value="add-plan" className="h-full text-base">계획 추가</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="my-plans" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsContent value="my-plans" className="space-y-6 mt-0">
             {plans.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 px-4 text-center space-y-4 bg-muted/20 rounded-2xl border border-dashed border-border/50">
                 <div className="p-4 bg-background rounded-full shadow-sm">
@@ -133,9 +137,15 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
                 <div>
                     <h3 className="font-semibold text-lg">진행 중인 계획이 없습니다</h3>
                     <p className="text-muted-foreground mt-1">
-                    '계획 추가' 탭에서 새로운 성경 읽기를 시작해보세요.
+                    '계획 추가'에서 새로운 성경 읽기를 시작해보세요.
                     </p>
                 </div>
+                <button
+                    onClick={() => setActiveTab("add-plan")}
+                    className="mt-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-colors"
+                >
+                    계획 추가하러 가기
+                </button>
               </div>
             ) : (
               <div className="grid gap-4 md:grid-cols-2">
@@ -181,7 +191,7 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
             )}
           </TabsContent>
 
-          <TabsContent value="add-plan" className="space-y-8">
+          <TabsContent value="add-plan" className="space-y-8 mt-0">
             {/* Custom Plan Button Section */}
             <div className="bg-card/50 border border-border rounded-xl p-6">
                 <h3 className="text-lg font-semibold mb-2">나만의 계획 만들기</h3>

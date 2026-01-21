@@ -10,13 +10,11 @@ import {
 import { setHashTab } from "../tabHash";
 
 interface HomeHeaderProps {
-  todayDateLabel: string;
   incomingRequestsCount: number;
   streak: number;
 }
 
 export function HomeHeader({
-  todayDateLabel,
   incomingRequestsCount,
   streak,
 }: HomeHeaderProps) {
@@ -24,7 +22,7 @@ export function HomeHeader({
     <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border shadow-sm transition-all duration-200">
       <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
         <div>
-          <p className="text-sm font-bold text-foreground">{todayDateLabel}</p>
+          <p className="text-xl font-bold text-foreground">Bible Plan</p>
         </div>
         <div className="flex items-center gap-3">
           {/* Notification Dropdown */}
