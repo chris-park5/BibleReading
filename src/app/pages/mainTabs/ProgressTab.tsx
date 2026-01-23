@@ -188,7 +188,7 @@ export function ProgressTab() {
           <h2 className="text-lg font-bold">읽기 기록</h2>
         </div>
 
-        <div className="bg-card text-card-foreground border border-border rounded-xl p-4 space-y-4 max-h-[500px] overflow-y-auto custom-scrollbar">
+        <div className="bg-card text-card-foreground border border-border rounded-xl p-4 space-y-4">
           <ReadingHistory
             schedule={plan.schedule}
             completedDays={(() => {
@@ -218,20 +218,44 @@ export function ProgressTab() {
             partialDays={(() => {
               const partial = new Set<number>();
               const completedReadingsByDay = progress.completedReadingsByDay || {};
+              const completedChaptersByDay = progress.completedChaptersByDay || {};
               const completedDaysSet = new Set(progress.completedDays || []);
 
-              for (let day = 1; day <= plan.totalDays; day++) {
+              // Iterate directly over schedule to find days with readings
+              for (const entry of plan.schedule) {
+                const day = entry.day;
+                // If the day is already marked as fully complete, skip
                 if (completedDaysSet.has(day)) continue;
 
-                const reading = plan.schedule.find((s) => s.day === day);
-                if (!reading) continue;
+                const readings = entry.readings || [];
+                const totalReadings = readings.length;
+                if (totalReadings === 0) continue;
 
-                const totalReadings = reading.readings.length;
-                if (totalReadings <= 0) continue;
-
+                // 1. Check if any FULL readings are done
                 const completedIndices = completedReadingsByDay[String(day)] || [];
                 const completedCount = completedIndices.length;
-                if (completedCount > 0 && completedCount < totalReadings) partial.add(day);
+                
+                // If any reading is fully done (even if not all), it's partial
+                if (completedCount > 0) {
+                  partial.add(day);
+                  continue;
+                }
+
+                // 2. Check if any CHAPTERS are done (when no readings are fully done)
+                const dayKey = String(day);
+                const dayChaptersMap = completedChaptersByDay[dayKey];
+                // Defensive check for numeric keys
+                const dayChaptersMapAlt = (completedChaptersByDay as any)[day];
+                const mapToCheck = dayChaptersMap || dayChaptersMapAlt;
+
+                if (mapToCheck) {
+                  const hasAnyChapter = Object.values(mapToCheck).some(
+                    (chapters) => Array.isArray(chapters) && chapters.length > 0
+                  );
+                  if (hasAnyChapter) {
+                    partial.add(day);
+                  }
+                }
               }
 
               return partial;
