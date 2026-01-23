@@ -10,7 +10,6 @@ import * as api from '../app/utils/api';
 
 export interface Friend {
   userId: string;
-  email: string;
   name: string;
   username?: string;
   addedAt: string;
@@ -20,7 +19,6 @@ export interface IncomingFriendRequest {
   requestId: string;
   fromUser: {
     id: string;
-    email: string;
     name: string;
     username?: string;
   };
@@ -31,7 +29,6 @@ export interface OutgoingFriendRequest {
   requestId: string;
   toUser: {
     id: string;
-    email: string;
     name: string;
     username?: string;
   };
@@ -41,7 +38,6 @@ export interface OutgoingFriendRequest {
 export interface FriendStatus {
   user: {
     id: string;
-    email: string;
     name: string;
     username?: string;
   };
@@ -60,7 +56,6 @@ export interface FriendStatus {
 export interface FriendProgress {
   user: {
     id: string;
-    email: string;
     name: string;
   };
   plan: {

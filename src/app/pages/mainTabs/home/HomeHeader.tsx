@@ -1,4 +1,5 @@
 import { Bell, Flame, Settings, Users } from "lucide-react";
+import { toast } from "sonner";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,11 +13,13 @@ import { setHashTab } from "../tabHash";
 interface HomeHeaderProps {
   incomingRequestsCount: number;
   streak: number;
+  longestStreak: number;
 }
 
 export function HomeHeader({
   incomingRequestsCount,
   streak,
+  longestStreak,
 }: HomeHeaderProps) {
   return (
     <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border shadow-sm transition-all duration-200">
@@ -61,12 +64,18 @@ export function HomeHeader({
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 dark:bg-orange-900/20 rounded-full border border-orange-100 dark:border-orange-900/30">
+          <button 
+            onClick={() => toast.success(`최대 연속 접속: ${longestStreak}일`, {
+              description: "매일 말씀을 읽고 기록을 경신해보세요!",
+              duration: 2000,
+            })}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 dark:bg-orange-900/20 rounded-full border border-orange-100 dark:border-orange-900/30 hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors cursor-pointer"
+          >
             <Flame className="w-4 h-4 text-orange-500 fill-orange-500" />
             <span className="text-sm font-bold text-orange-600 dark:text-orange-400">
               {streak ?? 0}일
             </span>
-          </div>
+          </button>
         </div>
       </div>
     </div>

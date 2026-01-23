@@ -4,13 +4,12 @@ import * as api from "../utils/api";
 
 interface Friend {
   userId: string;
-  email: string;
   name: string;
   addedAt: string;
 }
 
 interface FriendProgress {
-  user: { id: string; email: string; name: string };
+  user: { id: string; name: string };
   plan: { name: string; totalDays: number };
   progress: { completedDays: number[] };
   achievementRate?: number;
@@ -156,7 +155,6 @@ export function FriendsPanel({ onClose, currentPlanId }: FriendsPanelProps) {
                     <div className="flex items-center justify-between">
                       <div>
                         <p>{friend.name}</p>
-                        <p className="text-sm text-muted-foreground">{friend.email}</p>
                       </div>
                       <button
                         onClick={() => handleViewProgress(friend)}

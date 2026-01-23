@@ -279,7 +279,6 @@ function FriendProfileDialog({ friendId, onClose }: { friendId: string | null; o
               </div>
               <div className="flex-1">
                 <h3 className="text-xl font-bold">{status.user.name}{isMe && " (나)"}</h3>
-                <p className="text-muted-foreground text-sm">{status.user.email}</p>
               </div>
               {!isMe && (
                 <button
@@ -687,7 +686,6 @@ function RequestsView({
               <div key={req.requestId} className="bg-card border border-border p-4 rounded-xl flex flex-col sm:flex-row gap-3 sm:items-center justify-between">
                 <div>
                   <div className="font-medium">{req.fromUser.name}</div>
-                  <div className="text-xs text-muted-foreground">{req.fromUser.email}</div>
                 </div>
                 <div className="flex gap-2">
                   <button
@@ -729,7 +727,6 @@ function RequestsView({
               <div key={req.requestId} className="bg-card border border-border p-4 rounded-xl flex items-center justify-between">
                 <div>
                   <div className="font-medium">{req.toUser.name}</div>
-                  <div className="text-xs text-muted-foreground">{req.toUser.email}</div>
                 </div>
                 <button
                   onClick={() => cancelMutation.mutate(req.requestId)}

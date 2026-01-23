@@ -277,7 +277,7 @@ export async function sendScheduledNotifications(c: Context) {
 
     if (dueError) throw dueError;
 
-    const WINDOW_MINUTES = 15; // ±15분 허용
+    const WINDOW_MINUTES = 2; // ±2분 허용
     const nowMinutes = (() => {
       const [h, m] = hhmm.split(":").map(Number);
       return h * 60 + m;
@@ -300,13 +300,18 @@ export async function sendScheduledNotifications(c: Context) {
       const diff = nowMinutes - targetMinutes;
       if (diff < 0 || diff > WINDOW_MINUTES) return false;
 
-      // last_sent_at 중복 방지: 같은 날짜에 이미 발송된 경우 스킵
+      // last_sent_at 중복 방지: 같은 날짜에 이미 발송된 경우 스킵 (하루 한 번)
       const last = row.last_sent_at ? new Date(row.last_sent_at) : null;
       if (!last) return true;
 
-      const seoulLast = getSeoulDateParts(last);
-      if (seoulLast.date === date) return false; // Already sent today
+      const lastDate = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Seoul",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(last);
 
+      if (lastDate === date) return false;
       return true;
     });
 
