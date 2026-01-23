@@ -27,11 +27,14 @@ export function useHomeLogic() {
   const userName = useAuthStore((s) => s.user?.name ?? "사용자");
 
   // Fetch Streak
-  const { data: streak } = useQuery({
+  const { data: streakData } = useQuery({
     queryKey: ["streak", userId],
     queryFn: authService.checkStreak,
     enabled: !!userId,
   });
+
+  const streak = streakData?.currentStreak ?? 0;
+  const longestStreak = streakData?.longestStreak ?? 0;
 
   // Priority Loading: Defer secondary data (friend requests)
   const [isIdle, setIsIdle] = useState(false);
@@ -337,6 +340,7 @@ export function useHomeLogic() {
     plans,
     userName,
     streak,
+    longestStreak,
     incomingRequestsCount,
     today,
     viewDate,

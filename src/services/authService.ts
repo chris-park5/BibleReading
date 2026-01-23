@@ -121,6 +121,6 @@ export function getAccessToken() {
 /**
  * 연속 접속일(Streak) 확인 및 갱신
  */
-export async function checkStreak() {
+export async function checkStreak(): Promise<{ currentStreak: number; longestStreak: number }> {
   return api.checkStreak();
 }

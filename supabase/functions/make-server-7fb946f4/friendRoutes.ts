@@ -111,7 +111,7 @@ export async function getFriends(c: Context) {
 
     const { data: acceptedUsers, error: acceptedUsersError } = await supabase
       .from("users")
-      .select("id, email, name, username")
+      .select("id, name, username")
       .in("id", acceptedFriendIds.length ? acceptedFriendIds : ["00000000-0000-0000-0000-000000000000"]);
 
     if (acceptedUsersError) throw acceptedUsersError;
@@ -126,7 +126,6 @@ export async function getFriends(c: Context) {
         if (!u) return null;
         return {
           userId: u.id,
-          email: u.email,
           name: u.name,
           username: u.username,
           addedAt: r.created_at,
@@ -148,7 +147,7 @@ export async function getFriends(c: Context) {
     const incomingRequesterIds = (incomingRows ?? []).map((r: any) => r.requested_by);
     const { data: requesterUsers, error: requesterError } = await supabase
       .from("users")
-      .select("id, email, name, username")
+      .select("id, name, username")
       .in(
         "id",
         incomingRequesterIds.length ? incomingRequesterIds : ["00000000-0000-0000-0000-000000000000"]
@@ -167,7 +166,6 @@ export async function getFriends(c: Context) {
           requestId: r.id,
           fromUser: {
             id: requester.id,
-            email: requester.email,
             name: requester.name,
             username: requester.username,
           },
@@ -193,7 +191,7 @@ export async function getFriends(c: Context) {
 
     const { data: outgoingTargets, error: outgoingTargetsError } = await supabase
       .from("users")
-      .select("id, email, name, username")
+      .select("id, name, username")
       .in(
         "id",
         outgoingTargetIds.length ? outgoingTargetIds : ["00000000-0000-0000-0000-000000000000"]
@@ -213,7 +211,6 @@ export async function getFriends(c: Context) {
           requestId: r.id,
           toUser: {
             id: toUser.id,
-            email: toUser.email,
             name: toUser.name,
             username: toUser.username,
           },
@@ -377,7 +374,7 @@ export async function getFriendStatus(c: Context) {
 
     const { data: friendUser, error: friendUserError } = await supabase
       .from("users")
-      .select("id, email, name, username, shared_plan_id, current_streak")
+      .select("id, name, username, shared_plan_id, current_streak")
       .eq("id", friendUserId)
       .maybeSingle();
 
@@ -567,7 +564,7 @@ export async function getLeaderboard(c: Context) {
     // 2. Get Users + Shared Plan ID
     const { data: users, error: usersError } = await supabase
       .from("users")
-      .select("id, email, name, username, shared_plan_id")
+      .select("id, name, username, shared_plan_id")
       .in("id", allUserIds);
 
     if (usersError) throw usersError;
@@ -586,7 +583,7 @@ export async function getLeaderboard(c: Context) {
       (users || []).map(async (u: any) => {
         if (!u.shared_plan_id) {
           return {
-            user: { id: u.id, name: u.name, username: u.username, email: u.email },
+            user: { id: u.id, name: u.name, username: u.username },
             plan: null,
             achievementRate: 0,
             completedDays: 0,
@@ -603,7 +600,7 @@ export async function getLeaderboard(c: Context) {
 
         if (planError || !plan) {
           return {
-            user: { id: u.id, name: u.name, username: u.username, email: u.email },
+            user: { id: u.id, name: u.name, username: u.username },
             plan: null,
             achievementRate: 0,
             completedDays: 0,
@@ -625,7 +622,7 @@ export async function getLeaderboard(c: Context) {
         const progressRate = await calculateProgressRate(supabase, u.id, plan, progress, groupedSchedule);
 
         return {
-          user: { id: u.id, name: u.name, username: u.username, email: u.email },
+          user: { id: u.id, name: u.name, username: u.username },
           plan: { id: plan.id, name: plan.name, totalDays: plan.total_days },
           achievementRate,
           progressRate,
