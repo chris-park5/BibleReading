@@ -5,11 +5,13 @@ import { usePlanStore } from "../../../stores/plan.store";
 import { ProgressChart } from "../../components/ProgressChart";
 import { ReadingHistory } from "../../components/ReadingHistory";
 import { TodayReading } from "../../components/TodayReading";
+import { BibleProgressModal } from "../../components/BibleProgressModal";
 import { BIBLE_BOOKS } from "../../data/bibleBooks";
 import { computeTodayDay, startOfTodayLocal } from "./dateUtils";
 import { computeChaptersTotals, countChapters } from "../../utils/chaptersProgress";
-import { Search } from "lucide-react";
+import { Check } from "lucide-react";
 import { bookMatchesQuery } from "../../utils/bookSearch";
+import { expandChapters } from "../../utils/expandChapters";
 import {
   Select,
   SelectContent,
@@ -17,8 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../components/ui/select";
-
-import { ScrollArea } from "../../components/ui/scroll-area";
+import { cn } from "../../components/ui/utils";
 
 export function ProgressTab() {
   const { plans } = usePlans();
@@ -29,8 +30,6 @@ export function ProgressTab() {
   const activePlanId = selectedPlanId || (plans.length > 0 ? plans[0].id : null);
   const plan = usePlan(activePlanId);
   const { progress, toggleReading } = useProgress(activePlanId);
-  const [viewMode, setViewMode] = useState<"day" | "book">("day");
-  const [bookQuery, setBookQuery] = useState("");
 
   // NOTE:
   // - `todayDay` is computed from real calendar date + plan.startDate.
@@ -43,6 +42,7 @@ export function ProgressTab() {
   const [selectedHistoryDay, setSelectedHistoryDay] = useState<number>(todayDay);
   const [isPinnedHistoryDay, setIsPinnedHistoryDay] = useState(false);
   const historyDetailRef = useRef<HTMLDivElement | null>(null);
+  const [historyViewMode, setHistoryViewMode] = useState<"calendar" | "list">("calendar");
 
   useEffect(() => {
     // When plan changes, reset selection to currentDay.
@@ -98,12 +98,6 @@ export function ProgressTab() {
 
     return rows;
   }, [plan, progress]);
-
-  const normalizedBookQuery = bookQuery.trim().toLowerCase();
-  const filteredBookRows = useMemo(() => {
-    if (!normalizedBookQuery) return bookProgressRows;
-    return bookProgressRows.filter((row) => bookMatchesQuery(row.book, normalizedBookQuery));
-  }, [bookProgressRows, normalizedBookQuery]);
 
   if (!activePlanId || !plan || !progress) {
     return (
@@ -170,190 +164,225 @@ export function ProgressTab() {
       </div>
 
       <div className="max-w-4xl mx-auto p-4 space-y-6 pt-6">
-        <div className="bg-card text-card-foreground border border-border rounded-xl p-4">
-          <p className="text-sm text-muted-foreground">달성률</p>
-          <p className="text-2xl font-semibold">{completionRateElapsed}%</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            오늘까지 {elapsedChapters}장 중 {completedChapters}장 완료
-          </p>
-          <p className="text-muted-foreground mt-1">{completionMessage}</p>
-        </div>
+        <BibleProgressModal bookProgressRows={bookProgressRows}>
+          <button type="button" className="w-full text-left bg-card text-card-foreground border border-border rounded-xl p-4 cursor-pointer hover:bg-accent/50 transition-colors">
+            <p className="text-sm text-muted-foreground">달성률</p>
+            <p className="text-2xl font-semibold">{completionRateElapsed}%</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              오늘까지 {elapsedChapters}장 중 {completedChapters}장 완료
+            </p>
+            <p className="text-muted-foreground mt-1">{completionMessage}</p>
+          </button>
+        </BibleProgressModal>
 
         <ProgressChart totalChapters={totalChapters} completedChapters={completedChapters} />
 
         {/* Reading History Section Header */}
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold">읽기 기록</h2>
-          <div className="w-32">
-            <Select value={viewMode} onValueChange={(v) => setViewMode(v as "day" | "book")}>
-              <SelectTrigger className="h-8 text-xs bg-card">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="day" className="text-xs">일자별</SelectItem>
-                <SelectItem value="book" className="text-xs">성경별</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
         </div>
 
-        {viewMode === "day" ? (
-          <div className="bg-card text-card-foreground border border-border rounded-xl p-4 space-y-4">
-            <ReadingHistory
-              schedule={plan.schedule}
-              completedDays={(() => {
-                const completed = new Set<number>();
-                const completedReadingsByDay = progress.completedReadingsByDay || {};
-                const completedDaysSet = new Set(progress.completedDays || []);
+        <div className="bg-card text-card-foreground border border-border rounded-xl p-4 space-y-4">
+          <ReadingHistory
+            schedule={plan.schedule}
+            completedDays={(() => {
+              const completed = new Set<number>();
+              const completedReadingsByDay = progress.completedReadingsByDay || {};
+              const completedDaysSet = new Set(progress.completedDays || []);
 
-                for (let day = 1; day <= plan.totalDays; day++) {
-                  const reading = plan.schedule.find((s) => s.day === day);
-                  if (!reading) continue;
+              for (let day = 1; day <= plan.totalDays; day++) {
+                const reading = plan.schedule.find((s) => s.day === day);
+                if (!reading) continue;
 
-                  const totalReadings = reading.readings.length;
-                  if (totalReadings <= 0) continue;
+                const totalReadings = reading.readings.length;
+                if (totalReadings <= 0) continue;
 
-                  if (completedDaysSet.has(day)) {
-                    completed.add(day);
-                    continue;
-                  }
-
-                  const completedIndices = completedReadingsByDay[String(day)] || [];
-                  const completedCount = completedIndices.length;
-                  if (completedCount === totalReadings) completed.add(day);
+                if (completedDaysSet.has(day)) {
+                  completed.add(day);
+                  continue;
                 }
 
-                return completed;
-              })()}
-              partialDays={(() => {
-                const partial = new Set<number>();
-                const completedReadingsByDay = progress.completedReadingsByDay || {};
-                const completedDaysSet = new Set(progress.completedDays || []);
+                const completedIndices = completedReadingsByDay[String(day)] || [];
+                const completedCount = completedIndices.length;
+                if (completedCount === totalReadings) completed.add(day);
+              }
 
-                for (let day = 1; day <= plan.totalDays; day++) {
-                  if (completedDaysSet.has(day)) continue;
+              return completed;
+            })()}
+            partialDays={(() => {
+              const partial = new Set<number>();
+              const completedReadingsByDay = progress.completedReadingsByDay || {};
+              const completedDaysSet = new Set(progress.completedDays || []);
 
-                  const reading = plan.schedule.find((s) => s.day === day);
-                  if (!reading) continue;
+              for (let day = 1; day <= plan.totalDays; day++) {
+                if (completedDaysSet.has(day)) continue;
 
-                  const totalReadings = reading.readings.length;
-                  if (totalReadings <= 0) continue;
+                const reading = plan.schedule.find((s) => s.day === day);
+                if (!reading) continue;
 
-                  const completedIndices = completedReadingsByDay[String(day)] || [];
-                  const completedCount = completedIndices.length;
-                  if (completedCount > 0 && completedCount < totalReadings) partial.add(day);
-                }
+                const totalReadings = reading.readings.length;
+                if (totalReadings <= 0) continue;
 
-                return partial;
-              })()}
-              // "오늘" 표시(하이라이트)는 실제 오늘 날짜 기준 day를 사용합니다.
-              currentDay={todayDay}
-              selectedDay={selectedHistoryDay}
-              onDayClick={(day) => {
-                setSelectedHistoryDay(day);
-                setIsPinnedHistoryDay(true);
+                const completedIndices = completedReadingsByDay[String(day)] || [];
+                const completedCount = completedIndices.length;
+                if (completedCount > 0 && completedCount < totalReadings) partial.add(day);
+              }
 
-                // Scroll to the checkbox list (TodayReading) below.
-                if (typeof window !== "undefined") {
-                  window.requestAnimationFrame(() => {
-                    historyDetailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-                  });
-                }
-              }}
-              startDate={plan.startDate}
-              totalDays={plan.totalDays}
-              // Remove border and shadow from inner component
-              className="border-none shadow-none p-0 bg-transparent"
-              hideHeader={true}
-            />
-
-            {(() => {
-              const day = selectedHistoryDay;
+              return partial;
+            })()}
+            // "오늘" 표시(하이라이트)는 실제 오늘 날짜 기준 day를 사용합니다.
+            currentDay={todayDay}
+            selectedDay={selectedHistoryDay}
+            onViewChange={setHistoryViewMode}
+            onDayClick={(day) => {
+              setSelectedHistoryDay(day);
+              setIsPinnedHistoryDay(true);
+              // Scroll to the details
+              setTimeout(() => {
+                historyDetailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+              }, 50);
+            }}
+            renderDayDetails={(day, query) => {
               const entry = plan.schedule.find((s) => s.day === day);
-              const readings = entry?.readings ?? [];
-              const readingCount = readings.length;
+              const allReadings = entry?.readings ?? [];
+              const readingCount = allReadings.length;
 
               const isDayCompleted = progress.completedDays.includes(day);
               const completedIndices = progress.completedReadingsByDay?.[String(day)] ?? [];
               const completedSet = new Set(completedIndices);
-
-              // NEW: Get detailed chapters progress
               const dayChaptersMap = progress.completedChaptersByDay?.[String(day)] ?? {};
 
-              const completedByIndex = readings.map((_, i) => isDayCompleted || completedSet.has(i));
-              const completedChaptersByIndex = readings.map((_, i) => dayChaptersMap[i] ?? []);
+              // Map readings to include original index
+              const allReadingsWithIndex = allReadings.map((r, i) => ({ ...r, originalIndex: i }));
+              
+              // Filter if query is present
+              const filteredReadingsWithIndex = query 
+                ? allReadingsWithIndex.filter(r => bookMatchesQuery(String(r.book), query)) 
+                : allReadingsWithIndex;
+
+              if (filteredReadingsWithIndex.length === 0) {
+                return (
+                  <div className="bg-card text-card-foreground border border-border rounded-xl p-4 text-sm text-muted-foreground text-center">
+                    선택한 날짜({day}일차)에 해당하는 읽기 항목이 없습니다.
+                  </div>
+                );
+              }
 
               return (
-                <div ref={historyDetailRef}>
-                  {readings.length === 0 ? (
-                    <div className="bg-card text-card-foreground border border-border rounded-xl p-4 text-sm text-muted-foreground">
-                      선택한 날짜에 읽기 항목이 없습니다.
-                    </div>
-                  ) : (
-                    <TodayReading
-                      day={day}
-                      readings={readings}
-                      completedByIndex={completedByIndex}
-                      completedChaptersByIndex={completedChaptersByIndex}
-                      subtitle={null}
-                      onToggleReading={(readingIndex, completed, completedChapters) =>
-                        toggleReading({
-                          day,
-                          readingIndex,
-                          completed,
-                          readingCount,
-                          completedChapters,
-                        })
-                      }
-                    />
-                  )}
+                <div className="flex flex-col gap-4 py-2">
+                  {filteredReadingsWithIndex.map((reading) => {
+                    const expandedChapters = expandChapters(reading.chapters);
+                    const originalIndex = reading.originalIndex;
+                    
+                    // Determine current status
+                    const isReadingCompleted = isDayCompleted || completedSet.has(originalIndex);
+                    const currentCompletedChapters = isReadingCompleted 
+                      ? expandedChapters 
+                      : (dayChaptersMap[originalIndex] || []);
+                    
+                    const completedChaptersSet = new Set(currentCompletedChapters);
+
+                    return (
+                      <div key={`${day}-${originalIndex}`} className="space-y-2">
+                        {filteredReadingsWithIndex.length > 1 && (
+                          <div className="text-sm font-medium text-muted-foreground">
+                            {reading.book} {reading.chapters}
+                          </div>
+                        )}
+                        <div className="flex flex-wrap gap-2">
+                          {expandedChapters.map((chapter) => {
+                            const isChecked = completedChaptersSet.has(chapter);
+                            
+                            return (
+                              <button
+                                key={chapter}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const nextSet = new Set<string>(completedChaptersSet);
+                                  if (nextSet.has(chapter)) {
+                                    nextSet.delete(chapter);
+                                  } else {
+                                    nextSet.add(chapter);
+                                  }
+                                  
+                                  const nextChapters = Array.from(nextSet);
+                                  const isNowFullyComplete = expandedChapters.length > 0 && expandedChapters.every(c => nextSet.has(c));
+
+                                  toggleReading({
+                                    day,
+                                    readingIndex: originalIndex,
+                                    completed: isNowFullyComplete,
+                                    readingCount,
+                                    completedChapters: nextChapters
+                                  });
+                                }}
+                                className={cn(
+                                  "flex items-center justify-center w-10 h-10 rounded-md text-sm font-medium border transition-all",
+                                  isChecked 
+                                    ? "bg-green-100 border-green-200 text-green-700 dark:bg-green-900/30 dark:border-green-800 dark:text-green-400" 
+                                    : "bg-muted/30 border-border text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                                )}
+                              >
+                                {isChecked && <Check className="w-3 h-3 mr-0.5 stroke-[3]" />}
+                                {chapter}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               );
-            })()}
-          </div>
-        ) : (
-          <div className="bg-card text-card-foreground border border-border rounded-xl p-4 overflow-hidden">
-            <div className="mb-3 flex items-center gap-2">
-              <div className="relative flex-1 min-w-0">
-                <Search className="w-4 h-4 text-muted-foreground/60 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  value={bookQuery}
-                  onChange={(e) => setBookQuery(e.target.value)}
-                  placeholder="책 이름 검색 (예: 히브리서)"
-                  className="w-full pl-9 pr-3 py-2 border border-border rounded-lg bg-input-background text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                />
-              </div>
-              {normalizedBookQuery && (
-                <div className="text-xs text-muted-foreground whitespace-nowrap">{filteredBookRows.length}권</div>
-              )}
-            </div>
+            }}
+            startDate={plan.startDate}
+            totalDays={plan.totalDays}
+            // Remove border and shadow from inner component
+            className="border-none shadow-none p-0 bg-transparent"
+            hideHeader={true}
+          />
 
-            {bookProgressRows.length === 0 ? (
-              <div className="text-sm text-muted-foreground">표시할 데이터가 없습니다.</div>
-            ) : filteredBookRows.length === 0 ? (
-              <div className="text-sm text-muted-foreground">검색 결과가 없습니다.</div>
-            ) : (
-              <ScrollArea className="h-[400px] pr-4">
-                <div className="space-y-2 pr-2">
-                  {filteredBookRows.map((row) => (
-                    <div key={row.book} className="border border-border rounded-lg p-3 bg-card">
-                      <div className="flex items-center justify-between gap-3 min-w-0">
-                        <div className="min-w-0">
-                          <div className="text-sm truncate">{row.book}</div>
-                          <div className="text-xs text-muted-foreground">{row.completed}/{row.total}장</div>
-                        </div>
-                        <div className="text-sm font-medium text-muted-foreground shrink-0">{row.percent}%</div>
-                      </div>
-                      <div className="mt-2 w-full bg-muted rounded-full h-2">
-                        <div className="bg-primary h-2 rounded-full" style={{ width: `${row.percent}%` }} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
-            )}
-          </div>
-        )}
+          {/* Bottom Details Section for Calendar View */}
+          {historyViewMode === "calendar" && (
+            <div ref={historyDetailRef} className="mt-4">
+              {(() => {
+                const day = selectedHistoryDay;
+                const entry = plan.schedule.find((s) => s.day === day);
+                const readings = entry?.readings ?? [];
+                const readingCount = readings.length;
+
+                const isDayCompleted = progress.completedDays.includes(day);
+                const completedIndices = progress.completedReadingsByDay?.[String(day)] ?? [];
+                const completedSet = new Set(completedIndices);
+                const dayChaptersMap = progress.completedChaptersByDay?.[String(day)] ?? {};
+
+                const completedByIndex = readings.map((_, i) => isDayCompleted || completedSet.has(i));
+                const completedChaptersByIndex = readings.map((_, i) => dayChaptersMap[i] ?? []);
+
+                if (readings.length === 0) return null;
+
+                return (
+                  <TodayReading
+                    day={day}
+                    readings={readings}
+                    completedByIndex={completedByIndex}
+                    completedChaptersByIndex={completedChaptersByIndex}
+                    subtitle={`${day}일차 전체 보기`}
+                    onToggleReading={(readingIndex, completed, completedChapters) =>
+                      toggleReading({
+                        day,
+                        readingIndex,
+                        completed,
+                        readingCount,
+                        completedChapters,
+                      })
+                    }
+                  />
+                );
+              })()}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

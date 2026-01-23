@@ -1,5 +1,4 @@
 import { Bell, Flame, Settings, Users } from "lucide-react";
-import { toast } from "sonner";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,6 +7,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../../../components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "../../../components/ui/popover";
 import { setHashTab } from "../tabHash";
 
 interface HomeHeaderProps {
@@ -64,18 +68,32 @@ export function HomeHeader({
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <button 
-            onClick={() => toast.success(`최대 연속 접속: ${longestStreak}일`, {
-              description: "매일 말씀을 읽고 기록을 경신해보세요!",
-              duration: 2000,
-            })}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 dark:bg-orange-900/20 rounded-full border border-orange-100 dark:border-orange-900/30 hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors cursor-pointer"
-          >
-            <Flame className="w-4 h-4 text-orange-500 fill-orange-500" />
-            <span className="text-sm font-bold text-orange-600 dark:text-orange-400">
-              {streak ?? 0}일
-            </span>
-          </button>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button 
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 dark:bg-orange-900/20 rounded-full border border-orange-100 dark:border-orange-900/30 hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors cursor-pointer outline-none"
+              >
+                <Flame className="w-4 h-4 text-orange-500 fill-orange-500" />
+                <span className="text-sm font-bold text-orange-600 dark:text-orange-400">
+                  {streak ?? 0}일
+                </span>
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-4" align="end">
+              <div className="flex flex-col items-center gap-2">
+                <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-full">
+                  <Flame className="w-6 h-6 text-orange-500 fill-orange-500" />
+                </div>
+                <div className="text-center">
+                  <p className="text-xs text-muted-foreground font-medium">최대 연속 접속</p>
+                  <p className="text-xl font-bold text-foreground">{longestStreak ?? 0}일</p>
+                </div>
+                <p className="text-[10px] text-muted-foreground text-center max-w-[140px]">
+                  매일 말씀을 읽고<br/>기록을 경신해보세요!
+                </p>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
     </div>
