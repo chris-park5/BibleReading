@@ -275,15 +275,28 @@ export function ReadingHistory({
       {/* Content */}
       {visibleDaysSet ? (
         <div>
-          <div className="text-sm font-medium mb-2">
-            {filter !== 'all' ? (
-              <span>
-                {filter === 'completed' && "완료된 날짜"}
-                {filter === 'partial' && "일부 완료된 날짜"}
-                {filter === 'incomplete' && "미완료 날짜"}
-                {normalizedQuery && " (검색됨)"}
-              </span>
-            ) : "검색 결과"}
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-sm font-medium">
+              {filter !== 'all' ? (
+                <span>
+                  {filter === 'completed' && "완료된 날짜"}
+                  {filter === 'partial' && "일부 완료된 날짜"}
+                  {filter === 'incomplete' && "미완료 날짜"}
+                  {normalizedQuery && " (검색됨)"}
+                </span>
+              ) : "검색 결과"}
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setInternalQuery("");
+                setFilter("all");
+                onQueryChange?.("");
+              }}
+              className="text-xs text-primary hover:underline"
+            >
+              캘린더로 돌아가기
+            </button>
           </div>
           {searchResultDays.length === 0 ? (
             <div className="text-sm text-muted-foreground">표시할 날짜가 없습니다.</div>
