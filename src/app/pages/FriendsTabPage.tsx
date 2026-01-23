@@ -316,7 +316,7 @@ function FriendProfileDialog({ friendId, onClose }: { friendId: string | null; o
                   <span>읽은 장수</span>
                 </div>
                 <div className="text-xl font-bold text-primary">
-                  {status.completedDays} / {status.totalDays} 장
+                  {status.completedDays} 장
                 </div>
               </div>
               <div className="bg-muted/50 p-4 rounded-xl space-y-2">

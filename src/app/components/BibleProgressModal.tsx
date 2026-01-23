@@ -1,5 +1,4 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
-import { ScrollArea } from "./ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { BIBLE_BOOKS, getBookChapters } from "../data/bibleBooks";
 import { cn } from "./ui/utils";
@@ -99,14 +98,14 @@ export function BibleProgressModal({ children, bookProgressRows }: BibleProgress
             </TabsList>
           </div>
           
-          <ScrollArea className="flex-1 p-4">
+          <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
             <TabsContent value="old" className="mt-0">
               {renderList(otRows)}
             </TabsContent>
             <TabsContent value="new" className="mt-0">
               {renderList(ntRows)}
             </TabsContent>
-          </ScrollArea>
+          </div>
         </Tabs>
       </DialogContent>
     </Dialog>
