@@ -56,7 +56,7 @@ export async function getFriends(): Promise<{
   if (relatedUserIds.size > 0) {
     const { data: users, error: userError } = await supabase
       .from("users")
-      .select("id, email, name, username")
+      .select("id, name, username")
       .in("id", Array.from(relatedUserIds));
     
     if (userError) throw userError;
@@ -70,7 +70,6 @@ export async function getFriends(): Promise<{
       if (!u) return null;
       return {
         userId: u.id,
-        email: u.email,
         name: u.name,
         username: u.username ?? undefined,
         addedAt: r.created_at,
@@ -86,7 +85,6 @@ export async function getFriends(): Promise<{
         requestId: r.id,
         fromUser: {
           id: u.id,
-          email: u.email,
           name: u.name,
           username: u.username ?? undefined,
         },
@@ -103,7 +101,6 @@ export async function getFriends(): Promise<{
         requestId: r.id,
         toUser: {
           id: u.id,
-          email: u.email,
           name: u.name,
           username: u.username ?? undefined,
         },
@@ -159,7 +156,7 @@ export async function getFriendStatus(friendUserId: string) {
 export async function getLeaderboard(): Promise<{
   success: boolean;
   leaderboard: {
-    user: { id: string; email: string; name: string; username?: string };
+    user: { id: string; name: string; username?: string };
     plan: { id: string; name: string; totalDays: number } | null;
     achievementRate: number;
     progressRate: number;
