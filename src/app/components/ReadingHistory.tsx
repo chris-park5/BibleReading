@@ -340,7 +340,11 @@ export function ReadingHistory({
                         className={cn(
                           "p-3 rounded-lg border flex items-center gap-3 transition-all",
                           isCurrent
-                            ? "border-primary bg-primary/10"
+                            ? isCompleted
+                              ? "border-green-500 bg-primary/10" // Today + Completed
+                              : isPartial
+                              ? "border-yellow-500 bg-primary/5" // Today + Partial
+                              : "border-primary bg-primary/10"   // Today + Incomplete
                             : isCompleted
                             ? "border-green-200 bg-green-50 dark:bg-green-900/10 dark:border-green-900/30"
                             : isPartial
