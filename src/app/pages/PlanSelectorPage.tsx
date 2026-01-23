@@ -185,12 +185,21 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
               </div>
             ) : (
               <div>
-                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                  <span className="bg-primary/10 text-primary p-1 rounded-md">
-                    <BookOpen className="w-4 h-4" />
-                  </span>
-                  나의 계획
-                </h2>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold flex items-center gap-2">
+                    <span className="bg-primary/10 text-primary p-1 rounded-md">
+                      <BookOpen className="w-4 h-4" />
+                    </span>
+                    나의 계획
+                  </h2>
+                  <button
+                    onClick={() => setActiveTab("add-plan")}
+                    className="flex items-center gap-1 px-3 py-1.5 bg-primary/10 text-primary rounded-lg text-sm font-medium hover:bg-primary/20 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    계획 추가
+                  </button>
+                </div>
                 <div className="grid gap-4 md:grid-cols-2">
                   {plans.map((plan) => (
                     <ReadingPlanCard

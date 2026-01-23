@@ -313,7 +313,7 @@ function FriendProfileDialog({ friendId, onClose }: { friendId: string | null; o
               <div className="bg-muted/50 p-4 rounded-xl space-y-2">
                 <div className="flex items-center gap-2 text-muted-foreground text-sm">
                   <BookOpen className="w-4 h-4" />
-                  <span>읽은 페이지</span>
+                  <span>읽은 장수</span>
                 </div>
                 <div className="text-xl font-bold text-primary">
                   {status.completedDays} / {status.totalDays} 장
