@@ -284,7 +284,7 @@ export async function sendScheduledNotifications(c: Context) {
 
     if (dueError) throw dueError;
 
-    const WINDOW_MINUTES = 15; // ±15분 허용
+    const WINDOW_MINUTES = 2; // ±2분 허용
     const nowMinutes = (() => {
       const [h, m] = hhmm.split(":").map(Number);
       return h * 60 + m;
@@ -296,7 +296,7 @@ export async function sendScheduledNotifications(c: Context) {
       console.log(`[debug] Checking row: ${row.id}, targetTime: ${t}, nowTime: ${hhmm}`);
       if (!t || !isTimeWithinWindow(t, hhmm, WINDOW_MINUTES)) return false;
 
-      // last_sent_at 중복 방지: 같은 날짜+시각에 이미 발송된 경우 스킵
+      // last_sent_at 중복 방지: 같은 날짜에 이미 발송된 경우 스킵 (하루 한 번)
       const last = row.last_sent_at ? new Date(row.last_sent_at) : null;
       if (!last) return true;
 
@@ -307,11 +307,7 @@ export async function sendScheduledNotifications(c: Context) {
         day: "2-digit",
       }).format(last);
 
-      // last_sent_at이 오늘이고, last_sent_at의 시각이 현재 시각 윈도우 내에 있으면 중복 발송 방지
-      const lastH = last.getHours();
-      const lastM = last.getMinutes();
-      const lastMinutes = lastH * 60 + lastM;
-      if (lastDate === date && Math.abs(lastMinutes - nowMinutes) <= WINDOW_MINUTES) return false;
+      if (lastDate === date) return false;
 
       return true;
     });
