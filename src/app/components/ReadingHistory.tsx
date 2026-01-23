@@ -3,7 +3,6 @@ import { Calendar, CheckCircle, Circle, CircleDashed, Search } from "lucide-reac
 import { bookMatchesQuery } from "../utils/bookSearch";
 
 import { cn } from "./ui/utils";
-import { ScrollArea } from "./ui/scroll-area";
 
 import { ChevronDown, ChevronUp } from "lucide-react";
 
@@ -301,7 +300,7 @@ export function ReadingHistory({
           {searchResultDays.length === 0 ? (
             <div className="text-sm text-muted-foreground">표시할 날짜가 없습니다.</div>
           ) : (
-            <ScrollArea className="max-h-[400px] overflow-y-auto pr-2">
+            <div className="max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
               <div className="flex flex-col gap-2">
                 {searchResultDays.map((day) => {
                   const date = addDays(start, day - 1);
@@ -390,7 +389,7 @@ export function ReadingHistory({
                   );
                 })}
               </div>
-            </ScrollArea>
+            </div>
           )}
         </div>
       ) : (

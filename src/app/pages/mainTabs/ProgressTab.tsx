@@ -164,25 +164,31 @@ export function ProgressTab() {
       </div>
 
       <div className="max-w-4xl mx-auto p-4 space-y-6 pt-6">
-        <BibleProgressModal bookProgressRows={bookProgressRows}>
-          <button type="button" className="w-full text-left bg-card text-card-foreground border border-border rounded-xl p-4 cursor-pointer hover:bg-accent/50 transition-colors">
+          <div className="bg-card text-card-foreground border border-border rounded-xl p-4">
             <p className="text-sm text-muted-foreground">달성률</p>
             <p className="text-2xl font-semibold">{completionRateElapsed}%</p>
             <p className="text-sm text-muted-foreground mt-1">
               오늘까지 {elapsedChapters}장 중 {completedChapters}장 완료
             </p>
             <p className="text-muted-foreground mt-1">{completionMessage}</p>
+          </div>
+
+        <BibleProgressModal bookProgressRows={bookProgressRows}>
+          <button type="button" className="w-full text-left">
+            <ProgressChart 
+              totalChapters={totalChapters} 
+              completedChapters={completedChapters} 
+              className="cursor-pointer hover:bg-accent/50 transition-colors"
+            />
           </button>
         </BibleProgressModal>
-
-        <ProgressChart totalChapters={totalChapters} completedChapters={completedChapters} />
 
         {/* Reading History Section Header */}
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold">읽기 기록</h2>
         </div>
 
-        <div className="bg-card text-card-foreground border border-border rounded-xl p-4 space-y-4">
+        <div className="bg-card text-card-foreground border border-border rounded-xl p-4 space-y-4 max-h-[500px] overflow-y-auto custom-scrollbar">
           <ReadingHistory
             schedule={plan.schedule}
             completedDays={(() => {
