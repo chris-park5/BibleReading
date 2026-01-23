@@ -8,6 +8,7 @@ import { CustomPlanCreator } from '../components/CustomPlanCreator';
 import * as authService from '../../services/authService';
 import * as api from '../utils/api';
 import { bundledPresetPlans, normalizeSchedule } from '../plans/bundledPresets';
+import { countChapters } from '../utils/chaptersProgress';
 import { Tabs, TabsContent } from '../components/ui/tabs';
 import {
   Select,
@@ -231,13 +232,28 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
               <div className="grid gap-4 md:grid-cols-2">
                 {presetPlans.map((plan: any) => {
                   const isAlreadyAdded = plans.some(p => p.name === plan.title);
+                  
+                  // Calculate average chapters
+                  let totalChapters = 0;
+                  if (plan.schedule) {
+                    plan.schedule.forEach((day: any) => {
+                      if (day.readings) {
+                        day.readings.forEach((r: any) => {
+                          totalChapters += countChapters(r.chapters);
+                        });
+                      }
+                    });
+                  }
+                  const avg = plan.totalDays > 0 ? (totalChapters / plan.totalDays).toFixed(1) : "0";
+                  const avgText = `하루 평균 ${avg}장`;
+
                   return (
                     <ReadingPlanCard
                       key={plan.id}
                       id={plan.id}
                       title={plan.title}
                       description="" // Hide description in list
-                      duration=""    // Hide duration in list
+                      duration={avgText}
                       isSelected={false}
                       onSelect={() => {
                         if (isAlreadyAdded) {

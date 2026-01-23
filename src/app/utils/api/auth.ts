@@ -166,7 +166,7 @@ export async function getMyProfile(): Promise<{
   };
 }
 
-export async function checkStreak(): Promise<number> {
+export async function checkStreak(): Promise<{ currentStreak: number; longestStreak: number }> {
   const { error } = await supabase.rpc('update_user_streak');
   if (error) {
     console.error("Streak update failed:", error);
@@ -174,16 +174,19 @@ export async function checkStreak(): Promise<number> {
   }
   
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return 0;
+  if (!user) return { currentStreak: 0, longestStreak: 0 };
 
   const { data, error: fetchError } = await supabase
     .from('users')
-    .select('current_streak')
+    .select('current_streak, longest_streak')
     .eq('id', user.id)
     .single();
     
   if (fetchError) throw fetchError;
-  return data?.current_streak ?? 0;
+  return {
+    currentStreak: data?.current_streak ?? 0,
+    longestStreak: data?.longest_streak ?? 0
+  };
 }
 
 export async function updateUsername(newUsername: string): Promise<{ success: true }> {
