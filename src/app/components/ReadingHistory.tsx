@@ -220,54 +220,58 @@ export function ReadingHistory({
       )}
 
       {!hideCalendar && (
-        <div className="mb-4 flex items-center gap-2 overflow-x-auto pb-2 custom-scrollbar no-scrollbar sm:justify-center text-sm">
+        <div className="mb-4 flex flex-wrap items-center gap-2 text-sm">
           <button 
             type="button"
             onClick={() => toggleFilter('completed')}
             className={cn(
-              "flex items-center gap-2 px-3 py-2 rounded-lg transition-all border shrink-0",
+              "flex items-center gap-1.5 px-2 py-1 rounded-lg transition-all border shrink-0",
               filter === 'completed' 
-                ? "bg-green-100 border-green-200 dark:bg-green-900/30 dark:border-green-800 ring-1 ring-green-500" 
+                ? "bg-green-50 border-green-100 dark:bg-green-900/20 dark:border-green-900/40 ring-1 ring-green-200 dark:ring-green-800" 
                 : "border-transparent hover:bg-muted bg-muted/30"
             )}
           >
-            <CheckCircle className="w-5 h-5 text-green-500" />
-            <span className={cn("text-muted-foreground whitespace-nowrap", filter === 'completed' && "text-foreground font-semibold")}>완료</span>
+            <CheckCircle className="w-4 h-4 text-green-500" />
+            <span className={cn("text-xs text-muted-foreground whitespace-nowrap", filter === 'completed' && "text-foreground font-semibold")}>완료</span>
           </button>
 
           <button 
             type="button"
             onClick={() => toggleFilter('partial')}
             className={cn(
-              "flex items-center gap-2 px-3 py-2 rounded-lg transition-all border shrink-0",
+              "flex items-center gap-1.5 px-2 py-1 rounded-lg transition-all border shrink-0",
               filter === 'partial' 
-                ? "bg-yellow-100 border-yellow-200 dark:bg-yellow-900/30 dark:border-yellow-800 ring-1 ring-yellow-500" 
+                ? "bg-yellow-50 border-yellow-100 dark:bg-yellow-900/20 dark:border-yellow-900/40 ring-1 ring-yellow-200 dark:ring-yellow-800" 
                 : "border-transparent hover:bg-muted bg-muted/30"
             )}
           >
-            <CircleDashed className="w-5 h-5 text-yellow-500" />
-            <span className={cn("text-muted-foreground whitespace-nowrap", filter === 'partial' && "text-foreground font-semibold")}>일부 완료</span>
+            <CircleDashed className="w-4 h-4 text-yellow-500" />
+            <span className={cn("text-xs text-muted-foreground whitespace-nowrap", filter === 'partial' && "text-foreground font-semibold")}>일부 완료</span>
           </button>
 
           <button
              type="button"
              onClick={() => toggleFilter('incomplete')}
              className={cn(
-               "flex items-center gap-2 px-3 py-2 rounded-lg transition-all border shrink-0",
+               "flex items-center gap-1.5 px-2 py-1 rounded-lg transition-all border shrink-0",
                filter === 'incomplete' 
-                 ? "bg-gray-100 border-gray-200 dark:bg-gray-800 dark:border-gray-700 ring-1 ring-gray-400" 
+                 ? "bg-gray-50 border-gray-100 dark:bg-gray-800/50 dark:border-gray-700/50 ring-1 ring-gray-200 dark:ring-gray-700" 
                  : "border-transparent hover:bg-muted bg-muted/30"
              )}
           >
-             <Circle className="w-5 h-5 text-muted-foreground/40" />
-            <span className={cn("text-muted-foreground whitespace-nowrap", filter === 'incomplete' && "text-foreground font-semibold")}>미완료</span>
+             <Circle className="w-4 h-4 text-muted-foreground/40" />
+            <span className={cn("text-xs text-muted-foreground whitespace-nowrap", filter === 'incomplete' && "text-foreground font-semibold")}>미완료</span>
           </button>
 
-          {/* Today Indicator (Static) */}
-          <div className="flex items-center gap-2 px-3 py-2 border border-transparent opacity-70 shrink-0">
-            <div className="w-5 h-5 border border-primary rounded bg-primary/10" />
-            <span className="text-muted-foreground whitespace-nowrap">오늘</span>
-          </div>
+          {/* Today Button */}
+          <button
+            type="button"
+            onClick={() => onDayClick(currentDay)}
+            className="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-transparent hover:bg-muted bg-muted/30 transition-all shrink-0"
+          >
+            <div className="w-4 h-4 border border-primary rounded bg-primary/10" />
+            <span className="text-xs text-muted-foreground whitespace-nowrap">오늘</span>
+          </button>
         </div>
       )}
 

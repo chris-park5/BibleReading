@@ -5,6 +5,29 @@ import { HomeHeader } from "./home/HomeHeader";
 import { ReadingHistorySection } from "./home/ReadingHistorySection";
 import { useHomeLogic } from "./home/useHomeLogic";
 import { WeeklyCalendar } from "./home/WeeklyCalendar";
+import { Skeleton } from "../../components/ui/skeleton";
+
+function HomeTabSkeleton() {
+  return (
+    <div className="min-h-screen pb-20 relative">
+      <div className="sticky top-0 z-10 bg-background/95 border-b border-border shadow-sm h-14 flex items-center px-4">
+         <div className="w-full flex justify-between items-center max-w-4xl mx-auto">
+            <Skeleton className="h-6 w-6 rounded-md" />
+            <div className="flex gap-2">
+                <Skeleton className="h-6 w-16 rounded-full" />
+                <Skeleton className="h-6 w-6 rounded-full" />
+            </div>
+         </div>
+      </div>
+      <div className="max-w-4xl mx-auto p-4 space-y-6 pt-4">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-36 w-full rounded-xl" />
+        <Skeleton className="h-64 w-full rounded-xl" />
+        <Skeleton className="h-40 w-full rounded-xl" />
+      </div>
+    </div>
+  );
+}
 
 export function HomeTab() {
   const {
@@ -29,7 +52,12 @@ export function HomeTab() {
     updateReadingMutation,
     isAllPlansCompletedForDate,
     hasAnyPlanForDate,
+    isLoading,
   } = useHomeLogic();
+
+  if (isLoading) {
+    return <HomeTabSkeleton />;
+  }
 
   return (
     <div className="min-h-screen pb-20 relative">
