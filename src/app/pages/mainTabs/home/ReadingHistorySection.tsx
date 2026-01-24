@@ -51,6 +51,7 @@ export function ReadingHistorySection() {
     const completed = new Set<number>();
     const partial = new Set<number>();
     const completedReadingsByDay = progress.completedReadingsByDay || {};
+    const completedChaptersByDay = progress.completedChaptersByDay || {};
     const completedDaysSet = new Set(progress.completedDays || []);
 
     for (let day = 1; day <= plan.totalDays; day++) {
@@ -72,6 +73,17 @@ export function ReadingHistorySection() {
         completed.add(day);
       } else if (completedCount > 0) {
         partial.add(day);
+      } else {
+        // Check if any chapters are completed
+        const dayChaptersMap = completedChaptersByDay[String(day)];
+        if (dayChaptersMap) {
+          const hasAnyChapter = Object.values(dayChaptersMap).some(
+            (chapters) => Array.isArray(chapters) && chapters.length > 0
+          );
+          if (hasAnyChapter) {
+            partial.add(day);
+          }
+        }
       }
     }
 
