@@ -89,6 +89,7 @@ export default defineConfig({
       output: {
         // Manual chunks: 큰 vendor 의존성을 분리해서 초기 번들 크기와 캐시 효율을 개선합니다.
         // (필요 시 더 세분화 가능)
+        /*
         manualChunks(id) {
           if (!id.includes('node_modules')) return;
 
@@ -133,6 +134,7 @@ export default defineConfig({
           // 나머지는 하나의 vendor로 묶되, 너무 비대해지면 위 규칙을 추가해 분리합니다.
           return 'vendor';
         },
+        */
       },
     },
   },
