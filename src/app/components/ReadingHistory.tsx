@@ -285,17 +285,19 @@ export function ReadingHistory({
                 </span>
               ) : "검색 결과"}
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                setInternalQuery("");
-                setFilter("all");
-                onQueryChange?.("");
-              }}
-              className="text-xs text-primary hover:underline"
-            >
-              캘린더로 돌아가기
-            </button>
+            {!hideCalendar && (
+              <button
+                type="button"
+                onClick={() => {
+                  setInternalQuery("");
+                  setFilter("all");
+                  onQueryChange?.("");
+                }}
+                className="text-xs text-primary hover:underline"
+              >
+                캘린더로 돌아가기
+              </button>
+            )}
           </div>
           {searchResultDays.length === 0 ? (
             <div className="text-sm text-muted-foreground">표시할 날짜가 없습니다.</div>
