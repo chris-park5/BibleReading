@@ -26,7 +26,6 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
   type Step = 1 | 2 | 3;
   const [step, setStep] = useState<Step>(1);
   const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
   const [startDate, setStartDate] = useState(
     new Date().toISOString().split("T")[0]
   );
@@ -512,7 +511,7 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
 
       onSave({
         name: finalName,
-        description: description.trim() || undefined,
+        description: undefined,
         startDate,
         endDate,
         totalDays,
@@ -656,15 +655,7 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
                   placeholder="예) 성경 1년 1독 / 구약 90일"
                 />
                 
-                <div className="mt-3">
-                  <div className="text-sm text-muted-foreground mb-1">계획 설명</div>
-                  <textarea
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    className="w-full px-3 py-2.5 border border-border bg-input-background rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring text-sm resize-none h-20"
-                    placeholder="계획에 대한 설명을 입력하세요 (선택)"
-                  />
-                </div>
+
 
                 {!isFinalNameValid && finalName.length > MAX_PLAN_NAME_LENGTH && (
                   <div className="text-sm text-destructive mt-2">이름이 너무 깁니다. (최대 {MAX_PLAN_NAME_LENGTH}자)</div>

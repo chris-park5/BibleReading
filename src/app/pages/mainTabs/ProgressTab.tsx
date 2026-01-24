@@ -371,6 +371,7 @@ export function ProgressTab() {
             className="border-none shadow-none p-0 bg-transparent"
             hideHeader={true}
           />
+        </div>
 
           {/* Bottom Details Section for Calendar View */}
           {historyViewMode === "calendar" && (
@@ -412,7 +413,6 @@ export function ProgressTab() {
               })()}
             </div>
           )}
-        </div>
       </div>
     </div>
   );

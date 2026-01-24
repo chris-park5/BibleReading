@@ -22,12 +22,12 @@ type CombinedReading = {
 };
 
 export function useHomeLogic() {
-  const { plans } = usePlans();
+  const { plans, isLoading: isPlansLoading } = usePlans();
   const userId = useAuthStore((s) => s.user?.id ?? null);
   const userName = useAuthStore((s) => s.user?.name ?? "사용자");
 
   // Fetch Streak
-  const { data: streakData } = useQuery({
+  const { data: streakData, isLoading: isStreakLoading } = useQuery({
     queryKey: ["streak", userId],
     queryFn: authService.checkStreak,
     enabled: !!userId,
@@ -367,5 +367,7 @@ export function useHomeLogic() {
     // Logic Helpers
     isAllPlansCompletedForDate,
     hasAnyPlanForDate,
+
+    isLoading: isPlansLoading || isStreakLoading,
   };
 }

@@ -170,11 +170,11 @@ function ReadingItem({
                       className="shrink-0"
                   >
                       {isFullyCompleted ? (
-                          <CheckCircle className="w-6 h-6 text-green-600" />
+                          <CheckCircle className="w-7 h-7 text-green-600" />
                       ) : isPartial ? (
-                          <CircleDashed className="w-6 h-6 text-amber-600" />
+                          <CircleDashed className="w-7 h-7 text-amber-600" />
                       ) : (
-                          <Circle className="w-6 h-6 text-muted-foreground/60" />
+                          <Circle className="w-7 h-7 text-muted-foreground/60" />
                       )}
                   </button>
                   
@@ -204,7 +204,7 @@ function ReadingItem({
                           key={chapter}
                           onClick={(e) => handleSubCheck(chapter, e)}
                           className={`
-                              flex items-center justify-center py-2 px-3 min-w-[3rem] rounded-md text-sm font-medium border transition-colors whitespace-nowrap
+                              flex items-center justify-center py-3 px-4 min-w-[3.5rem] rounded-md text-base font-medium border transition-colors whitespace-nowrap
                               ${isChecked 
                                   ? "bg-primary/10 border-primary/20 text-primary" 
                                   : "bg-muted/30 border-border text-muted-foreground hover:bg-muted/60"
