@@ -63,24 +63,33 @@ export function ProgressTab() {
     const totalByBook = new Map<string, number>();
     const doneByBook = new Map<string, number>();
     const completedReadingsByDay = progress.completedReadingsByDay || {};
+    const completedChaptersByDay = progress.completedChaptersByDay || {};
     const completedDaysSet = new Set(progress.completedDays || []);
 
     for (const entry of plan.schedule) {
       const day = entry.day;
       const readings = entry.readings || [];
       const forcedComplete = completedDaysSet.has(day);
-      const completedIndices = completedReadingsByDay[String(day)] || [];
+      const dayStr = String(day);
+      const completedIndices = completedReadingsByDay[dayStr] || [];
       const completedSet = forcedComplete ? new Set(readings.map((_, i) => i)) : new Set(completedIndices);
+      const dayPartialMap = completedChaptersByDay[dayStr] || {};
 
       for (let i = 0; i < readings.length; i++) {
         const r = readings[i];
         const book = r.book;
-        const chapters = countChapters(r.chapters);
+        const totalInUnit = countChapters(r.chapters);
         if (!book) continue;
 
-        totalByBook.set(book, (totalByBook.get(book) ?? 0) + chapters);
+        totalByBook.set(book, (totalByBook.get(book) ?? 0) + totalInUnit);
+        
         if (completedSet.has(i)) {
-          doneByBook.set(book, (doneByBook.get(book) ?? 0) + chapters);
+          doneByBook.set(book, (doneByBook.get(book) ?? 0) + totalInUnit);
+        } else if (dayPartialMap[i]) {
+          const partialList = dayPartialMap[i];
+          if (Array.isArray(partialList)) {
+            doneByBook.set(book, (doneByBook.get(book) ?? 0) + partialList.length);
+          }
         }
       }
     }

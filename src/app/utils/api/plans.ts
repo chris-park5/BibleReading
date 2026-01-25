@@ -72,6 +72,7 @@ export async function getPlans(): Promise<{ success: boolean; plans: Plan[] }> {
           // Deterministic ordering for stable pagination
           .order("plan_id", { ascending: true })
           .order("day", { ascending: true })
+          .order("order_index", { ascending: true })
           .order("book", { ascending: true })
           .order("chapters", { ascending: true })
           .range(from, to),
@@ -95,6 +96,7 @@ export async function getPlans(): Promise<{ success: boolean; plans: Plan[] }> {
           // Deterministic ordering for stable pagination
           .order("preset_id", { ascending: true })
           .order("day", { ascending: true })
+          .order("order_index", { ascending: true })
           .order("book", { ascending: true })
           .order("chapters", { ascending: true })
           .range(from, to),

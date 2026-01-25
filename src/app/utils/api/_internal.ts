@@ -71,9 +71,14 @@ async function tryRecoverSessionToken(): Promise<void> {
 export async function getBearerTokenOrThrow(useAuth: boolean): Promise<string | null> {
   if (!useAuth) return null;
 
-  // Ensure we have a valid session token even after browser restart.
-  await tryRecoverSessionToken();
-  if (accessToken) return accessToken;
+  // Always fetch the latest session. Supabase client handles caching and refreshing automatically.
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+
+  if (token) {
+    accessToken = token; // Update local cache for synchronous access if needed elsewhere
+    return token;
+  }
 
   // Do not fall back to anon key for Authorization; the Edge Function verifies JWT.
   throw new Error("로그인이 필요합니다. 다시 로그인해주세요.");
