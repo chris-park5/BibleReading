@@ -103,11 +103,12 @@ export async function seedPresetSchedules(c: Context) {
     }
 
     const rows = schedule.flatMap((d) =>
-      (d.readings || []).map((r) => ({
+      (d.readings || []).map((r, index) => ({
         preset_id: presetId,
         day: d.day,
         book: r.book,
         chapters: r.chapters,
+        order_index: index,
       }))
     );
 
@@ -245,11 +246,12 @@ export async function createPlan(c: Context) {
       if (presetCountError) throw presetCountError;
 
       const presetRowsRaw = schedule.flatMap((day) =>
-        day.readings.map((reading) => ({
+        day.readings.map((reading, index) => ({
           preset_id: presetId,
           day: day.day,
           book: reading.book,
           chapters: reading.chapters,
+          order_index: index,
         }))
       );
 
@@ -301,11 +303,12 @@ export async function createPlan(c: Context) {
     // Custom plan: plan_schedules
     if (isCustom && schedule && schedule.length > 0) {
       const scheduleRowsRaw = schedule.flatMap((day) =>
-        day.readings.map((reading) => ({
+        day.readings.map((reading, index) => ({
           plan_id: plan.id,
           day: day.day,
           book: reading.book,
           chapters: reading.chapters,
+          order_index: index,
         }))
       );
 
@@ -385,6 +388,7 @@ export async function getPlans(c: Context) {
             // Deterministic ordering for stable pagination
             .order("plan_id", { ascending: true })
             .order("day", { ascending: true })
+            .order("order_index", { ascending: true })
             .order("book", { ascending: true })
             .order("chapters", { ascending: true })
             .range(from, to),
@@ -408,6 +412,7 @@ export async function getPlans(c: Context) {
             // Deterministic ordering for stable pagination
             .order("preset_id", { ascending: true })
             .order("day", { ascending: true })
+            .order("order_index", { ascending: true })
             .order("book", { ascending: true })
             .order("chapters", { ascending: true })
             .range(from, to),
