@@ -383,7 +383,7 @@ export async function getPlans(c: Context) {
         (from, to) =>
           supabase
             .from("plan_schedules")
-            .select("plan_id, day, book, chapters")
+            .select("plan_id, day, book, chapters, order_index")
             .in("plan_id", customPlanIds)
             // Deterministic ordering for stable pagination
             .order("plan_id", { ascending: true })
@@ -407,7 +407,7 @@ export async function getPlans(c: Context) {
         (from, to) =>
           supabase
             .from("preset_schedules")
-            .select("preset_id, day, book, chapters")
+            .select("preset_id, day, book, chapters, order_index")
             .in("preset_id", presetIds)
             // Deterministic ordering for stable pagination
             .order("preset_id", { ascending: true })
