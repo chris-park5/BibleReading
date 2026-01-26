@@ -48,6 +48,21 @@ export function getSupabaseClient(): SupabaseClient {
   return supabaseInstance;
 }
 
+export function getAuthClient(accessToken: string): SupabaseClient {
+  const url = Deno.env.get("SUPABASE_URL");
+  const key = Deno.env.get("SUPABASE_ANON_KEY");
+  
+  if (!url || !key) {
+    throw new Error("Missing Supabase credentials (SUPABASE_URL and SUPABASE_ANON_KEY)");
+  }
+  
+  return createClient(url, key, {
+    global: {
+      headers: { Authorization: accessToken },
+    },
+  });
+}
+
 /**
  * 사용자 인증 토큰 검증
  */
