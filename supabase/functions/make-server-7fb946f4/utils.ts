@@ -283,47 +283,239 @@ export function handleError(error: unknown, message: string) {
   return { error: full };
 }
 
-/**
- * 성경 장 수 계산 (문자열 파싱)
- */
-export function countChapters(raw: string): number {
-  const s = String(raw ?? "").trim();
-  if (!s) return 0;
+// ============================================
+// Bible Data & Clustering Logic
+// ============================================
 
-  // "1", "1-3", "1,2,4-6" 등의 패턴 지원
-  const cleaned = s
-    .replace(/장/g, "")
-    .replace(/[^0-9,\-\s]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+export type BibleVerseCounts = {
+  book: string;
+  chapters: number[];
+};
 
-  if (!cleaned) return 0;
-  const parts = cleaned
-    .split(",")
-    .map((p) => p.trim())
-    .filter(Boolean);
+export const BIBLE_VERSE_COUNTS: BibleVerseCounts[] = [
+  { "book": "창세기", "chapters": [31, 25, 24, 26, 32, 22, 24, 22, 29, 32, 32, 20, 18, 24, 21, 16, 27, 33, 38, 18, 34, 24, 20, 67, 34, 35, 46, 22, 35, 43, 55, 32, 20, 31, 29, 43, 36, 30, 23, 23, 57, 38, 34, 34, 28, 34, 31, 22, 33, 26] },
+  { "book": "출애굽기", "chapters": [22, 25, 22, 31, 23, 30, 25, 32, 35, 29, 10, 51, 22, 31, 27, 36, 16, 27, 25, 26, 36, 31, 33, 18, 40, 37, 21, 43, 46, 38, 18, 35, 23, 35, 35, 38, 29, 31, 43, 38] },
+  { "book": "레위기", "chapters": [17, 16, 17, 35, 19, 30, 38, 36, 24, 20, 47, 8, 59, 57, 33, 34, 16, 30, 37, 27, 24, 33, 44, 23, 55, 46, 34] },
+  { "book": "민수기", "chapters": [54, 34, 51, 49, 31, 27, 89, 26, 23, 36, 35, 16, 33, 45, 41, 50, 13, 32, 22, 29, 35, 41, 30, 25, 18, 65, 23, 31, 40, 16, 54, 42, 56, 29, 34, 13] },
+  { "book": "신명기", "chapters": [46, 37, 29, 49, 33, 25, 26, 20, 29, 22, 32, 32, 18, 29, 23, 22, 20, 22, 21, 20, 23, 30, 25, 22, 19, 19, 26, 68, 29, 20, 30, 52, 29, 12] },
+  { "book": "여호수아", "chapters": [18, 24, 17, 24, 15, 27, 26, 35, 27, 43, 23, 24, 33, 15, 63, 10, 18, 28, 51, 9, 45, 34, 16, 33] },
+  { "book": "사사기", "chapters": [36, 23, 31, 24, 31, 40, 25, 35, 57, 18, 40, 15, 25, 20, 20, 31, 13, 31, 30, 48, 25] },
+  { "book": "룻기", "chapters": [22, 23, 18, 22] },
+  { "book": "사무엘상", "chapters": [28, 36, 21, 22, 12, 21, 17, 22, 27, 27, 15, 25, 23, 52, 35, 23, 58, 30, 24, 42, 15, 23, 28, 22, 44, 25, 12, 25, 11, 31, 13] },
+  { "book": "사무엘하", "chapters": [27, 32, 39, 12, 25, 23, 29, 18, 13, 19, 27, 31, 39, 33, 37, 23, 29, 33, 43, 26, 22, 51, 39, 25] },
+  { "book": "열왕기상", "chapters": [53, 46, 28, 34, 18, 38, 51, 66, 28, 29, 43, 33, 34, 31, 34, 34, 24, 46, 21, 43, 29, 53] },
+  { "book": "열왕기하", "chapters": [18, 25, 27, 44, 27, 33, 20, 29, 37, 36, 21, 21, 25, 29, 38, 20, 41, 37, 37, 21, 26, 20, 37, 20, 30] },
+  { "book": "역대상", "chapters": [54, 55, 24, 43, 26, 81, 40, 40, 44, 14, 47, 40, 14, 17, 29, 43, 27, 17, 19, 8, 30, 19, 32, 31, 31, 32, 34, 21, 30] },
+  { "book": "역대하", "chapters": [17, 18, 17, 22, 14, 42, 22, 18, 31, 19, 23, 16, 22, 15, 19, 14, 19, 34, 11, 37, 20, 12, 21, 27, 28, 23, 9, 27, 36, 27, 21, 33, 25, 33, 27, 23] },
+  { "book": "에스라", "chapters": [11, 70, 13, 24, 17, 22, 28, 36, 15, 44] },
+  { "book": "느헤미야", "chapters": [11, 20, 32, 23, 19, 19, 73, 18, 38, 39, 36, 47, 31] },
+  { "book": "에스더", "chapters": [22, 23, 15, 17, 14, 14, 10, 17, 32, 3] },
+  { "book": "욥기", "chapters": [22, 13, 26, 21, 27, 30, 21, 22, 35, 22, 20, 25, 28, 22, 35, 22, 16, 21, 29, 29, 34, 30, 17, 25, 6, 14, 23, 28, 25, 31, 40, 22, 33, 37, 16, 33, 24, 41, 30, 24, 34, 17] },
+  { "book": "시편", "chapters": [6, 12, 8, 8, 12, 10, 17, 9, 20, 18, 7, 8, 6, 7, 5, 11, 15, 50, 14, 9, 13, 31, 6, 10, 22, 12, 14, 9, 11, 12, 24, 11, 22, 22, 28, 12, 40, 22, 13, 17, 13, 11, 5, 26, 17, 11, 9, 14, 20, 23, 19, 9, 6, 7, 23, 13, 11, 11, 17, 12, 8, 12, 11, 10, 13, 20, 7, 35, 36, 5, 24, 20, 28, 23, 10, 12, 20, 72, 13, 19, 16, 8, 18, 12, 13, 17, 7, 18, 52, 17, 16, 15, 5, 23, 11, 13, 12, 9, 9, 5, 8, 28, 22, 35, 45, 48, 43, 13, 31, 7, 10, 10, 9, 8, 18, 19, 2, 29, 176, 7, 8, 9, 4, 8, 5, 6, 5, 6, 8, 8, 3, 18, 3, 3, 21, 26, 9, 8, 24, 13, 10, 7, 12, 15, 21, 10, 20, 14, 9, 6] },
+  { "book": "잠언", "chapters": [33, 22, 35, 27, 23, 35, 27, 36, 18, 32, 31, 28, 25, 35, 33, 33, 28, 24, 29, 30, 31, 29, 35, 34, 28, 28, 27, 28, 27, 33, 31] },
+  { "book": "전도서", "chapters": [18, 26, 22, 16, 20, 12, 29, 17, 18, 20, 10, 14] },
+  { "book": "아가", "chapters": [17, 17, 11, 16, 16, 13, 13, 14] },
+  { "book": "이사야", "chapters": [31, 22, 26, 6, 30, 13, 25, 22, 21, 34, 16, 6, 22, 32, 9, 14, 14, 7, 25, 6, 17, 25, 18, 23, 12, 21, 13, 29, 24, 33, 9, 20, 24, 17, 10, 22, 38, 22, 8, 31, 29, 25, 28, 28, 25, 13, 15, 22, 26, 11, 23, 15, 12, 17, 13, 12, 21, 14, 21, 22, 11, 12, 19, 12, 25, 24] },
+  { "book": "예레미야", "chapters": [19, 37, 25, 31, 31, 30, 34, 22, 26, 25, 23, 17, 27, 22, 21, 21, 27, 23, 15, 18, 14, 30, 40, 10, 38, 24, 22, 17, 32, 24, 40, 44, 26, 22, 19, 32, 21, 28, 18, 16, 18, 22, 13, 30, 5, 28, 7, 47, 39, 46, 64, 34] },
+  { "book": "예레미야 애가", "chapters": [22, 22, 66, 22, 22] },
+  { "book": "에스겔", "chapters": [28, 10, 27, 17, 17, 14, 27, 18, 11, 22, 25, 28, 23, 23, 8, 63, 24, 32, 14, 49, 32, 31, 49, 27, 17, 21, 36, 26, 21, 26, 18, 32, 33, 31, 15, 38, 28, 23, 29, 49, 26, 20, 27, 31, 25, 24, 23, 35] },
+  { "book": "다니엘", "chapters": [21, 49, 30, 37, 31, 28, 28, 27, 27, 21, 45, 13] },
+  { "book": "호세아", "chapters": [11, 23, 5, 19, 15, 11, 16, 14, 17, 15, 12, 14, 16, 9] },
+  { "book": "요엘", "chapters": [20, 32, 21] },
+  { "book": "아모스", "chapters": [15, 16, 15, 13, 27, 14, 17, 14, 15] },
+  { "book": "오바댜", "chapters": [21] },
+  { "book": "요나", "chapters": [17, 10, 10, 11] },
+  { "book": "미가", "chapters": [16, 13, 12, 13, 15, 16, 20] },
+  { "book": "나훔", "chapters": [15, 13, 19] },
+  { "book": "하박국", "chapters": [17, 20, 19] },
+  { "book": "스바냐", "chapters": [18, 15, 20] },
+  { "book": "학개", "chapters": [15, 23] },
+  { "book": "스가랴", "chapters": [21, 13, 10, 14, 11, 15, 14, 23, 17, 12, 17, 14, 9, 21] },
+  { "book": "말라기", "chapters": [14, 17, 18, 6] },
+  { "book": "마태복음", "chapters": [25, 23, 17, 25, 48, 34, 29, 34, 38, 42, 30, 50, 58, 36, 39, 28, 27, 35, 30, 34, 46, 46, 39, 51, 46, 75, 66, 20] },
+  { "book": "마가복음", "chapters": [45, 28, 35, 41, 43, 56, 37, 38, 50, 52, 33, 44, 37, 72, 47, 20] },
+  { "book": "누가복음", "chapters": [80, 52, 38, 44, 39, 49, 50, 56, 62, 42, 54, 59, 35, 35, 32, 31, 37, 43, 48, 47, 38, 71, 56, 53] },
+  { "book": "요한복음", "chapters": [51, 25, 36, 54, 47, 71, 53, 59, 41, 42, 57, 50, 38, 31, 27, 33, 26, 40, 42, 31, 25] },
+  { "book": "사도행전", "chapters": [26, 47, 26, 37, 42, 15, 60, 40, 43, 48, 30, 25, 52, 28, 41, 40, 34, 28, 41, 38, 40, 30, 35, 27, 27, 32, 44, 31] },
+  { "book": "로마서", "chapters": [32, 29, 31, 25, 21, 23, 25, 39, 33, 21, 36, 21, 14, 23, 33, 27] },
+  { "book": "고린도전서", "chapters": [31, 16, 23, 21, 13, 20, 40, 13, 27, 33, 34, 31, 13, 40, 58, 24] },
+  { "book": "고린도후서", "chapters": [24, 17, 18, 18, 21, 18, 16, 24, 15, 18, 33, 21, 13] },
+  { "book": "갈라디아서", "chapters": [24, 21, 29, 31, 26, 18] },
+  { "book": "에베소서", "chapters": [23, 22, 21, 32, 33, 24] },
+  { "book": "빌립보서", "chapters": [30, 30, 21, 23] },
+  { "book": "골로새서", "chapters": [29, 23, 25, 18] },
+  { "book": "데살로니가전서", "chapters": [10, 20, 13, 18, 28] },
+  { "book": "데살로니가후서", "chapters": [12, 17, 18] },
+  { "book": "디모데전서", "chapters": [20, 15, 16, 16, 25, 21] },
+  { "book": "디모데후서", "chapters": [18, 26, 17, 22] },
+  { "book": "디도서", "chapters": [16, 15, 15] },
+  { "book": "빌레몬서", "chapters": [25] },
+  { "book": "히브리서", "chapters": [14, 18, 19, 16, 14, 20, 28, 13, 28, 39, 40, 29, 25] },
+  { "book": "야고보서", "chapters": [27, 26, 18, 17, 20] },
+  { "book": "베드로전서", "chapters": [25, 25, 22, 19, 14] },
+  { "book": "베드로후서", "chapters": [21, 22, 18] },
+  { "book": "요한1서", "chapters": [10, 29, 24, 21, 21] },
+  { "book": "요한2서", "chapters": [13] },
+  { "book": "요한3서", "chapters": [14] },
+  { "book": "유다서", "chapters": [25] },
+  { "book": "요한계시록", "chapters": [20, 29, 22, 11, 14, 17, 17, 13, 21, 11, 19, 17, 18, 20, 8, 21, 18, 24, 21, 15, 27, 21] }
+];
 
-  let total = 0;
-  for (const part of parts) {
-    const m = part.match(/^(\d+)(?:\s*-\s*(\d+))?$/);
-    if (!m) {
-      total += 1;
-      continue;
-    }
-    const a = Number(m[1]);
-    const b = m[2] ? Number(m[2]) : a;
-    if (!Number.isFinite(a) || !Number.isFinite(b)) {
-      total += 1;
-      continue;
-    }
-    total += Math.abs(b - a) + 1;
-  }
-  return total;
+export function getVerseCounts(bookName: string): number[] | null {
+  const found = BIBLE_VERSE_COUNTS.find((b) => b.book === bookName);
+  return found ? found.chapters : null;
 }
 
-/**
- * 장 단위 달성률 계산
- */
+export interface ChapterRange {
+  ch: number;
+  startVerse: number;
+  endVerse: number;
+}
+
+export interface ReadingRef {
+  day: number;
+  index: number;
+  weight: number;
+}
+
+export interface ChapterInstance {
+  book: string;
+  ch: number;
+  readings: ReadingRef[];
+  isFullChapter: boolean;
+}
+
+export function parseChapterRanges(raw: string, bookName: string): ChapterRange[] {
+  const s = String(raw ?? "").trim();
+  if (!s) return [];
+
+  const parts = s.split(",").map(p => p.trim()).filter(Boolean);
+  const result: ChapterRange[] = [];
+  const verseCounts = getVerseCounts(bookName);
+
+  for (const part of parts) {
+    const colonMatch = part.match(/^(\d+):(\d+)-(\d+)(?:장|절)?$/);
+    if (colonMatch) {
+      result.push({ ch: parseInt(colonMatch[1]), startVerse: parseInt(colonMatch[2]), endVerse: parseInt(colonMatch[3]) });
+      continue;
+    }
+    const colonSingleMatch = part.match(/^(\d+):(\d+)(?:장|절)?$/);
+    if (colonSingleMatch) {
+      const v = parseInt(colonSingleMatch[2]);
+      result.push({ ch: parseInt(colonSingleMatch[1]), startVerse: v, endVerse: v });
+      continue;
+    }
+    const krRangeMatch = part.match(/^(\d+)장\s*(\d+)-(\d+)(?:절)?$/);
+    if (krRangeMatch) {
+      result.push({ ch: parseInt(krRangeMatch[1]), startVerse: parseInt(krRangeMatch[2]), endVerse: parseInt(krRangeMatch[3]) });
+      continue;
+    }
+    const krSingleMatch = part.match(/^(\d+)장\s*(\d+)(?:절)?$/);
+    if (krSingleMatch) {
+       const v = parseInt(krSingleMatch[2]);
+       result.push({ ch: parseInt(krSingleMatch[1]), startVerse: v, endVerse: v });
+       continue;
+    }
+
+    const cleaned = part.replace(/장/g, "").replace(/절/g, "").trim(); 
+    const dashMatch = cleaned.match(/^(\d+)-(\d+)$/);
+    if (dashMatch) {
+      const start = parseInt(dashMatch[1]);
+      const end = parseInt(dashMatch[2]);
+      for (let c = start; c <= end; c++) {
+        const limit = verseCounts ? (verseCounts[c - 1] ?? 999) : 999;
+        result.push({ ch: c, startVerse: 1, endVerse: limit });
+      }
+      continue;
+    }
+
+    const singleNum = parseInt(cleaned);
+    if (!isNaN(singleNum)) {
+      const limit = verseCounts ? (verseCounts[singleNum - 1] ?? 999) : 999;
+      result.push({ ch: singleNum, startVerse: 1, endVerse: limit });
+      continue;
+    }
+  }
+  return result;
+}
+
+export function clusterReadings(
+  bookName: string, 
+  readings: Array<{ day: number; index: number; rawChapters: string }>
+): ChapterInstance[] {
+  const verseCounts = getVerseCounts(bookName);
+  
+  type ReadingItem = { day: number; index: number; range: ChapterRange };
+  const itemsByChapter = new Map<number, ReadingItem[]>();
+
+  for (const r of readings) {
+    const ranges = parseChapterRanges(r.rawChapters, bookName);
+    for (const rng of ranges) {
+      if (!itemsByChapter.has(rng.ch)) {
+        itemsByChapter.set(rng.ch, []);
+      }
+      itemsByChapter.get(rng.ch)!.push({ day: r.day, index: r.index, range: rng });
+    }
+  }
+
+  const instances: ChapterInstance[] = [];
+
+  for (const [ch, items] of itemsByChapter.entries()) {
+    let currentCluster: ReadingItem[] = [];
+    let currentCoverage = new Set<number>();
+
+    const finalizeCluster = () => {
+      if (currentCluster.length === 0) return;
+      const totalVerses = verseCounts ? (verseCounts[ch - 1] ?? 100) : 100;
+      const refs: ReadingRef[] = currentCluster.map(item => {
+        const len = item.range.endVerse - item.range.startVerse + 1;
+        let w = 0;
+        if (verseCounts) {
+           w = len / totalVerses;
+        } else {
+           w = 1;
+        }
+        return { day: item.day, index: item.index, weight: w };
+      });
+      if (!verseCounts) {
+        const count = refs.length;
+        refs.forEach(r => r.weight = 1 / count);
+      }
+      instances.push({ book: bookName, ch, readings: refs, isFullChapter: true });
+    };
+
+    for (const item of items) {
+      let overlap = false;
+      for (let v = item.range.startVerse; v <= item.range.endVerse; v++) {
+        if (currentCoverage.has(v)) {
+          overlap = true;
+          break;
+        }
+      }
+
+      if (overlap) {
+        finalizeCluster();
+        currentCluster = [item];
+        currentCoverage = new Set();
+        for (let v = item.range.startVerse; v <= item.range.endVerse; v++) {
+          currentCoverage.add(v);
+        }
+      } else {
+        currentCluster.push(item);
+        for (let v = item.range.startVerse; v <= item.range.endVerse; v++) {
+          currentCoverage.add(v);
+        }
+      }
+    }
+    finalizeCluster();
+  }
+  return instances;
+}
+
+export function countChapters(raw: string): number {
+  return 1; 
+}
+
 export function computeChaptersTotals({
   schedule,
   progress,
@@ -333,48 +525,95 @@ export function computeChaptersTotals({
   progress: any;
   upToDay?: number;
 }): { totalChapters: number; completedChapters: number } {
+  const completedDaysSet = new Set(progress.completedDays || []);
   const completedReadingsByDay = progress.completedReadingsByDay || {};
   const completedChaptersByDay = progress.completedChaptersByDay || {};
-  // Backend progress structure uses completedDays array
-  const completedDaysSet = new Set(progress.completedDays || []);
+
+  const readingsByBook = new Map<string, Array<{ day: number; index: number; rawChapters: string }>>();
+  
+  for (const entry of schedule) {
+    if (!entry || !entry.readings) continue;
+    const day = Number(entry.day);
+    if (!Number.isFinite(day)) continue;
+    const readings = entry.readings;
+    for (let i = 0; i < readings.length; i++) {
+      const r = readings[i];
+      if (!r.book) continue;
+      if (!readingsByBook.has(r.book)) {
+        readingsByBook.set(r.book, []);
+      }
+      readingsByBook.get(r.book)!.push({ day, index: i, rawChapters: r.chapters });
+    }
+  }
 
   let totalChapters = 0;
   let completedChapters = 0;
 
-  for (const entry of schedule) {
-    if (!entry) continue;
-    const day = Number(entry.day);
-    if (!Number.isFinite(day)) continue;
-    if (typeof upToDay === "number" && day > upToDay) continue;
+  for (const [book, items] of readingsByBook.entries()) {
+    items.sort((a, b) => {
+        if (a.day !== b.day) return a.day - b.day;
+        return a.index - b.index;
+    });
 
-    // schedule data structure from DB: { day, readings: [...] }
-    const readings = Array.isArray(entry.readings) ? entry.readings : [];
-    const forcedComplete = completedDaysSet.has(day);
-    const dayStr = String(day);
-    const completedIndices = completedReadingsByDay[dayStr] || [];
-    const completedSet = forcedComplete ? new Set(readings.map((_, i) => i)) : new Set(completedIndices);
-    
-    // Partial chapters for this day
-    const dayPartialMap = completedChaptersByDay[dayStr] || {};
+    const instances = clusterReadings(book, items);
 
-    for (let i = 0; i < readings.length; i++) {
-      const r = readings[i];
-      const totalInUnit = countChapters(r?.chapters ?? "");
-      totalChapters += totalInUnit;
-      
-      if (completedSet.has(i)) {
-        completedChapters += totalInUnit;
-      } else if (dayPartialMap[i]) {
-        // Partial chapters check
-        const partialList = dayPartialMap[i];
-        if (Array.isArray(partialList)) {
-          completedChapters += partialList.length;
+    for (const inst of instances) {
+      const scheduledRefs = typeof upToDay === "number" 
+        ? inst.readings.filter(r => r.day <= upToDay)
+        : inst.readings;
+
+      if (scheduledRefs.length === 0) continue;
+
+      let instProgress = 0;
+      let instScheduledWeight = 0;
+      let allScheduledDone = true;
+
+      for (const ref of scheduledRefs) {
+        instScheduledWeight += ref.weight;
+
+        let isDone = false;
+        if (completedDaysSet.has(ref.day)) {
+          isDone = true;
+        } else {
+          const dayStr = String(ref.day);
+          const doneIndices = completedReadingsByDay[dayStr];
+          if (doneIndices && doneIndices.includes(ref.index)) {
+            isDone = true;
+          } else {
+            const doneChapters = completedChaptersByDay[dayStr]?.[ref.index];
+            if (doneChapters && doneChapters.includes(String(inst.ch))) {
+              isDone = true;
+            }
+          }
         }
+
+        if (isDone) {
+          instProgress += ref.weight;
+        } else {
+          allScheduledDone = false;
+        }
+      }
+
+      totalChapters += instScheduledWeight;
+
+      if (allScheduledDone) {
+        completedChapters += instScheduledWeight;
+      } else {
+        completedChapters += instProgress;
       }
     }
   }
 
+  if (typeof upToDay === "undefined") {
+      totalChapters = Math.round(totalChapters);
+      completedChapters = Math.round(completedChapters * 100) / 100;
+  } else {
+      totalChapters = Math.round(totalChapters * 100) / 100;
+      completedChapters = Math.round(completedChapters * 100) / 100;
+  }
+
   if (completedChapters > totalChapters) completedChapters = totalChapters;
+
   return { totalChapters, completedChapters };
 }
 
@@ -389,14 +628,14 @@ export async function fetchGroupedSchedule(
   if (plan.is_custom) {
     const { data } = await supabase
       .from("plan_schedules")
-      .select("day, chapters")
+      .select("day, book, chapters")
       .eq("plan_id", plan.id)
       .order("day", { ascending: true });
     scheduleRows = data || [];
   } else {
     const { data } = await supabase
       .from("preset_schedules")
-      .select("day, chapters")
+      .select("day, book, chapters")
       .eq("preset_id", plan.preset_id)
       .order("day", { ascending: true });
     scheduleRows = data || [];
@@ -411,7 +650,7 @@ export async function fetchGroupedSchedule(
       dayMap.set(d, entry);
       groupedSchedule.push(entry);
     }
-    dayMap.get(d).readings.push({ chapters: row.chapters });
+    dayMap.get(d).readings.push({ book: row.book, chapters: row.chapters });
   });
 
   return groupedSchedule;
