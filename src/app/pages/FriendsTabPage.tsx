@@ -33,6 +33,10 @@ import { cn } from "../components/ui/utils";
 import { usePlans } from "../../hooks/usePlans";
 import { parseTabFromHash } from "../pages/mainTabs/tabHash";
 
+function formatChapterCount(val: number) {
+  return parseFloat(val.toFixed(1));
+}
+
 export function FriendsTabPage({ isActive = true }: { isActive?: boolean }) {
   const userId = useAuthStore((s) => s.user?.id ?? null);
   const queryClient = useQueryClient();
@@ -316,7 +320,7 @@ function FriendProfileDialog({ friendId, onClose }: { friendId: string | null; o
                   <span>읽은 장수</span>
                 </div>
                 <div className="text-xl font-bold text-primary">
-                  {status.completedDays} 장
+                  {Math.floor(status.completedDays)} 장
                 </div>
               </div>
               <div className="bg-muted/50 p-4 rounded-xl space-y-2">
@@ -547,7 +551,7 @@ function LeaderboardItem({
         <div className={cn("font-bold text-lg", isSticky ? "text-white" : "text-primary")}>
           {metric === "rate"
             ? `${Math.round(item.achievementRate)}%`
-            : `${item.completedDays}장`}
+            : `${Math.floor(item.completedDays)}장`}
         </div>
         <p className={cn("text-xs", isSticky ? "text-white/80" : "text-muted-foreground")}>
           {metric === "rate" ? "달성률" : "읽은 장수"}

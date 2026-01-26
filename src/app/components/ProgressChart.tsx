@@ -7,6 +7,10 @@ interface ProgressChartProps {
   className?: string;
 }
 
+function formatChapterCount(val: number) {
+  return parseFloat(val.toFixed(1));
+}
+
 export function ProgressChart({
   totalChapters,
   completedChapters,
@@ -20,7 +24,7 @@ export function ProgressChart({
         <div>
           <p className="text-sm text-muted-foreground">진행상황</p>
           <p className="text-lg font-semibold">
-            {completedChapters}장 / {totalChapters}장 완료
+            {formatChapterCount(completedChapters)}장 / {formatChapterCount(totalChapters)}장 완료
           </p>
         </div>
         <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-lg">
