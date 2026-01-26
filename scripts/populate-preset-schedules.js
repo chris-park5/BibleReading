@@ -14,10 +14,25 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Supabase configuration
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// Load from .env if present
+const envPath = path.join(__dirname, '../.env');
+if (fs.existsSync(envPath)) {
+  const envContent = fs.readFileSync(envPath, 'utf-8');
+  envContent.split('\n').forEach(line => {
+    const match = line.match(/^([^=]+)=(.*)$/);
+    if (match) {
+      const key = match[1].trim();
+      const value = match[2].trim().replace(/^["']|["']$/g, '');
+      if (!process.env[key]) {
+        process.env[key] = value;
+      }
+    }
+  });
+}
 
-if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+
+
+
   console.error('Error: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set');
   process.exit(1);
 }
@@ -72,11 +87,12 @@ async function populatePresetSchedules() {
       // Insert schedule data
       console.log(`  Inserting ${data.schedule.length} schedule entries...`);
       const scheduleRows = data.schedule.flatMap((daySchedule) =>
-        daySchedule.readings.map((reading) => ({
+        daySchedule.readings.map((reading, index) => ({
           preset_id: data.id,
           day: daySchedule.day,
           book: reading.book,
           chapters: reading.chapters,
+          order_index: index,
         }))
       );
       

@@ -5,6 +5,7 @@
 import { Context } from "npm:hono";
 import {
   getSupabaseClient,
+  getAuthClient,
   fetchUserProgress,
   handleError,
   computeChaptersTotals,
@@ -28,13 +29,17 @@ const supabase = getSupabaseClient();
 export async function addFriend(c: Context) {
   try {
     const userId = c.get("userId");
+    const authHeader = c.req.header("Authorization");
+    if (!authHeader) return c.json({ error: "Missing Authorization header" }, 401);
+
+    const authClient = getAuthClient(authHeader);
     const { friendIdentifier } = (await c.req.json()) as AddFriendRequest;
 
     if (!friendIdentifier) {
       return c.json({ error: "Friend identifier is required" }, 400);
     }
 
-    // Email 또는 Username 조회
+    // Email 또는 Username 조회 (Admin client 사용 - Users RLS 제한 우회 필요)
     const isEmail = friendIdentifier.includes("@");
     const { data: friend, error: findError } = await supabase
       .from("users")
@@ -51,8 +56,9 @@ export async function addFriend(c: Context) {
       return c.json({ error: "Cannot add yourself" }, 400);
     }
 
-    // 기존 관계(정규화 때문에 양방향 모두 확인)
-    const { data: existing, error: existingError } = await supabase
+    // 기존 관계 확인 (Auth client 사용 - RLS 적용)
+    // RLS: "Users can view own friendships"
+    const { data: existing, error: existingError } = await authClient
       .from("friendships")
       .select("id, status, requested_by, user_id, friend_id")
       .or(
@@ -75,8 +81,8 @@ export async function addFriend(c: Context) {
     }
 
     // 친구 요청 생성 (pending)
-    // friendships 테이블은 requested_by NOT NULL이며, 정규화 트리거가 쌍을 정리하므로 requested_by를 명시해야 함
-    const { error } = await supabase.from("friendships").insert({
+    // RLS: "Users can send requests"
+    const { error } = await authClient.from("friendships").insert({
       user_id: userId,
       friend_id: friend.id,
       requested_by: userId,
@@ -228,27 +234,31 @@ export async function getFriends(c: Context) {
 export async function cancelFriendRequest(c: Context) {
   try {
     const userId = c.get("userId");
+    const authHeader = c.req.header("Authorization");
+    if (!authHeader) return c.json({ error: "Missing Authorization header" }, 401);
+    
+    const authClient = getAuthClient(authHeader);
     const { requestId } = (await c.req.json()) as CancelFriendRequest;
 
     if (!requestId) {
       return c.json({ error: "requestId is required" }, 400);
     }
 
-    const { data: row, error: rowError } = await supabase
+    // RLS 덕분에 본인이 참여하지 않은 관계는 조회/삭제되지 않음
+    const { data: row, error: rowError } = await authClient
       .from("friendships")
       .select("id, user_id, friend_id, requested_by, status")
       .eq("id", requestId)
       .maybeSingle();
 
     if (rowError) throw rowError;
-    if (!row) return c.json({ error: "Request not found" }, 404);
+    if (!row) return c.json({ error: "Request not found" }, 404); // RLS에 의해 숨겨진 경우도 포함
 
-    const isParticipant = row.user_id === userId || row.friend_id === userId;
-    if (!isParticipant) return c.json({ error: "Forbidden" }, 403);
+    // 추가 검증: 요청자만 취소 가능 (RLS는 user_id/friend_id만 체크하므로 로직 필요)
     if (row.requested_by !== userId) return c.json({ error: "Only requester can cancel" }, 403);
     if (row.status !== "pending") return c.json({ error: "Request is not pending" }, 400);
 
-    const { error: deleteError } = await supabase.from("friendships").delete().eq("id", requestId);
+    const { error: deleteError } = await authClient.from("friendships").delete().eq("id", requestId);
 
     if (deleteError) throw deleteError;
     return c.json({ success: true });
@@ -260,14 +270,18 @@ export async function cancelFriendRequest(c: Context) {
 export async function respondFriendRequest(c: Context) {
   try {
     const userId = c.get("userId");
+    const authHeader = c.req.header("Authorization");
+    if (!authHeader) return c.json({ error: "Missing Authorization header" }, 401);
+
+    const authClient = getAuthClient(authHeader);
     const { requestId, action } = (await c.req.json()) as RespondFriendRequest;
 
     if (!requestId || (action !== "accept" && action !== "decline")) {
       return c.json({ error: "requestId and valid action are required" }, 400);
     }
 
-    // 대상 요청 확인 (내가 참여자이고, 내가 요청자가 아닌 pending만 처리 가능)
-    const { data: row, error: rowError } = await supabase
+    // RLS: 본인 관련 데이터만 조회 가능
+    const { data: row, error: rowError } = await authClient
       .from("friendships")
       .select("id, user_id, friend_id, requested_by, status")
       .eq("id", requestId)
@@ -276,13 +290,12 @@ export async function respondFriendRequest(c: Context) {
     if (rowError) throw rowError;
     if (!row) return c.json({ error: "Request not found" }, 404);
 
-    const isParticipant = row.user_id === userId || row.friend_id === userId;
-    if (!isParticipant) return c.json({ error: "Forbidden" }, 403);
     if (row.requested_by === userId) return c.json({ error: "Cannot respond to own request" }, 400);
     if (row.status !== "pending") return c.json({ error: "Request is not pending" }, 400);
 
     if (action === "accept") {
-      const { error: updateError } = await supabase
+      // RLS: "Users can respond to requests" 정책이 업데이트 허용
+      const { error: updateError } = await authClient
         .from("friendships")
         .update({ status: "accepted" })
         .eq("id", requestId);
@@ -292,7 +305,8 @@ export async function respondFriendRequest(c: Context) {
     }
 
     // decline: delete request row
-    const { error: deleteError } = await supabase.from("friendships").delete().eq("id", requestId);
+    // RLS: "Users can delete friendships" 정책이 삭제 허용
+    const { error: deleteError } = await authClient.from("friendships").delete().eq("id", requestId);
 
     if (deleteError) throw deleteError;
     return c.json({ success: true });
@@ -506,6 +520,10 @@ export async function getFriendProgress(c: Context) {
 export async function deleteFriend(c: Context) {
   try {
     const userId = c.get("userId");
+    const authHeader = c.req.header("Authorization");
+    if (!authHeader) return c.json({ error: "Missing Authorization header" }, 401);
+
+    const authClient = getAuthClient(authHeader);
     const friendUserId = c.req.param("friendUserId");
 
     if (!friendUserId) {
@@ -516,7 +534,8 @@ export async function deleteFriend(c: Context) {
       return c.json({ error: "Cannot delete yourself" }, 400);
     }
 
-    const { data: friendship, error: friendshipError } = await supabase
+    // RLS: 본인 관련 데이터만 조회 가능
+    const { data: friendship, error: friendshipError } = await authClient
       .from("friendships")
       .select("id")
       .eq("status", "accepted")
@@ -528,7 +547,8 @@ export async function deleteFriend(c: Context) {
     if (friendshipError) throw friendshipError;
     if (!friendship) return c.json({ error: "Not friends" }, 403);
 
-    const { error: deleteError } = await supabase.from("friendships").delete().eq("id", friendship.id);
+    // RLS: 본인 관련 데이터만 삭제 가능
+    const { error: deleteError } = await authClient.from("friendships").delete().eq("id", friendship.id);
 
     if (deleteError) throw deleteError;
     return c.json({ success: true });
