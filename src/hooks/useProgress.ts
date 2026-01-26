@@ -32,12 +32,12 @@ export function useProgress(planId: string | null) {
       }
       return progressService.updateProgress(planId!, day, completed);
     },
-    onMutate: ({ day, completed }) => {
+    onMutate: async ({ day, completed }) => {
       toggleCompleteSeqRef.current += 1;
       const seq = toggleCompleteSeqRef.current;
 
-      // Do not await here. Waiting for an in-flight fetch can make the UI feel laggy.
-      void queryClient.cancelQueries({ queryKey: progressQueryKey });
+      // Await cancellation to ensure no in-flight queries overwrite our optimistic update
+      await queryClient.cancelQueries({ queryKey: progressQueryKey });
 
       const previous = queryClient.getQueryData<{ success: boolean; progress: Progress }>(progressQueryKey);
 
@@ -101,12 +101,12 @@ export function useProgress(planId: string | null) {
       }
       return progressService.updateReadingProgress(planId!, day, readingIndex, completed, readingCount, completedChapters);
     },
-    onMutate: ({ day, readingIndex, completed, readingCount, completedChapters }) => {
+    onMutate: async ({ day, readingIndex, completed, readingCount, completedChapters }) => {
       toggleReadingSeqRef.current += 1;
       const seq = toggleReadingSeqRef.current;
 
-      // Do not await here. Waiting for an in-flight fetch can make the UI feel laggy.
-      void queryClient.cancelQueries({ queryKey: progressQueryKey });
+      // Await cancellation to ensure no in-flight queries overwrite our optimistic update
+      await queryClient.cancelQueries({ queryKey: progressQueryKey });
 
       const previous = queryClient.getQueryData<{ success: boolean; progress: Progress }>(progressQueryKey);
 
