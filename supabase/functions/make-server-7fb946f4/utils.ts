@@ -513,7 +513,39 @@ export function clusterReadings(
 }
 
 export function countChapters(raw: string): number {
-  return 1; 
+  const s = String(raw ?? "").trim();
+  if (!s) return 0;
+
+  // Accept patterns like "1", "1-3", "1,2,4-6"; ignore non-numeric decorations.
+  const cleaned = s
+    .replace(/장/g, "")
+    .replace(/[^0-9,\-\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!cleaned) return 0;
+  const parts = cleaned
+    .split(",")
+    .map((p) => p.trim())
+    .filter(Boolean);
+
+  let total = 0;
+  for (const part of parts) {
+    const m = part.match(/^(\d+)(?:\s*-\s*(\d+))?$/);
+    if (!m) {
+      // Fallback: if we cannot parse, treat as 1 reading unit.
+      total += 1;
+      continue;
+    }
+    const a = Number(m[1]);
+    const b = m[2] ? Number(m[2]) : a;
+    if (!Number.isFinite(a) || !Number.isFinite(b)) {
+      total += 1;
+      continue;
+    }
+    total += Math.abs(b - a) + 1;
+  }
+  return total;
 }
 
 export function computeChaptersTotals({
