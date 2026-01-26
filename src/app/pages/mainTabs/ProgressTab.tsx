@@ -9,6 +9,7 @@ import { BibleProgressModal } from "../../components/BibleProgressModal";
 import { BIBLE_BOOKS } from "../../data/bibleBooks";
 import { computeTodayDay, startOfTodayLocal } from "./dateUtils";
 import { computeChaptersTotals, countChapters } from "../../utils/chaptersProgress";
+import { clusterReadings } from "../../utils/chapterClustering";
 import { Check } from "lucide-react";
 import { bookMatchesQuery } from "../../utils/bookSearch";
 import { expandChapters } from "../../utils/expandChapters";
@@ -20,6 +21,10 @@ import {
   SelectValue,
 } from "../../components/ui/select";
 import { cn } from "../../components/ui/utils";
+
+function formatChapterCount(val: number) {
+  return parseFloat(val.toFixed(1));
+}
 
 export function ProgressTab() {
   const { plans } = usePlans();
@@ -64,74 +69,75 @@ export function ProgressTab() {
     const completedChaptersByDay = progress.completedChaptersByDay || {};
     const completedDaysSet = new Set(progress.completedDays || []);
 
-    // Structure: Map<BookName, Map<ChapterStr, Set<ReadingID>>>
-    // ReadingID = `${day}-${readingIndex}`
-    const bookRequirements = new Map<string, Map<string, Set<string>>>();
-
-    // 1. Build requirements map (Book -> Chapter -> Set of ReadingItems that cover it)
+    // 1. Gather readings by book
+    const readingsByBook = new Map<string, Array<{ day: number; index: number; rawChapters: string }>>();
     for (const entry of plan.schedule) {
       const day = entry.day;
       const readings = entry.readings || [];
-      
-      // NOTE: Iterating by index 'i'. This relies on 'readings' being sorted by order_index
-      // (as returned by getPlans), so 'i' matches the 'readingIndex' stored in DB.
       for (let i = 0; i < readings.length; i++) {
         const r = readings[i];
-        const book = r.book;
-        if (!book) continue;
-
-        // Use expandChapters to identify distinct chapters (e.g. "22:1-8" -> "22")
-        const chapters = expandChapters(r.chapters);
-        
-        if (!bookRequirements.has(book)) {
-          bookRequirements.set(book, new Map());
+        if (!r.book) continue;
+        if (!readingsByBook.has(r.book)) {
+          readingsByBook.set(r.book, []);
         }
-        const chapterMap = bookRequirements.get(book)!;
-
-        for (const ch of chapters) {
-          if (!chapterMap.has(ch)) {
-            chapterMap.set(ch, new Set());
-          }
-          // Record that this reading item is required for this chapter
-          chapterMap.get(ch)!.add(`${day}-${i}`);
-        }
+        readingsByBook.get(r.book)!.push({ day, index: i, rawChapters: r.chapters });
       }
     }
 
-    // 2. Calculate completion status for each unique chapter
     const rows: Array<{ book: string; completed: number; total: number; percent: number }> = [];
-    
-    for (const [book, chapterMap] of bookRequirements) {
-      let completedCount = 0;
-      const totalCount = chapterMap.size; // Total unique chapters scheduled for this book
 
-      for (const [ch, reqSet] of chapterMap) {
-        let isChapterComplete = true;
-        
-        // A chapter is complete ONLY if ALL its required reading items are done (or the specific chapter part is marked done)
-        for (const req of reqSet) {
-          const [dStr, iStr] = req.split("-");
-          const d = Number(dStr);
-          const idx = Number(iStr);
+    // 2. Cluster and calculate stats per book
+    for (const [book, items] of readingsByBook.entries()) {
+      // Sort for clustering
+      items.sort((a, b) => {
+        if (a.day !== b.day) return a.day - b.day;
+        return a.index - b.index;
+      });
 
-          const isDayDone = completedDaysSet.has(d);
-          const isReadingDone = completedReadingsByDay[String(d)]?.includes(idx);
-          // Check if this specific chapter was marked done within the partial reading
-          const isChapterDone = completedChaptersByDay[String(d)]?.[idx]?.includes(ch);
+      const instances = clusterReadings(book, items);
+      let bookTotal = instances.length;
+      let bookCompleted = 0;
 
-          if (!isDayDone && !isReadingDone && !isChapterDone) {
-            isChapterComplete = false;
-            break;
-          }
+      for (const inst of instances) {
+        let instProgress = 0;
+        let allPartsDone = true;
+
+        for (const ref of inst.readings) {
+           let isDone = false;
+           if (completedDaysSet.has(ref.day)) {
+             isDone = true;
+           } else {
+             const dayStr = String(ref.day);
+             const doneIndices = completedReadingsByDay[dayStr];
+             if (doneIndices && doneIndices.includes(ref.index)) {
+               isDone = true;
+             } else {
+               const doneChapters = completedChaptersByDay[dayStr]?.[ref.index];
+               if (doneChapters && doneChapters.includes(String(inst.ch))) {
+                 isDone = true;
+               }
+             }
+           }
+           
+           if (isDone) {
+             instProgress += ref.weight;
+           } else {
+             allPartsDone = false;
+           }
         }
-        
-        if (isChapterComplete) {
-          completedCount++;
+
+        if (allPartsDone) {
+          bookCompleted += 1;
+        } else {
+          bookCompleted += instProgress;
         }
       }
 
-      const percent = totalCount <= 0 ? 0 : Math.round((completedCount / totalCount) * 100);
-      rows.push({ book, completed: completedCount, total: totalCount, percent });
+      // Round to avoid float errors
+      bookCompleted = Math.round(bookCompleted * 100) / 100;
+
+      const percent = bookTotal <= 0 ? 0 : Math.round((bookCompleted / bookTotal) * 100);
+      rows.push({ book, completed: bookCompleted, total: bookTotal, percent });
     }
 
     const canonicalOrder = new Map<string, number>();
@@ -209,7 +215,7 @@ export function ProgressTab() {
             <p className="text-sm text-muted-foreground">달성률</p>
             <p className="text-2xl font-semibold">{completionRateElapsed}%</p>
             <p className="text-sm text-muted-foreground mt-1">
-              오늘까지 {elapsedChapters}장 중 {completedChapters}장 완료
+              오늘까지 {formatChapterCount(elapsedChapters)}장 중 {formatChapterCount(completedChapters)}장 완료
             </p>
             <p className="text-muted-foreground mt-1">{completionMessage}</p>
           </div>
