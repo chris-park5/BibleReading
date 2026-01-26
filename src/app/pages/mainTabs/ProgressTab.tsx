@@ -60,52 +60,84 @@ export function ProgressTab() {
   const bookProgressRows = useMemo(() => {
     if (!plan || !progress) return [] as Array<{ book: string; completed: number; total: number; percent: number }>;
 
-    const totalByBook = new Map<string, number>();
-    const doneByBook = new Map<string, number>();
     const completedReadingsByDay = progress.completedReadingsByDay || {};
     const completedChaptersByDay = progress.completedChaptersByDay || {};
     const completedDaysSet = new Set(progress.completedDays || []);
 
+    // Structure: Map<BookName, Map<ChapterStr, Set<ReadingID>>>
+    // ReadingID = `${day}-${readingIndex}`
+    const bookRequirements = new Map<string, Map<string, Set<string>>>();
+
+    // 1. Build requirements map (Book -> Chapter -> Set of ReadingItems that cover it)
     for (const entry of plan.schedule) {
       const day = entry.day;
       const readings = entry.readings || [];
-      const forcedComplete = completedDaysSet.has(day);
-      const dayStr = String(day);
-      const completedIndices = completedReadingsByDay[dayStr] || [];
-      const completedSet = forcedComplete ? new Set(readings.map((_, i) => i)) : new Set(completedIndices);
-      const dayPartialMap = completedChaptersByDay[dayStr] || {};
-
+      
+      // NOTE: Iterating by index 'i'. This relies on 'readings' being sorted by order_index
+      // (as returned by getPlans), so 'i' matches the 'readingIndex' stored in DB.
       for (let i = 0; i < readings.length; i++) {
         const r = readings[i];
         const book = r.book;
-        const totalInUnit = countChapters(r.chapters);
         if (!book) continue;
 
-        totalByBook.set(book, (totalByBook.get(book) ?? 0) + totalInUnit);
+        // Use expandChapters to identify distinct chapters (e.g. "22:1-8" -> "22")
+        const chapters = expandChapters(r.chapters);
         
-        if (completedSet.has(i)) {
-          doneByBook.set(book, (doneByBook.get(book) ?? 0) + totalInUnit);
-        } else if (dayPartialMap[i]) {
-          const partialList = dayPartialMap[i];
-          if (Array.isArray(partialList)) {
-            doneByBook.set(book, (doneByBook.get(book) ?? 0) + partialList.length);
+        if (!bookRequirements.has(book)) {
+          bookRequirements.set(book, new Map());
+        }
+        const chapterMap = bookRequirements.get(book)!;
+
+        for (const ch of chapters) {
+          if (!chapterMap.has(ch)) {
+            chapterMap.set(ch, new Set());
           }
+          // Record that this reading item is required for this chapter
+          chapterMap.get(ch)!.add(`${day}-${i}`);
         }
       }
+    }
+
+    // 2. Calculate completion status for each unique chapter
+    const rows: Array<{ book: string; completed: number; total: number; percent: number }> = [];
+    
+    for (const [book, chapterMap] of bookRequirements) {
+      let completedCount = 0;
+      const totalCount = chapterMap.size; // Total unique chapters scheduled for this book
+
+      for (const [ch, reqSet] of chapterMap) {
+        let isChapterComplete = true;
+        
+        // A chapter is complete ONLY if ALL its required reading items are done (or the specific chapter part is marked done)
+        for (const req of reqSet) {
+          const [dStr, iStr] = req.split("-");
+          const d = Number(dStr);
+          const idx = Number(iStr);
+
+          const isDayDone = completedDaysSet.has(d);
+          const isReadingDone = completedReadingsByDay[String(d)]?.includes(idx);
+          // Check if this specific chapter was marked done within the partial reading
+          const isChapterDone = completedChaptersByDay[String(d)]?.[idx]?.includes(ch);
+
+          if (!isDayDone && !isReadingDone && !isChapterDone) {
+            isChapterComplete = false;
+            break;
+          }
+        }
+        
+        if (isChapterComplete) {
+          completedCount++;
+        }
+      }
+
+      const percent = totalCount <= 0 ? 0 : Math.round((completedCount / totalCount) * 100);
+      rows.push({ book, completed: completedCount, total: totalCount, percent });
     }
 
     const canonicalOrder = new Map<string, number>();
     BIBLE_BOOKS.forEach((b, idx) => canonicalOrder.set(b.name, idx));
 
-    const rows = Array.from(totalByBook.entries())
-      .map(([book, total]) => {
-        const completed = Math.min(total, doneByBook.get(book) ?? 0);
-        const percent = total <= 0 ? 0 : Math.round((completed / total) * 100);
-        return { book, completed, total, percent };
-      })
-      .sort((a, b) => (canonicalOrder.get(a.book) ?? 999) - (canonicalOrder.get(b.book) ?? 999));
-
-    return rows;
+    return rows.sort((a, b) => (canonicalOrder.get(a.book) ?? 999) - (canonicalOrder.get(b.book) ?? 999));
   }, [plan, progress]);
 
   if (!activePlanId || !plan || !progress) {
