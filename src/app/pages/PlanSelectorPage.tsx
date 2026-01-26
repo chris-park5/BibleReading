@@ -253,7 +253,8 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
                       }
                     });
                   }
-                  const avg = plan.totalDays > 0 ? (totalChapters / plan.totalDays).toFixed(1) : "0";
+                  const rawAvg = plan.totalDays > 0 ? totalChapters / plan.totalDays : 0;
+                  const avg = parseFloat(rawAvg.toFixed(1));
                   const avgText = `하루 평균 ${avg}장`;
 
                   return (
