@@ -1382,7 +1382,7 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
                 {` (${totalChapters}장)을 `}
                 <span className="font-medium">{computedTotalDays}일</span> 동안 읽습니다.
                 {avgChaptersPerDay !== null && (
-                  <span className="text-muted-foreground"> (하루 평균 {avgChaptersPerDay.toFixed(1)}장)</span>
+                  <span className="text-muted-foreground"> (하루 평균 {parseFloat(avgChaptersPerDay.toFixed(1))}장)</span>
                 )}
               </span>
             )}
