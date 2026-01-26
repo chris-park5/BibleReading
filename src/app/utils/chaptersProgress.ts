@@ -1,4 +1,5 @@
 import type { Plan, Progress } from "../../types/domain";
+import { expandChapters } from "./expandChapters";
 
 export function countChapters(raw: string): number {
   const s = String(raw ?? "").trim();
@@ -49,8 +50,12 @@ export function computeChaptersTotals({
   const completedReadingsByDay = progress.completedReadingsByDay || {};
   const completedChaptersByDay = progress.completedChaptersByDay || {};
 
-  let totalChapters = 0;
-  let completedChapters = 0;
+  // Structure: Map<ChapterKey, Set<ReadingID>>
+  // ChapterKey = `${Book}:${Chapter}`
+  // ReadingID = `${Day}-${ReadingIndex}`
+  // NOTE: This logic assumes 'schedule' readings are sorted (by order_index) so that the array index 'i'
+  // corresponds to the persistent 'reading_index' used in the database.
+  const chapterRequirements = new Map<string, Set<string>>();
 
   for (const entry of schedule) {
     if (!entry) continue;
@@ -59,29 +64,53 @@ export function computeChaptersTotals({
     if (typeof upToDay === "number" && day > upToDay) continue;
 
     const readings = Array.isArray(entry.readings) ? entry.readings : [];
-    const forcedComplete = completedDaysSet.has(day);
-    const dayStr = String(day);
-    const completedIndices = completedReadingsByDay[dayStr] || [];
-    const completedSet = forcedComplete ? new Set(readings.map((_, i) => i)) : new Set(completedIndices);
-    
-    const dayPartialMap = completedChaptersByDay[dayStr] || {};
 
     for (let i = 0; i < readings.length; i++) {
       const r = readings[i];
-      const totalInUnit = countChapters(r?.chapters ?? "");
-      totalChapters += totalInUnit;
+      if (!r.book) continue;
+
+      // Use expandChapters to identify distinct chapters (e.g. "22:1-8" -> "22")
+      const chapters = expandChapters(r.chapters);
       
-      if (completedSet.has(i)) {
-        completedChapters += totalInUnit;
-      } else if (dayPartialMap[i]) {
-        const partialList = dayPartialMap[i];
-        if (Array.isArray(partialList)) {
-          completedChapters += partialList.length;
+      for (const ch of chapters) {
+        const key = `${r.book}:${ch}`;
+        if (!chapterRequirements.has(key)) {
+          chapterRequirements.set(key, new Set());
         }
+        chapterRequirements.get(key)!.add(`${day}-${i}`);
       }
     }
   }
 
-  if (completedChapters > totalChapters) completedChapters = totalChapters;
+  const totalChapters = chapterRequirements.size;
+  let completedChapters = 0;
+
+  for (const [key, reqSet] of chapterRequirements) {
+    // Extract strictly the chapter number part for partial checks
+    // key format: "BookName:ChapterNum"
+    const [_, chNum] = key.split(":"); 
+
+    let isFullyComplete = true;
+
+    for (const req of reqSet) {
+      const [dStr, iStr] = req.split("-");
+      const d = Number(dStr);
+      const idx = Number(iStr);
+
+      const isDayDone = completedDaysSet.has(d);
+      const isReadingDone = completedReadingsByDay[String(d)]?.includes(idx);
+      const isChapterDone = completedChaptersByDay[String(d)]?.[idx]?.includes(chNum);
+
+      if (!isDayDone && !isReadingDone && !isChapterDone) {
+        isFullyComplete = false;
+        break;
+      }
+    }
+
+    if (isFullyComplete) {
+      completedChapters++;
+    }
+  }
+
   return { totalChapters, completedChapters };
 }
