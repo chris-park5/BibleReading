@@ -199,7 +199,8 @@ export async function getNotifications(c: Context) {
     const { data, error } = await supabase
       .from("notification_settings")
       .select("plan_id,time,enabled")
-      .eq("user_id", userId);
+      .eq("user_id", userId)
+      .order("time", { ascending: true });
 
     if (error) throw error;
 

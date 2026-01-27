@@ -1,60 +1,54 @@
 import { Skeleton } from "./ui/skeleton";
 
-export function RouteLoadingOverlay({ visible }: { visible: boolean }) {
+export function RouteLoadingOverlay({ visible, variant = "default" }: { visible: boolean; variant?: "home" | "friends" | "default" }) {
   if (!visible) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-background">
-      {/* Main Content Area Skeleton */}
-      <div className="flex-1 overflow-y-auto pb-24">
-        <div className="max-w-4xl mx-auto p-6 space-y-4">
-          
-          {/* Date Navigator Skeleton */}
-          <div className="bg-card border border-border rounded-xl p-4">
-            <div className="flex items-center justify-between gap-2">
-              <Skeleton className="w-9 h-9 rounded-lg" />
-              <div className="flex-1 flex flex-col items-center gap-2">
-                 <Skeleton className="h-3 w-16" />
-                 <Skeleton className="h-6 w-32" />
-              </div>
-              <Skeleton className="w-9 h-9 rounded-lg" />
+      {variant === "friends" ? (
+        <div className="flex-1 overflow-y-auto pb-24">
+          <div className="sticky top-0 z-10 bg-background/95 border-b border-border">
+            <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+              <Skeleton className="h-7 w-16" />
+              <Skeleton className="h-8 w-24 rounded-full" />
             </div>
           </div>
-
-          {/* TodayReading Skeleton - Mimicking the main card */}
-          <div className="bg-card border border-border rounded-xl p-6 space-y-6">
-             {/* Title area */}
-             <div className="space-y-2">
-                <Skeleton className="h-6 w-1/3" />
-                <Skeleton className="h-4 w-1/2" />
-             </div>
-             
-             {/* Reading List Items */}
-             <div className="space-y-4">
-                {[1, 2, 3].map((i) => (
-                   <div key={i} className="flex items-center gap-4 p-3 border border-border rounded-lg">
-                      <Skeleton className="w-6 h-6 rounded-md shrink-0" />
-                      <div className="flex-1 space-y-2">
-                         <Skeleton className="h-5 w-3/4" />
-                         <Skeleton className="h-3 w-1/2" />
-                      </div>
-                   </div>
-                ))}
-             </div>
+          <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-6 pt-6">
+            <div className="flex items-center gap-3 mb-2">
+              <Skeleton className="w-12 h-12 rounded-lg" />
+              <div className="space-y-2">
+                <Skeleton className="h-5 w-32" />
+                <Skeleton className="h-4 w-40" />
+              </div>
+            </div>
+            <Skeleton className="h-10 w-full rounded-xl" />
+            <div className="space-y-3">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Skeleton key={i} className="h-16 w-full rounded-xl" />
+              ))}
+            </div>
           </div>
-
-          {/* Additional Content Skeleton */}
-           <div className="bg-card border border-border rounded-xl p-6 space-y-4 opacity-60">
-             <Skeleton className="h-5 w-1/4" />
-             <div className="grid grid-cols-7 gap-2">
-                {[...Array(7)].map((_, i) => (
-                    <Skeleton key={i} className="aspect-square rounded-md" />
-                ))}
-             </div>
-          </div>
-
         </div>
-      </div>
+      ) : (
+        /* Default / Home Skeleton */
+        <div className="flex-1 overflow-y-auto pb-24">
+          <div className="sticky top-0 z-10 bg-background/95 border-b border-border shadow-sm h-14 flex items-center px-4">
+             <div className="w-full flex justify-between items-center max-w-4xl mx-auto">
+                <Skeleton className="h-6 w-6 rounded-md" />
+                <div className="flex gap-2">
+                    <Skeleton className="h-6 w-16 rounded-full" />
+                    <Skeleton className="h-6 w-6 rounded-full" />
+                </div>
+             </div>
+          </div>
+          <div className="max-w-4xl mx-auto p-4 space-y-6 pt-4">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-36 w-full rounded-xl" />
+            <Skeleton className="h-64 w-full rounded-xl" />
+            <Skeleton className="h-40 w-full rounded-xl" />
+          </div>
+        </div>
+      )}
 
       {/* Bottom Navigation Skeleton */}
       <nav className="fixed bottom-0 left-0 right-0 border-t border-border bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70">

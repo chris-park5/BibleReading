@@ -9,6 +9,7 @@ import { RouteLoadingOverlay } from "./components/RouteLoadingOverlay";
 import { clearOfflineQueueForUser, flushOfflineProgressQueue } from "./utils/offlineProgressQueue";
 import { OfflineBanner } from "./components/OfflineBanner";
 import { Button } from "./components/ui/button";
+import { parseTabFromHash } from "./pages/mainTabs/tabHash";
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -357,12 +358,15 @@ export default function App() {
     );
   }
 
+  const { tab } = parseTabFromHash(hash);
+  const loadingVariant = tab === "friends" ? "friends" : "home";
+
   // 모바일 PWA 탭 기반 메인 화면
   return (
     <>
       <InstallAppBanner />
       <OfflineBanner visible={!isOnline} />
-      <RouteLoadingOverlay visible={showLoadingOverlay} />
+      <RouteLoadingOverlay visible={showLoadingOverlay} variant={loadingVariant} />
       <MainTabsPage />
     </>
   );

@@ -252,6 +252,10 @@ export function useHomeLogic() {
       if (ctx.seq !== latest) return;
       queryClient.setQueryData(ctx.key, data);
     },
+    onSettled: (_data, _error, vars) => {
+      const key = ["progress", userId, vars.planId] as const;
+      return queryClient.invalidateQueries({ queryKey: key });
+    },
   });
 
   const combined: CombinedReading[] = useMemo(() => {
