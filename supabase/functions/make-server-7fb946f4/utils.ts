@@ -677,14 +677,20 @@ export async function fetchGroupedSchedule(
       .from("plan_schedules")
       .select("day, book, chapters")
       .eq("plan_id", plan.id)
-      .order("day", { ascending: true });
+      .order("day", { ascending: true })
+      .order("order_index", { ascending: true })
+      .order("book", { ascending: true })
+      .order("chapters", { ascending: true });
     scheduleRows = data || [];
   } else {
     const { data } = await supabase
       .from("preset_schedules")
       .select("day, book, chapters")
       .eq("preset_id", plan.preset_id)
-      .order("day", { ascending: true });
+      .order("day", { ascending: true })
+      .order("order_index", { ascending: true })
+      .order("book", { ascending: true })
+      .order("chapters", { ascending: true });
     scheduleRows = data || [];
   }
 

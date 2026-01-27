@@ -78,7 +78,13 @@ export function getBookIndex(bookName: string): number {
 }
 
 export function getBookChapters(bookName: string): number {
+  // Handle known typos
+  if (bookName === "역대대상") bookName = "역대상";
+
   const book = BIBLE_BOOKS.find((b) => b.name === bookName);
-  if (!book) throw new Error(`알 수 없는 책 이름: ${bookName}`);
+  if (!book) {
+    console.error(`알 수 없는 책 이름: ${bookName}`);
+    return 0; // Fallback to avoid crash
+  }
   return book.chapters;
 }
