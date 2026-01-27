@@ -78,7 +78,7 @@ export function ReadingHistory({
   };
 
   const normalizedQuery = query.trim().toLowerCase();
-  
+
   // 1. Search Query Matches
   const queryMatchedDays = useMemo(() => {
     if (!schedule || !normalizedQuery) return null;
@@ -96,12 +96,12 @@ export function ReadingHistory({
   // 2. Filter Matches
   const filterMatchedDays = useMemo(() => {
     if (filter === "all") return null;
-    
+
     const hits = new Set<number>();
     for (let day = 1; day <= totalDays; day++) {
       const isCompleted = completedDays.has(day);
       const isPartial = safePartialDays.has(day);
-      
+
       if (filter === "completed" && isCompleted) hits.add(day);
       else if (filter === "partial" && isPartial) hits.add(day);
       else if (filter === "incomplete" && !isCompleted && !isPartial) hits.add(day);
@@ -204,7 +204,7 @@ export function ReadingHistory({
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="책 이름 검색 (예: 히브리서)"
+              placeholder="성경 이름 검색 (예: 히브리서)"
               className="w-full pl-9 pr-3 py-2 border border-border rounded-lg bg-input-background text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
           </div>
@@ -221,13 +221,13 @@ export function ReadingHistory({
 
       {!hideCalendar && (
         <div className="mb-4 flex flex-wrap items-center gap-2 text-sm">
-          <button 
+          <button
             type="button"
             onClick={() => toggleFilter('completed')}
             className={cn(
               "flex items-center gap-1.5 px-2 py-1 rounded-lg transition-all border shrink-0",
-              filter === 'completed' 
-                ? "bg-green-50 border-green-100 dark:bg-green-900/20 dark:border-green-900/40 ring-1 ring-green-200 dark:ring-green-800" 
+              filter === 'completed'
+                ? "bg-green-50 border-green-100 dark:bg-green-900/20 dark:border-green-900/40 ring-1 ring-green-200 dark:ring-green-800"
                 : "border-transparent hover:bg-muted bg-muted/30"
             )}
           >
@@ -235,13 +235,13 @@ export function ReadingHistory({
             <span className={cn("text-xs text-muted-foreground whitespace-nowrap", filter === 'completed' && "text-foreground font-semibold")}>완료</span>
           </button>
 
-          <button 
+          <button
             type="button"
             onClick={() => toggleFilter('partial')}
             className={cn(
               "flex items-center gap-1.5 px-2 py-1 rounded-lg transition-all border shrink-0",
-              filter === 'partial' 
-                ? "bg-yellow-50 border-yellow-100 dark:bg-yellow-900/20 dark:border-yellow-900/40 ring-1 ring-yellow-200 dark:ring-yellow-800" 
+              filter === 'partial'
+                ? "bg-yellow-50 border-yellow-100 dark:bg-yellow-900/20 dark:border-yellow-900/40 ring-1 ring-yellow-200 dark:ring-yellow-800"
                 : "border-transparent hover:bg-muted bg-muted/30"
             )}
           >
@@ -250,16 +250,16 @@ export function ReadingHistory({
           </button>
 
           <button
-             type="button"
-             onClick={() => toggleFilter('incomplete')}
-             className={cn(
-               "flex items-center gap-1.5 px-2 py-1 rounded-lg transition-all border shrink-0",
-               filter === 'incomplete' 
-                 ? "bg-gray-50 border-gray-100 dark:bg-gray-800/50 dark:border-gray-700/50 ring-1 ring-gray-200 dark:ring-gray-700" 
-                 : "border-transparent hover:bg-muted bg-muted/30"
-             )}
+            type="button"
+            onClick={() => toggleFilter('incomplete')}
+            className={cn(
+              "flex items-center gap-1.5 px-2 py-1 rounded-lg transition-all border shrink-0",
+              filter === 'incomplete'
+                ? "bg-gray-50 border-gray-100 dark:bg-gray-800/50 dark:border-gray-700/50 ring-1 ring-gray-200 dark:ring-gray-700"
+                : "border-transparent hover:bg-muted bg-muted/30"
+            )}
           >
-             <Circle className="w-4 h-4 text-muted-foreground/40" />
+            <Circle className="w-4 h-4 text-muted-foreground/40" />
             <span className={cn("text-xs text-muted-foreground whitespace-nowrap", filter === 'incomplete' && "text-foreground font-semibold")}>미완료</span>
           </button>
 
@@ -320,10 +320,10 @@ export function ReadingHistory({
                   const isExpanded = day === expandedDay;
 
                   const entry = schedule?.find(s => s.day === day);
-                  
+
                   // Filter readings based on the search query
                   const relevantReadings = entry?.readings
-                    ? normalizedQuery 
+                    ? normalizedQuery
                       ? entry.readings.filter(r => bookMatchesQuery(String(r.book), normalizedQuery))
                       : entry.readings
                     : [];
@@ -349,13 +349,13 @@ export function ReadingHistory({
                             ? isCompleted
                               ? "border-green-500 bg-primary/10" // Today + Completed
                               : isPartial
-                              ? "border-yellow-500 bg-primary/5" // Today + Partial
-                              : "border-primary bg-primary/10"   // Today + Incomplete
+                                ? "border-yellow-500 bg-primary/5" // Today + Partial
+                                : "border-primary bg-primary/10"   // Today + Incomplete
                             : isCompleted
-                            ? "border-green-200 bg-green-50 dark:bg-green-900/10 dark:border-green-900/30"
-                            : isPartial
-                            ? "border-yellow-200 bg-yellow-50 dark:bg-yellow-900/10 dark:border-yellow-900/30"
-                            : "border-border bg-card hover:bg-accent",
+                              ? "border-green-200 bg-green-50 dark:bg-green-900/10 dark:border-green-900/30"
+                              : isPartial
+                                ? "border-yellow-200 bg-yellow-50 dark:bg-yellow-900/10 dark:border-yellow-900/30"
+                                : "border-border bg-card hover:bg-accent",
                           isSelected && !isCurrent && "ring-2 ring-ring"
                         )}
                         title={`${day}일차: ${rangeText}`}
@@ -364,7 +364,7 @@ export function ReadingHistory({
                           <div className="text-[10px] text-muted-foreground uppercase">{mm}/{dd}</div>
                           <div className="text-sm font-bold">{day}일</div>
                         </div>
-                        
+
                         <div className="min-w-0 flex-1 text-left">
                           <div className="text-sm font-medium break-words text-foreground/90">
                             {rangeText || "읽기 항목 없음"}
@@ -379,7 +379,7 @@ export function ReadingHistory({
                           ) : (
                             <Circle className="w-4 h-4 text-muted-foreground/30" />
                           )}
-                          
+
                           {renderDayDetails && (
                             isExpanded ? (
                               <ChevronUp className="w-4 h-4 text-muted-foreground" />
@@ -472,29 +472,26 @@ export function ReadingHistory({
                           key={`d-${i}`}
                           type="button"
                           onClick={() => onDayClick(day)}
-                          className={`aspect-square p-2 rounded-lg border flex flex-col items-center justify-center transition-all ${
-                            isCurrent
+                          className={`aspect-square p-2 rounded-lg border flex flex-col items-center justify-center transition-all ${isCurrent
                               ? "border-primary bg-primary/10"
                               : isCompleted
-                              ? "border-green-200 bg-green-50"
-                              : isPartial
-                              ? "border-yellow-200 bg-yellow-50"
-                              : "border-border bg-card hover:bg-accent"
-                          } ${
-                            isSelected && !isCurrent ? "ring-2 ring-ring" : ""
-                          }`}
+                                ? "border-green-200 bg-green-50"
+                                : isPartial
+                                  ? "border-yellow-200 bg-yellow-50"
+                                  : "border-border bg-card hover:bg-accent"
+                            } ${isSelected && !isCurrent ? "ring-2 ring-ring" : ""
+                            }`}
                           title={`${day}일차`}
                         >
                           <span
-                            className={`text-xs mb-1 ${
-                              isCurrent
+                            className={`text-xs mb-1 ${isCurrent
                                 ? "text-primary"
                                 : isCompleted
-                                ? "text-green-600"
-                                : isPartial
-                                ? "text-yellow-600"
-                                : "text-muted-foreground"
-                            }`}
+                                  ? "text-green-600"
+                                  : isPartial
+                                    ? "text-yellow-600"
+                                    : "text-muted-foreground"
+                              }`}
                           >
                             {dayOfMonth}
                           </span>
