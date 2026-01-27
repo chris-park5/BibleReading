@@ -80,6 +80,9 @@ export function useProgress(planId: string | null) {
       if (ctx.seq !== toggleCompleteSeqRef.current) return;
       queryClient.setQueryData(progressQueryKey, data);
     },
+    onSettled: () => {
+      return queryClient.invalidateQueries({ queryKey: progressQueryKey });
+    },
   });
 
   const toggleReadingMutation = useMutation({
@@ -196,6 +199,9 @@ export function useProgress(planId: string | null) {
       if (ctx.seq !== toggleReadingSeqRef.current) return;
       // 서버 응답으로 캐시를 확정 (invalidate 없이도 UI 안정)
       queryClient.setQueryData(progressQueryKey, data);
+    },
+    onSettled: () => {
+      return queryClient.invalidateQueries({ queryKey: progressQueryKey });
     },
   });
   

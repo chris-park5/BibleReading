@@ -100,6 +100,9 @@ export function usePlans() {
         return { ...(current ?? {}), plans: nextPlans };
       });
     },
+    onSettled: () => {
+      return queryClient.invalidateQueries({ queryKey: plansQueryKey });
+    },
   });
 
   const deletePlanMutation = useMutation({
@@ -124,6 +127,9 @@ export function usePlans() {
       if (ctx?.previous) {
         queryClient.setQueryData(plansQueryKey, ctx.previous);
       }
+    },
+    onSettled: () => {
+      return queryClient.invalidateQueries({ queryKey: plansQueryKey });
     },
   });
   
