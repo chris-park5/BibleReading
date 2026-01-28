@@ -184,7 +184,7 @@ export function ReadingHistory({
   };
 
   return (
-    <div className={cn("bg-card text-card-foreground rounded-xl border border-border p-6", className)}>
+    <div className={cn("bg-card text-card-foreground rounded-xl border-none shadow-sm p-6", className)}>
       {!hideHeader && (
         <div className="flex items-center gap-3 mb-6">
           <div className="p-3 bg-primary/10 rounded-lg">
@@ -205,7 +205,7 @@ export function ReadingHistory({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="성경 이름 검색 (예: 히브리서)"
-              className="w-full pl-9 pr-3 py-2 border border-border rounded-lg bg-input-background text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="w-full pl-9 pr-3 py-2 border-none rounded-lg bg-muted/50 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
           </div>
           {(normalizedQuery || filter !== "all") && (

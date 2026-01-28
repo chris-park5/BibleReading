@@ -26,7 +26,7 @@ export function WeeklyCalendar({
 }: WeeklyCalendarProps) {
   return (
     <div>
-      <div className="bg-card/50 border border-border/50 rounded-xl p-1 relative">
+      <div className="bg-card/50 border-none shadow-sm rounded-xl p-1 relative">
         <div className="flex items-center gap-1">
           <button
             onClick={handlePrevDay}

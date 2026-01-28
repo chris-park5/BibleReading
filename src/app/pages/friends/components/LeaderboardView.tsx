@@ -123,8 +123,8 @@ function LeaderboardItem({
         isSticky
           ? "text-primary-foreground"
           : isMe
-          ? "bg-primary/5 border border-primary/20"
-          : "bg-card border border-border"
+          ? "bg-primary/5 border-none shadow-sm ring-1 ring-primary/20"
+          : "bg-card border-none shadow-sm"
       )}
     >
       <div className="flex-shrink-0 w-8 text-center font-bold text-lg">

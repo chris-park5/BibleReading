@@ -242,7 +242,7 @@ export function TodayReading({
   };
 
   return (
-    <div className="bg-card text-card-foreground rounded-xl border border-border p-6">
+    <div className="bg-card text-card-foreground rounded-xl border-none shadow-sm p-6">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <div className="p-3 bg-primary/10 rounded-lg">
