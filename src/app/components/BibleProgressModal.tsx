@@ -83,7 +83,7 @@ export function BibleProgressModal({ children, bookProgressRows }: BibleProgress
                 return (
                   <div 
                     key={row.book} 
-                    className="group relative flex flex-col justify-between aspect-[4/3] rounded-xl border border-border/60 bg-card overflow-hidden transition-all hover:border-primary/50"
+                    className="group relative flex flex-col justify-between min-h-[5.5rem] rounded-xl border border-border/60 bg-card overflow-hidden transition-all hover:border-primary/50"
                   >
                     {/* Progress Fill Background */}
                     <div 
@@ -93,8 +93,8 @@ export function BibleProgressModal({ children, bookProgressRows }: BibleProgress
 
                     {/* Content */}
                     <div className="relative z-10 p-3 flex flex-col h-full justify-between">
-                      <div className="flex justify-between items-start">
-                        <span className="font-semibold text-sm leading-tight break-keep">{row.book}</span>
+                      <div className="flex justify-between items-start gap-1">
+                        <span className="font-semibold text-[13px] leading-tight break-all">{row.book}</span>
                         {stats.completedFullCycles > 0 && (
                           <div className="shrink-0 flex items-center justify-center bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">
                             {stats.completedFullCycles}
@@ -102,7 +102,7 @@ export function BibleProgressModal({ children, bookProgressRows }: BibleProgress
                         )}
                       </div>
                       
-                      <div className="text-right">
+                      <div className="text-right mt-2">
                         <span className={cn(
                           "text-xs font-medium transition-colors",
                           stats.currentPercent > 50 ? "text-blue-700 dark:text-blue-300" : "text-muted-foreground"

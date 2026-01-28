@@ -1,4 +1,4 @@
-import { X, BookPlus } from "lucide-react";
+import { X, BookPlus, Check } from "lucide-react";
 import { useCustomPlanCreator, PlanData } from "./customPlan/hooks/useCustomPlanCreator";
 import { CustomPlanStepper } from "./customPlan/components/CustomPlanStepper";
 import { Step1PlanInfo } from "./customPlan/components/Step1PlanInfo";
@@ -31,8 +31,8 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-6 z-50">
-      <div className="bg-card text-card-foreground border border-border rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-card/80 backdrop-blur border-b border-border p-6">
+      <div className="bg-card text-card-foreground border-none shadow-xl rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto relative">
+        <div className="sticky top-0 bg-card/80 backdrop-blur border-b border-border p-6 z-20">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-3 bg-primary/10 rounded-lg">
@@ -104,7 +104,7 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
           <div className="flex gap-3">
             <button
               onClick={onClose}
-              className="px-3 py-2.5 border border-border bg-background rounded-lg hover:bg-accent transition-colors text-sm"
+              className="px-3 py-2.5 border-none shadow-sm bg-background rounded-lg hover:bg-accent transition-colors text-sm"
             >
               취소
             </button>
@@ -114,7 +114,7 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
                 <button
                   type="button"
                   onClick={goPrev}
-                  className="flex-1 px-3 py-2.5 border border-border bg-background rounded-lg hover:bg-accent transition-colors text-sm"
+                  className="flex-1 px-3 py-2.5 border-none shadow-sm bg-background rounded-lg hover:bg-accent transition-colors text-sm"
                 >
                   이전
                 </button>
@@ -132,9 +132,10 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
                 <button
                   onClick={handleSave}
                   disabled={isCreateDisabled}
-                  className="flex-1 px-3 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:hover:bg-primary text-sm"
+                  className="flex-1 px-3 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:hover:bg-primary text-sm flex items-center justify-center gap-2"
                 >
-                  계획 생성
+                  <Check className="w-4 h-4" />
+                  계획생성
                 </button>
               )}
             </div>

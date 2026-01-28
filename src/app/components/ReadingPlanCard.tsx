@@ -55,14 +55,14 @@ export function ReadingPlanCard({
         if (!isClickable) return;
         if (e.key === "Enter" || e.key === " ") onSelect();
       }}
-      className={`w-full p-6 rounded-xl border text-left transition-all ${
+      className={`w-full p-6 rounded-xl text-left transition-all ${
         isDisabled
-          ? "border-border bg-muted/40 opacity-60 cursor-not-allowed"
+          ? "bg-muted/40 opacity-60 cursor-not-allowed border-none shadow-none"
           : isSelected
-          ? "border-primary bg-primary/10"
+          ? "ring-2 ring-primary bg-primary/5 shadow-sm"
           : isClickable
-          ? "border-border bg-card hover:bg-accent cursor-pointer"
-          : "border-border bg-card"
+          ? "bg-card hover:bg-accent cursor-pointer border-none shadow-sm"
+          : "bg-card border-none shadow-sm"
       }`}
     >
       <div className="flex items-start gap-4">
