@@ -211,7 +211,7 @@ export function ProgressTab() {
       </div>
 
       <div className="max-w-4xl mx-auto p-4 space-y-6 pt-6">
-          <div className="bg-card text-card-foreground border border-border rounded-xl p-4">
+          <div className="bg-card text-card-foreground border-none shadow-sm rounded-xl p-4">
             <p className="text-sm text-muted-foreground">달성률</p>
             <p className="text-2xl font-semibold">{completionRateElapsed}%</p>
             <p className="text-sm text-muted-foreground mt-1">
@@ -235,7 +235,7 @@ export function ProgressTab() {
           <h2 className="text-lg font-bold">읽기 기록</h2>
         </div>
 
-        <div className="bg-card text-card-foreground border border-border rounded-xl p-4 space-y-4">
+        <div className="bg-card text-card-foreground border-none shadow-sm rounded-xl p-4 space-y-4">
           <ReadingHistory
             schedule={plan.schedule}
             completedDays={(() => {
