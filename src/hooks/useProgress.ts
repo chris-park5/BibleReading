@@ -16,9 +16,16 @@ export function useProgress(planId: string | null) {
 
   const progressQueryKey = ['progress', userId, planId] as const;
 
-  const toggleCompleteSeqRef = useRef(0);
-  const toggleReadingSeqRef = useRef(0);
+  // Track the timestamp of the latest server response we've applied.
+  // This ensures we don't overwrite the cache with stale data from out-of-order responses.
+  const latestServerTimestamp = useRef<number>(0);
+
+  // Serial queue to ensure network requests fire in order
+  const mutationQueue = useRef<Promise<any>>(Promise.resolve());
   
+  // Explicitly track pending mutations to handle optimistic update rollbacks/overwrites
+  const pendingMutations = useRef(0);
+
   const { data, isLoading } = useQuery({
     queryKey: progressQueryKey,
     queryFn: () => progressService.getProgress(planId!),
@@ -26,15 +33,27 @@ export function useProgress(planId: string | null) {
   });
   
   const toggleCompleteMutation = useMutation({
-    mutationFn: ({ day, completed }: { day: number; completed: boolean }) => {
-      if (typeof navigator !== 'undefined' && navigator && navigator.onLine === false) {
-        throw new OfflineError();
-      }
-      return progressService.updateProgress(planId!, day, completed);
+    mutationKey: ['progress-update', planId],
+    mutationFn: async ({ day, completed }: { day: number; completed: boolean }) => {
+      // Chain requests to ensure serial execution
+      const previous = mutationQueue.current;
+      
+      const task = async () => {
+        // Wait for previous request to settle (success or fail)
+        await previous.catch(() => {});
+        
+        if (typeof navigator !== 'undefined' && navigator && navigator.onLine === false) {
+          throw new OfflineError();
+        }
+        return progressService.updateProgress(planId!, day, completed);
+      };
+
+      const nextPromise = task();
+      mutationQueue.current = nextPromise;
+      return nextPromise;
     },
     onMutate: async ({ day, completed }) => {
-      toggleCompleteSeqRef.current += 1;
-      const seq = toggleCompleteSeqRef.current;
+      pendingMutations.current += 1;
 
       // Await cancellation to ensure no in-flight queries overwrite our optimistic update
       await queryClient.cancelQueries({ queryKey: progressQueryKey });
@@ -54,39 +73,57 @@ export function useProgress(planId: string | null) {
           progress: {
             ...prevProgress,
             completedDays: Array.from(nextCompletedDays),
+            // We do NOT update lastUpdated here for comparison purposes, 
+            // or we use a client-side marker. But simpler to just leave it 
+            // and trust the server response logic to eventually sync.
+            // However, to avoid "flicker" if a query finishes *before* this mutation,
+            // we'll just let the server response handle the authoritative update.
             lastUpdated: new Date().toISOString(),
           },
         };
       });
 
-      return { previous, seq };
+      return { previous };
     },
     onError: (err, vars, ctx) => {
-      if (!ctx) return;
-      if (ctx.seq !== toggleCompleteSeqRef.current) return;
-
       // 오프라인/네트워크 문제면 롤백하지 않고 큐에 저장 (온라인 복구 시 자동 동기화)
       if (isOfflineLikeError(err)) {
         void enqueueDayToggle({ planId: planId!, day: vars.day, completed: vars.completed });
         return;
       }
 
-      if (ctx.previous) {
+      // If there are other pending mutations, do NOT rollback.
+      // Rolling back would overwrite the optimistic updates of subsequent mutations.
+      if (pendingMutations.current > 1) {
+        return;
+      }
+
+      if (ctx?.previous) {
         queryClient.setQueryData(progressQueryKey, ctx.previous);
       }
     },
-    onSuccess: (data, _vars, ctx) => {
-      if (!ctx) return;
-      if (ctx.seq !== toggleCompleteSeqRef.current) return;
-      queryClient.setQueryData(progressQueryKey, data);
+    onSuccess: (data) => {
+      // If there are other pending mutations, do NOT overwrite the cache with this server response.
+      // The subsequent mutations have applied optimistic updates that this response (likely) doesn't know about.
+      // We wait for the final mutation to sync the authoritative state.
+      if (pendingMutations.current > 1) {
+        return;
+      }
+
+      const serverTime = new Date(data.progress.lastUpdated).getTime();
+      if (serverTime > latestServerTimestamp.current) {
+        latestServerTimestamp.current = serverTime;
+        queryClient.setQueryData(progressQueryKey, data);
+      }
     },
     onSettled: () => {
-      return queryClient.invalidateQueries({ queryKey: progressQueryKey });
-    },
+      pendingMutations.current = Math.max(0, pendingMutations.current - 1);
+    }
   });
 
   const toggleReadingMutation = useMutation({
-    mutationFn: ({
+    mutationKey: ['progress-update', planId],
+    mutationFn: async ({
       day,
       readingIndex,
       completed,
@@ -99,14 +136,25 @@ export function useProgress(planId: string | null) {
       readingCount: number;
       completedChapters?: string[];
     }) => {
-      if (typeof navigator !== 'undefined' && navigator && navigator.onLine === false) {
-        throw new OfflineError();
-      }
-      return progressService.updateReadingProgress(planId!, day, readingIndex, completed, readingCount, completedChapters);
+      // Chain requests to ensure serial execution
+      const previous = mutationQueue.current;
+
+      const task = async () => {
+        // Wait for previous request to settle
+        await previous.catch(() => {});
+
+        if (typeof navigator !== 'undefined' && navigator && navigator.onLine === false) {
+          throw new OfflineError();
+        }
+        return progressService.updateReadingProgress(planId!, day, readingIndex, completed, readingCount, completedChapters);
+      };
+
+      const nextPromise = task();
+      mutationQueue.current = nextPromise;
+      return nextPromise;
     },
     onMutate: async ({ day, readingIndex, completed, readingCount, completedChapters }) => {
-      toggleReadingSeqRef.current += 1;
-      const seq = toggleReadingSeqRef.current;
+      pendingMutations.current += 1;
 
       // Await cancellation to ensure no in-flight queries overwrite our optimistic update
       await queryClient.cancelQueries({ queryKey: progressQueryKey });
@@ -172,12 +220,9 @@ export function useProgress(planId: string | null) {
         };
       });
 
-      return { previous, seq };
+      return { previous };
     },
     onError: (err, vars, ctx) => {
-      if (!ctx) return;
-      if (ctx.seq !== toggleReadingSeqRef.current) return;
-
       // 오프라인/네트워크 문제면 롤백하지 않고 큐에 저장 (온라인 복구 시 자동 동기화)
       if (isOfflineLikeError(err)) {
         void enqueueReadingToggle({
@@ -190,19 +235,30 @@ export function useProgress(planId: string | null) {
         return;
       }
 
-      if (ctx.previous) {
+      // If there are other pending mutations, do NOT rollback.
+      if (pendingMutations.current > 1) {
+        return;
+      }
+
+      if (ctx?.previous) {
         queryClient.setQueryData(progressQueryKey, ctx.previous);
       }
     },
-    onSuccess: (data, _vars, ctx) => {
-      if (!ctx) return;
-      if (ctx.seq !== toggleReadingSeqRef.current) return;
-      // 서버 응답으로 캐시를 확정 (invalidate 없이도 UI 안정)
-      queryClient.setQueryData(progressQueryKey, data);
+    onSuccess: (data) => {
+      // If there are other pending mutations, do NOT overwrite the cache with this server response.
+      if (pendingMutations.current > 1) {
+        return;
+      }
+
+      const serverTime = new Date(data.progress.lastUpdated).getTime();
+      if (serverTime > latestServerTimestamp.current) {
+        latestServerTimestamp.current = serverTime;
+        queryClient.setQueryData(progressQueryKey, data);
+      }
     },
     onSettled: () => {
-      return queryClient.invalidateQueries({ queryKey: progressQueryKey });
-    },
+      pendingMutations.current = Math.max(0, pendingMutations.current - 1);
+    }
   });
   
   return {
