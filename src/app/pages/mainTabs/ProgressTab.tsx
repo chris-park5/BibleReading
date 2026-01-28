@@ -13,6 +13,7 @@ import { clusterReadings } from "../../utils/chapterClustering";
 import { Check } from "lucide-react";
 import { bookMatchesQuery } from "../../utils/bookSearch";
 import { expandChapters } from "../../utils/expandChapters";
+import { AchievementReportModal } from "../../components/AchievementReportModal";
 import {
   Select,
   SelectContent,
@@ -48,6 +49,7 @@ export function ProgressTab() {
   const [isPinnedHistoryDay, setIsPinnedHistoryDay] = useState(false);
   const historyDetailRef = useRef<HTMLDivElement | null>(null);
   const [historyViewMode, setHistoryViewMode] = useState<"calendar" | "list">("calendar");
+  const [showAchievementModal, setShowAchievementModal] = useState(false);
 
   useEffect(() => {
     // When plan changes, reset selection to currentDay.
@@ -211,14 +213,27 @@ export function ProgressTab() {
       </div>
 
       <div className="max-w-4xl mx-auto p-4 space-y-6 pt-6">
-          <div className="bg-card text-card-foreground border-none shadow-sm rounded-xl p-4">
+          <button 
+            type="button"
+            onClick={() => setShowAchievementModal(true)}
+            className="w-full text-left bg-card text-card-foreground border-none shadow-sm rounded-xl p-4 transition-all active:scale-[0.98] hover:bg-accent/50"
+          >
             <p className="text-sm text-muted-foreground">달성률</p>
             <p className="text-2xl font-semibold">{completionRateElapsed}%</p>
             <p className="text-sm text-muted-foreground mt-1">
               오늘까지 {formatChapterCount(elapsedChapters)}장 중 {formatChapterCount(completedChapters)}장 완료
             </p>
             <p className="text-muted-foreground mt-1">{completionMessage}</p>
-          </div>
+          </button>
+
+        {showAchievementModal && (
+          <AchievementReportModal 
+            plan={plan} 
+            progress={progress} 
+            open={showAchievementModal}
+            onClose={() => setShowAchievementModal(false)} 
+          />
+        )}
 
         <BibleProgressModal bookProgressRows={bookProgressRows}>
           <button type="button" className="w-full text-left">
