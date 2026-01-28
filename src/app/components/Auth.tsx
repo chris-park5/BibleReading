@@ -66,7 +66,7 @@ export function Auth({ onAuthSuccess }: AuthProps) {
           </p>
         </div>
 
-        <div className="bg-card text-card-foreground rounded-xl border border-border p-8">
+        <div className="bg-card text-card-foreground rounded-xl border-none shadow-sm p-8">
           <form onSubmit={handleSubmit} className="space-y-4">
             {isSignUp && (
               <>
