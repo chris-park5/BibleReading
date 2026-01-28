@@ -41,7 +41,7 @@ export async function getProgress(planId: string): Promise<{ success: boolean; p
   // 1. Fetch user progress
   const { data, error } = await supabase
     .from("reading_progress")
-    .select("day, reading_index, completed_chapters")
+    .select("day, reading_index, completed_chapters, completed_at")
     .eq("user_id", user.id)
     .eq("plan_id", planId);
 
@@ -51,11 +51,20 @@ export async function getProgress(planId: string): Promise<{ success: boolean; p
   const completedReadingsByDay: Record<string, number[]> = {};
   const completedChaptersByDay: Record<string, Record<number, string[]>> = {};
   const completedSetsByDay = new Map<number, Set<number>>();
+  const history: Array<{ day: number; readingIndex: number; completedAt: string }> = [];
 
   (data ?? []).forEach((item: any) => {
     const dayNum = Number(item.day);
     const idx = Number(item.reading_index);
     if (!Number.isFinite(dayNum) || !Number.isFinite(idx)) return;
+
+    if (item.completed_at) {
+      history.push({
+        day: dayNum,
+        readingIndex: idx,
+        completedAt: item.completed_at
+      });
+    }
 
     const dayStr = String(dayNum);
     const chapters = item.completed_chapters as string[] | null;
@@ -145,6 +154,7 @@ export async function getProgress(planId: string): Promise<{ success: boolean; p
       completedDays: completedDays.sort((a, b) => a - b),
       completedReadingsByDay,
       completedChaptersByDay,
+      history,
       lastUpdated: new Date().toISOString(),
     },
   };
