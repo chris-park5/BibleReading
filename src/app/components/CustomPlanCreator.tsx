@@ -27,10 +27,35 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
     duplicateEntryCount,
     totalChapters,
     avgChaptersPerDay,
+    handleStep3AutoScroll,
+    draggingIndex,
+    draggingGroup,
+    otStep3ScrollRef,
+    ntStep3ScrollRef,
+    step3ScrollRef,
   } = hookProps;
 
+  const handleGlobalDragOver = (e: React.DragEvent) => {
+    if (step !== 3) return;
+    
+    if (draggingIndex !== null || draggingGroup !== null) {
+      e.preventDefault();
+      
+      if (draggingGroup === 'OT') {
+         handleStep3AutoScroll(e.clientY, otStep3ScrollRef.current);
+      } else if (draggingGroup === 'NT') {
+         handleStep3AutoScroll(e.clientY, ntStep3ScrollRef.current);
+      } else if (draggingIndex !== null) {
+         handleStep3AutoScroll(e.clientY, step3ScrollRef.current);
+      }
+    }
+  };
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-6 z-50">
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-6 z-50"
+      onDragOver={handleGlobalDragOver}
+    >
       <div className="bg-card text-card-foreground border-none shadow-xl rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto relative">
         <div className="sticky top-0 bg-card/80 backdrop-blur border-b border-border p-6 z-20">
           <div className="flex items-center justify-between">
@@ -132,9 +157,8 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
                 <button
                   onClick={handleSave}
                   disabled={isCreateDisabled}
-                  className="flex-1 px-3 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:hover:bg-primary text-sm flex items-center justify-center gap-2"
+                  className="flex-1 px-3 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:hover:bg-primary text-sm flex items-center justify-center"
                 >
-                  <Check className="w-4 h-4" />
                   계획생성
                 </button>
               )}

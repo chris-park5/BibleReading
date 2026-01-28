@@ -57,34 +57,6 @@ export function Step3OrderConfirmation({
 }: Props) {
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-      {/* Summary Dashboard */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="bg-muted/30 rounded-xl p-3 flex flex-col items-center justify-center text-center">
-          <Calendar className="w-5 h-5 text-muted-foreground mb-1" />
-          <div className="text-xl font-bold text-foreground">
-            {computedTotalDays ?? 0}일
-          </div>
-          <div className="text-[10px] text-muted-foreground">총 기간</div>
-        </div>
-        <div className="bg-muted/30 rounded-xl p-3 flex flex-col items-center justify-center text-center">
-          <BookOpen className="w-5 h-5 text-muted-foreground mb-1" />
-          <div className="text-xl font-bold text-foreground">
-            {totalChapters ?? 0}장
-          </div>
-          <div className="text-[10px] text-muted-foreground">총 분량</div>
-        </div>
-        <div className="bg-primary/5 border border-primary/10 rounded-xl p-3 flex flex-col items-center justify-center text-center relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent" />
-          <TrendingUp className="w-5 h-5 text-primary mb-1 relative z-10" />
-          <div className="text-xl font-bold text-primary relative z-10">
-            {avgChaptersPerDay ? avgChaptersPerDay.toFixed(1) : 0}장
-          </div>
-          <div className="text-[10px] text-primary/80 relative z-10 font-medium">
-            하루 평균
-          </div>
-        </div>
-      </div>
-
       {/* Toolbar */}
       <div className="flex items-center justify-between bg-muted/30 rounded-xl p-2 pl-4">
         <div className="flex items-center gap-3">
@@ -112,7 +84,6 @@ export function Step3OrderConfirmation({
               onClick={() => setShowShuffleOptions((v) => !v)}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-background border border-border/50 hover:bg-accent hover:border-border text-foreground rounded-lg shadow-sm transition-all text-xs font-medium"
             >
-              <Shuffle className="w-3.5 h-3.5" />
               순서 섞기
             </button>
 
@@ -129,7 +100,7 @@ export function Step3OrderConfirmation({
                   }}
                   className="w-full text-left px-2 py-2 rounded-lg hover:bg-accent text-sm flex items-center gap-2"
                 >
-                  <Shuffle className="w-3.5 h-3.5 opacity-70" /> 구약만 섞기
+                  구약만 섞기
                 </button>
                 <button
                   type="button"
@@ -139,7 +110,7 @@ export function Step3OrderConfirmation({
                   }}
                   className="w-full text-left px-2 py-2 rounded-lg hover:bg-accent text-sm flex items-center gap-2"
                 >
-                  <Shuffle className="w-3.5 h-3.5 opacity-70" /> 신약만 섞기
+                  신약만 섞기
                 </button>
                 <button
                   type="button"
@@ -149,7 +120,7 @@ export function Step3OrderConfirmation({
                   }}
                   className="w-full text-left px-2 py-2 rounded-lg hover:bg-accent text-sm flex items-center gap-2"
                 >
-                  <Shuffle className="w-3.5 h-3.5 opacity-70" /> 전체 랜덤
+                  전체 랜덤
                 </button>
 
                 <div className="h-px bg-border my-1.5" />
@@ -161,7 +132,7 @@ export function Step3OrderConfirmation({
                   }}
                   className="w-full text-left px-2 py-2 rounded-lg hover:bg-destructive/10 text-destructive text-sm flex items-center gap-2"
                 >
-                  <RefreshCw className="w-3.5 h-3.5" /> 기본 순서로 초기화
+                  기본 순서로 초기화
                 </button>
               </div>
             )}
@@ -189,9 +160,9 @@ export function Step3OrderConfirmation({
                     setShowOtShuffleMenu((v) => !v);
                     setShowNtShuffleMenu(false);
                   }}
-                  className="p-1.5 hover:bg-muted rounded-md text-muted-foreground transition-colors"
+                  className="px-2 py-1 hover:bg-muted rounded-md text-muted-foreground transition-colors text-xs font-medium"
                 >
-                  <Shuffle className="w-3.5 h-3.5" />
+                  섞기
                 </button>
                 {showOtShuffleMenu && (
                   <div className="absolute right-0 mt-1 w-32 rounded-lg border border-border bg-card shadow-lg p-1 z-10">
@@ -277,9 +248,9 @@ export function Step3OrderConfirmation({
                     setShowNtShuffleMenu((v) => !v);
                     setShowOtShuffleMenu(false);
                   }}
-                  className="p-1.5 hover:bg-muted rounded-md text-muted-foreground transition-colors"
+                  className="px-2 py-1 hover:bg-muted rounded-md text-muted-foreground transition-colors text-xs font-medium"
                 >
-                  <Shuffle className="w-3.5 h-3.5" />
+                  섞기
                 </button>
                 {showNtShuffleMenu && (
                   <div className="absolute right-0 mt-1 w-32 rounded-lg border border-border bg-card shadow-lg p-1 z-10">
