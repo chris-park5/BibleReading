@@ -220,7 +220,7 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
           {/* Add Plan Tab */}
           <TabsContent value="add-plan" className="space-y-8 mt-0">
             {/* Custom Plan Button Section */}
-            <div className="bg-card/50 border border-border rounded-xl p-6">
+            <div className="bg-card border-none shadow-sm rounded-xl p-6">
                 <h3 className="text-lg font-semibold mb-2">나만의 계획 만들기</h3>
                 <p className="text-muted-foreground text-sm mb-4">원하는 범위와 기간을 설정하여 맞춤형 읽기표를 생성합니다.</p>
                 <button
