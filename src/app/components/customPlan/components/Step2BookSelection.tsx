@@ -1,4 +1,4 @@
-import { Plus, Minus, RotateCcw, ListChecks, Check } from "lucide-react";
+import { Plus, Minus, RotateCcw, Check } from "lucide-react";
 import { cn } from "../../ui/utils";
 import { useCustomPlanCreator } from "../hooks/useCustomPlanCreator";
 
@@ -114,7 +114,6 @@ export function Step2BookSelection({
                 : "bg-background border-border hover:bg-accent text-foreground"
             )}
           >
-            {isAllSelected ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : <ListChecks className="w-3.5 h-3.5 opacity-70" />}
             {isAllSelected ? "선택 해제" : "전체 선택"}
           </button>
 

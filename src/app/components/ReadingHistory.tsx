@@ -220,7 +220,7 @@ export function ReadingHistory({
       )}
 
       {!hideCalendar && (
-        <div className="mb-4 flex flex-wrap items-center gap-2 text-sm">
+        <div className="mb-4 flex flex-wrap items-center justify-center gap-2 text-sm">
           <button
             type="button"
             onClick={() => toggleFilter('completed')}
