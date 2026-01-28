@@ -24,5 +24,7 @@ export interface Progress {
   completedReadingsByDay?: Record<string, number[]>;
   // day(숫자) -> readingIndex -> completed chapters array
   completedChaptersByDay?: Record<string, Record<number, string[]>>;
+  // Completion history for analytics (charts)
+  history?: Array<{ day: number; readingIndex: number; completedAt: string }>;
   lastUpdated: string;
 }

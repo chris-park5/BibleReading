@@ -165,6 +165,19 @@ export function useProgress(planId: string | null) {
         if (!current?.progress) return current as any;
 
         const prevProgress = current.progress;
+        
+        // Update History (Optimistic)
+        let nextHistory = prevProgress.history ? [...prevProgress.history] : [];
+        if (completed) {
+            nextHistory.push({
+                day,
+                readingIndex,
+                completedAt: new Date().toISOString()
+            });
+        } else {
+            nextHistory = nextHistory.filter(h => !(h.day === day && h.readingIndex === readingIndex));
+        }
+
         const key = String(day);
         
         // Update Completed Readings (Full Completion)
@@ -215,6 +228,7 @@ export function useProgress(planId: string | null) {
             completedReadingsByDay: nextCompletedReadingsByDay,
             completedChaptersByDay: nextCompletedChaptersByDay,
             completedDays: Array.from(nextCompletedDays),
+            history: nextHistory,
             lastUpdated: new Date().toISOString(),
           },
         };
