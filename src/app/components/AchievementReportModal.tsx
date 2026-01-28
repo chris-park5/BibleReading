@@ -136,17 +136,17 @@ export function AchievementReportModal({ plan, progress, onClose, open }: Achiev
                        : "bg-slate-50 border-slate-200 text-slate-600"
                 )}>
                    {daysAhead > 0 ? (
-                      `+${daysAhead}일 앞서가는 중`
+                      `+${daysAhead}일 앞서가는 중(수정중)`
                    ) : daysAhead < 0 ? (
-                      `${Math.abs(daysAhead)}일 늦음`
+                      `${Math.abs(daysAhead)}일 늦음(수정중)`
                    ) : (
-                      "계획대로 진행 중"
+                      "계획대로 진행 중(수정중)"
                    )}
                 </div>
              </div>
 
              <div className="flex items-center justify-between py-4 border-t border-slate-100">
-                <span className="text-sm font-medium text-slate-500">예상 완료일</span>
+                <span className="text-sm font-medium text-slate-500">예상 완료일(수정중)</span>
                 <span className="text-base font-bold text-slate-900">
                    {yyyymmdd(projectedEndDate)}
                 </span>
