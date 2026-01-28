@@ -45,9 +45,9 @@ export function FriendsTabPage({ isActive = true }: { isActive?: boolean }) {
           {/* Add Friend Button */}
           <Dialog open={isAddFriendOpen} onOpenChange={setIsAddFriendOpen}>
             <DialogTrigger asChild>
-              <button className="flex items-center gap-2 px-3 py-1.5 bg-primary text-primary-foreground rounded-full hover:opacity-90 transition-colors shadow-sm text-sm">
+              <button className="flex items-center gap-2 px-3 py-1.5 bg-primary text-primary-foreground rounded-full hover:opacity-90 transition-colors shadow-sm text-sm font-medium">
                 <UserPlus className="w-4 h-4" />
-                <span className="hidden sm:inline">친구 추가</span>
+                <span>친구 추가</span>
               </button>
             </DialogTrigger>
             <DialogContent>

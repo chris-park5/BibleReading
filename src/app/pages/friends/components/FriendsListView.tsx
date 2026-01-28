@@ -58,7 +58,7 @@ export function FriendsListView({
             <div
               key={friend.userId}
               onClick={() => onSelectFriend(friend.userId)}
-              className="bg-card border border-border p-4 rounded-xl flex items-center justify-between group cursor-pointer hover:bg-accent/50 transition-colors"
+              className="bg-card border-none shadow-sm p-4 rounded-xl flex items-center justify-between group cursor-pointer hover:bg-accent/50 transition-colors"
             >
               <div className="flex-1 min-w-0 mr-4">
                 <div className="flex items-center gap-2 mb-1">
