@@ -31,7 +31,8 @@ export function expandChapters(chapterStr: string): string[] {
       continue;
     }
 
-    const trimmed = clean.replace(/장/g, "");
+    const normalized = clean.replace(/[~–—]/g, "-");
+    const trimmed = normalized.replace(/장/g, "");
 
     const range = trimmed.split("-");
     if (range.length === 2) {
