@@ -10,6 +10,7 @@ import { ReadingHistory } from '../components/ReadingHistory';
 import { useAuthStore } from '../../stores/auth.store';
 import * as friendService from '../../services/friendService';
 import { computeChaptersTotals } from "../utils/chaptersProgress";
+import { expandChapters } from "../utils/expandChapters";
 
 export function DashboardPage({ embedded = false }: { embedded?: boolean }) {
   const { 
@@ -59,7 +60,7 @@ export function DashboardPage({ embedded = false }: { embedded?: boolean }) {
     isDayCompleted || completedSet.has(i)
   );
   
-  const readingCount = todayReading?.readings.length ?? 0;
+  // const readingCount = todayReading?.readings.length ?? 0; // Removed: Unused or incorrect logic
 
   const handleNextDay = () => {
     if (currentDay < selectedPlan.totalDays) {
@@ -103,14 +104,21 @@ export function DashboardPage({ embedded = false }: { embedded?: boolean }) {
                   day={currentDay}
                   readings={todayReading.readings}
                   completedByIndex={completedByIndex}
-                  onToggleReading={(readingIndex, completed) =>
+                  onToggleReading={(readingIndex, completed, completedChapters) => {
+                    const reading = todayReading.readings[readingIndex];
+                    const expanded = expandChapters(reading.chapters);
+                    const chaptersCount = expanded.length;
+                    const dayTotalReadings = todayReading.readings.length;
+                    
                     toggleReading({
                       day: currentDay,
                       readingIndex,
                       completed,
-                      readingCount,
-                    })
-                  }
+                      chapterCount: chaptersCount,
+                      dayTotalReadings,
+                      completedChapters
+                    });
+                  }}
                 />
 
                 {/* Navigation */}
