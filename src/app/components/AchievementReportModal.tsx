@@ -287,7 +287,7 @@ export function AchievementReportModal({ plan, progress, dailyStats = [], onClos
           <div>
              <div className="flex items-center justify-between mb-6">
                  <div>
-                    <h3 className="text-lg font-bold text-slate-900">주간 활동</h3>
+                    <h3 className="text-lg font-bold text-slate-900">주간 활동"수정중"</h3>
                  </div>
                  {/* Legend */}
                  <div className="flex items-center gap-3">

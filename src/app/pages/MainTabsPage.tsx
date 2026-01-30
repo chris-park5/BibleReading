@@ -199,7 +199,7 @@ export function MainTabsPage() {
         </div>
       </main>
 
-      <nav className="fixed bottom-0 left-0 right-0 border-t border-border bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70">
         <div className="max-w-4xl mx-auto grid grid-cols-5 px-2 pb-[env(safe-area-inset-bottom)]">
           {tabs.map((t) => {
             const Icon = t.icon;
