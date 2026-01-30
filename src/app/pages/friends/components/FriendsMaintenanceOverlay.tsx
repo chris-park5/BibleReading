@@ -2,7 +2,7 @@ import { Wrench } from "lucide-react";
 
 export function FriendsMaintenanceOverlay() {
   return (
-    <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+    <div className="absolute inset-0 z-40 flex items-center justify-center bg-background/80 backdrop-blur-sm">
       <div className="max-w-sm w-full mx-4 p-8 bg-card border border-border rounded-2xl shadow-lg text-center space-y-4">
         <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-2">
           <Wrench className="w-8 h-8 text-primary" />
