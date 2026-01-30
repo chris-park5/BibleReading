@@ -246,7 +246,7 @@ export function AchievementReportModal({ plan, progress, dailyStats = [], onClos
       <DialogContent className="max-w-md p-0 overflow-hidden border-none shadow-2xl rounded-3xl bg-white">
         {/* Header Area */}
         <DialogHeader className="px-8 pt-8 pb-4 text-left">
-          <DialogTitle className="text-2xl font-black text-slate-900 tracking-tight">리포트</DialogTitle>
+          <DialogTitle className="text-2xl font-bold text-slate-900 tracking-tight">리포트</DialogTitle>
           <DialogDescription className="text-base text-slate-500 font-medium">
             나의 읽기 여정
           </DialogDescription>
@@ -259,7 +259,7 @@ export function AchievementReportModal({ plan, progress, dailyStats = [], onClos
              <div className="flex items-end justify-between mb-6">
                 <div>
                    <div className="text-sm font-bold text-slate-400 mb-2 uppercase tracking-wide">전체 달성률</div>
-                   <div className="text-7xl font-black text-slate-900 tracking-tighter leading-none">
+                   <div className="text-7xl font-bold text-slate-900 tracking-tighter leading-none">
                       {achievementRate}<span className="text-3xl font-bold text-slate-300 ml-1">%</span>
                    </div>
                 </div>
