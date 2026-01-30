@@ -275,8 +275,8 @@ export function AchievementReportModal({ plan, progress, dailyStats = [], onClos
                 </div>
              </div>
 
-             <div className="flex items-center justify-between py-5 border-t border-slate-100">
-                <span className="text-sm font-semibold text-slate-500">예상 완료일</span>
+             <div className="flex items-center justify-between py-4 border-t border-slate-100">
+                <span className="text-sm font-medium text-slate-500">예상 완료일</span>
                 <span className="text-base font-bold text-slate-900">
                    {yyyymmdd(projectedEndDate)}
                 </span>
