@@ -205,7 +205,8 @@ export function ReadingHistorySection() {
                                       day,
                                       readingIndex: originalIndex,
                                       completed: isNowFullyComplete,
-                                      readingCount,
+                                      chapterCount: expandedChapters.length,
+                                      dayTotalReadings: readingCount,
                                       completedChapters: nextChapters
                                     });
                                   }}

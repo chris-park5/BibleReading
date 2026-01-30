@@ -104,8 +104,6 @@ export function useProgress(planId: string | null) {
     },
     onSuccess: (data) => {
       // If there are other pending mutations, do NOT overwrite the cache with this server response.
-      // The subsequent mutations have applied optimistic updates that this response (likely) doesn't know about.
-      // We wait for the final mutation to sync the authoritative state.
       if (pendingMutations.current > 1) {
         return;
       }
@@ -115,6 +113,9 @@ export function useProgress(planId: string | null) {
         latestServerTimestamp.current = serverTime;
         queryClient.setQueryData(progressQueryKey, data);
       }
+      
+      // Also invalidate dailyStats to refresh the chart
+      queryClient.invalidateQueries({ queryKey: ['dailyStats', planId] });
     },
     onSettled: () => {
       pendingMutations.current = Math.max(0, pendingMutations.current - 1);
@@ -273,6 +274,9 @@ export function useProgress(planId: string | null) {
         latestServerTimestamp.current = serverTime;
         queryClient.setQueryData(progressQueryKey, data);
       }
+      
+      // Also invalidate dailyStats to refresh the chart
+      queryClient.invalidateQueries({ queryKey: ['dailyStats', planId] });
     },
     onSettled: () => {
       pendingMutations.current = Math.max(0, pendingMutations.current - 1);

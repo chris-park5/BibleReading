@@ -388,12 +388,31 @@ export async function getFriendStatus(c: Context) {
 
     const { data: friendUser, error: friendUserError } = await supabase
       .from("users")
-      .select("id, name, username, shared_plan_id, current_streak")
+      .select("id, name, username, shared_plan_id, current_streak, last_active_at")
       .eq("id", friendUserId)
       .maybeSingle();
 
     if (friendUserError) throw friendUserError;
     if (!friendUser) return c.json({ error: "User not found" }, 404);
+
+    // Calculate effective streak based on last_active_at
+    // If not active today or yesterday, streak is effectively broken (0)
+    let effectiveStreak = friendUser.current_streak ?? 0;
+    if (friendUser.last_active_at) {
+      const today = new Date();
+      const todayStr = today.toISOString().split('T')[0];
+      
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toISOString().split('T')[0];
+      
+      if (friendUser.last_active_at !== todayStr && friendUser.last_active_at !== yesterdayStr) {
+        effectiveStreak = 0;
+      }
+    } else {
+      // If last_active_at is null but streak > 0, it's stale data from before migration or error
+      effectiveStreak = 0;
+    }
 
     // 공유할 계획은 친구가 '선택한' 계획만 보여줌
     const selectedPlanId = friendUser.shared_plan_id ?? null;
@@ -407,7 +426,7 @@ export async function getFriendStatus(c: Context) {
           achievementRate: 0,
           completedDays: 0,
           totalDays: 0,
-          currentStreak: friendUser.current_streak ?? 0,
+          currentStreak: effectiveStreak,
         },
       });
     }
@@ -429,7 +448,7 @@ export async function getFriendStatus(c: Context) {
           achievementRate: 0,
           completedDays: 0,
           totalDays: 0,
-          currentStreak: friendUser.current_streak ?? 0,
+          currentStreak: effectiveStreak,
         },
       });
     }
@@ -459,7 +478,7 @@ export async function getFriendStatus(c: Context) {
         progressRate,
         completedDays: completedChapters, // Using chapters count here as requested by UI
         totalDays: plan.total_days,
-        currentStreak: friendUser.current_streak ?? 0,
+        currentStreak: effectiveStreak,
       },
     });
   } catch (error) {

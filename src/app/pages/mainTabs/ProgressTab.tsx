@@ -105,7 +105,7 @@ export function ProgressTab() {
       });
 
       const instances = clusterReadings(book, items);
-      let bookTotal = instances.length;
+      const bookTotal = instances.length;
       let bookCompleted = 0;
 
       for (const inst of instances) {
