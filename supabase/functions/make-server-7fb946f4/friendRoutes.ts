@@ -600,10 +600,11 @@ export async function getLeaderboard(c: Context) {
       return c.json({ success: true, leaderboard: [] });
     }
 
-    // 2. Get Users + Shared Plan ID
+    // 2. Get Users + Shared Plan ID + Cached Stats
+    // Optimized: Fetch 'completed_chapters_count' directly
     const { data: users, error: usersError } = await supabase
       .from("users")
-      .select("id, name, username, shared_plan_id")
+      .select("id, name, username, shared_plan_id, completed_chapters_count")
       .in("id", allUserIds);
 
     if (usersError) throw usersError;
@@ -632,21 +633,36 @@ export async function getLeaderboard(c: Context) {
 
     const plansMap = new Map(plansData.map((p: any) => [p.id, p]));
 
-    // 4. Bulk Fetch Schedules (Deduplicated)
-    // Key strategy: "preset:{presetId}" or "custom:{planId}"
-    const scheduleCache = new Map<string, any[]>();
+    // 4. Bulk Fetch Schedules (Only for Total Count Calculation)
+    // We still need to know the 'Denominator' (Total Chapters in Plan) to calculate Rate.
+    const scheduleCache = new Map<string, number>(); // Key -> Total Chapters
     const promises: Promise<void>[] = [];
-
-    // Identify unique schedules needed
     const neededSchedules = new Set<string>();
     
     plansData.forEach((p: any) => {
       const key = p.is_custom ? `custom:${p.id}` : `preset:${p.preset_id}`;
       if (!neededSchedules.has(key)) {
         neededSchedules.add(key);
+        // We only need the total chapter count now!
         promises.push(
           fetchGroupedSchedule(supabase, p).then((sched) => {
-            scheduleCache.set(key, sched);
+            let total = 0;
+            // sched is grouped by day. We need to sum up weights/chapters.
+            // Using logic similar to computeChaptersTotals
+            // This is still heavy but only done once per plan type (not per user)
+            // Ideally 'total_chapters' should be stored in 'plans' table.
+            
+            // Simplified sum:
+            sched.forEach((s: any) => {
+                // s.readings has 'chapters' string.
+                // We need to expand and count.
+                // Re-using computeChaptersTotals logic is safest but let's approximate
+                // actually we MUST match the counting logic.
+                const { totalChapters } = computeChaptersTotals({ schedule: sched, progress: {} as any });
+                total += totalChapters;
+            });
+            
+            scheduleCache.set(key, total);
           })
         );
       }
@@ -654,34 +670,9 @@ export async function getLeaderboard(c: Context) {
 
     await Promise.all(promises);
 
-    // 5. Bulk Fetch Progress
-    const { data: progressData, error: progressError } = await supabase
-      .from("reading_progress")
-      .select("user_id, plan_id, day, reading_index, completed_chapters")
-      .in("user_id", activeUsers.map((u: any) => u.id))
-      .in("plan_id", planIds);
-
-    if (progressError) throw progressError;
-
-    // Group progress by User -> Plan
-    // Map<userId, Map<planId, rows[]>>
-    const userPlanProgress = new Map<string, Map<string, any[]>>();
-
-    (progressData || []).forEach((row: any) => {
-      if (!userPlanProgress.has(row.user_id)) {
-        userPlanProgress.set(row.user_id, new Map());
-      }
-      const pMap = userPlanProgress.get(row.user_id)!;
-      if (!pMap.has(row.plan_id)) {
-        pMap.set(row.plan_id, []);
-      }
-      pMap.get(row.plan_id)!.push(row);
-    });
-
-    // 6. Compute Stats
-    const leaderboard = await Promise.all(
-      (users || []).map(async (u: any) => {
-        const plan = u.shared_plan_id ? plansMap.get(u.shared_plan_id) : null;
+    // 5. Compute Stats (Fast)
+    const leaderboard = (activeUsers || []).map((u: any) => {
+        const plan = plansMap.get(u.shared_plan_id);
         
         if (!plan) {
           return {
@@ -694,87 +685,34 @@ export async function getLeaderboard(c: Context) {
         }
 
         const schedKey = plan.is_custom ? `custom:${plan.id}` : `preset:${plan.preset_id}`;
-        const schedule = scheduleCache.get(schedKey) || [];
+        const totalChaptersInPlan = scheduleCache.get(schedKey) || 1; // Avoid div 0
 
-        // Build Progress Object
-        const rows = userPlanProgress.get(u.id)?.get(plan.id) || [];
+        const completedCount = u.completed_chapters_count || 0;
         
-        const completedReadingsByDay: Record<string, number[]> = {};
-        const completedChaptersByDay: Record<string, Record<number, string[]>> = {};
-        const completedSetsByDay = new Map<number, Set<number>>();
+        // Calculate Rate
+        const rate = Math.min(100, Math.round((completedCount / totalChaptersInPlan) * 100));
 
-        rows.forEach((r: any) => {
-          const dayNum = Number(r.day);
-          const idx = Number(r.reading_index);
-          const dayStr = String(dayNum);
-          
-          let chapters = r.completed_chapters;
-          if (typeof chapters === 'string') {
-            const clean = chapters.replace(/^\{|\}$/g, '').trim();
-            if (clean.length === 0) {
-              chapters = [];
-            } else {
-              chapters = clean.split(',').map((s: string) => s.replace(/^"|"$/g, '').trim());
-            }
-          }
-
-          if (chapters === null) {
-            // Full completion
-            if (!completedReadingsByDay[dayStr]) completedReadingsByDay[dayStr] = [];
-            completedReadingsByDay[dayStr].push(idx);
-
-            if (!completedSetsByDay.has(dayNum)) completedSetsByDay.set(dayNum, new Set());
-            completedSetsByDay.get(dayNum)!.add(idx);
-          } else {
-             // Partial
-             if (!completedChaptersByDay[dayStr]) completedChaptersByDay[dayStr] = {};
-             completedChaptersByDay[dayStr][idx] = Array.isArray(chapters) ? chapters : [];
-          }
-        });
-
-        // Calculate completedDays
-        const completedDays: number[] = [];
-        // Need schedule counts
-        // schedule is groupedSchedule (Array<{ day, readings }>)
-        // Build map for fast lookup
-        const scheduleMap = new Map<number, number>();
-        schedule.forEach((s: any) => {
-           scheduleMap.set(s.day, s.readings.length);
-        });
-
-        for (const [dayNum, completedSet] of completedSetsByDay.entries()) {
-           const req = scheduleMap.get(dayNum) ?? 0;
-           if (req > 0 && completedSet.size >= req) {
-              completedDays.push(dayNum);
-           }
-        }
-
-        const progressObj = {
-          completedDays,
-          completedReadingsByDay,
-          completedChaptersByDay,
-          lastUpdated: new Date().toISOString()
-        };
-
-        const { completedChapters: totalCompleted } = computeChaptersTotals({
-          schedule,
-          progress: progressObj
-        });
-
-        // Pass cached schedule to avoid re-fetching
-        const achievementRate = await calculateAchievementRate(supabase, u.id, plan, progressObj, schedule);
-        const progressRate = await calculateProgressRate(supabase, u.id, plan, progressObj, schedule);
+        // Note: completedDays logic was "how many *days* are fully done".
+        // Now we are returning "completed *chapters* count" as 'completedDays' because
+        // the UI (FriendProfileDialog) displays it as "읽은 장수".
+        // The frontend expects this field to be the count.
+        
+        // If we really need 'days' count, we can't get it from 'completed_chapters_count'.
+        // But the previous heavy logic put 'completedChapters' (total count) into 'completedDays' field?
+        // Let's check previous code:
+        // const { completedChapters: totalCompleted } = computeChaptersTotals(...)
+        // completedDays: totalCompleted
+        // Yes, it was returning CHAPTERS count in the 'completedDays' field. So this is correct.
 
         return {
           user: { id: u.id, name: u.name, username: u.username },
           plan: { id: plan.id, name: plan.name, totalDays: plan.total_days },
-          achievementRate,
-          progressRate,
-          completedDays: totalCompleted, 
+          achievementRate: rate,
+          progressRate: rate,
+          completedDays: completedCount, 
           totalDays: plan.total_days,
         };
-      })
-    );
+    });
 
     // Sort by achievement rate desc
     leaderboard.sort((a, b) => b.achievementRate - a.achievementRate);
