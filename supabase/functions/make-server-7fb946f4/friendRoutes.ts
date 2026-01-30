@@ -635,7 +635,7 @@ export async function getLeaderboard(c: Context) {
 
     // 4. Bulk Fetch Schedules (Only for Total Count Calculation)
     // We still need to know the 'Denominator' (Total Chapters in Plan) to calculate Rate.
-    const scheduleCache = new Map<string, number>(); // Key -> Total Chapters
+    const scheduleCache = new Map<string, { total: number; grouped: any[] }>(); 
     const promises: Promise<void>[] = [];
     const neededSchedules = new Set<string>();
     
@@ -643,26 +643,10 @@ export async function getLeaderboard(c: Context) {
       const key = p.is_custom ? `custom:${p.id}` : `preset:${p.preset_id}`;
       if (!neededSchedules.has(key)) {
         neededSchedules.add(key);
-        // We only need the total chapter count now!
         promises.push(
           fetchGroupedSchedule(supabase, p).then((sched) => {
-            let total = 0;
-            // sched is grouped by day. We need to sum up weights/chapters.
-            // Using logic similar to computeChaptersTotals
-            // This is still heavy but only done once per plan type (not per user)
-            // Ideally 'total_chapters' should be stored in 'plans' table.
-            
-            // Simplified sum:
-            sched.forEach((s: any) => {
-                // s.readings has 'chapters' string.
-                // We need to expand and count.
-                // Re-using computeChaptersTotals logic is safest but let's approximate
-                // actually we MUST match the counting logic.
-                const { totalChapters } = computeChaptersTotals({ schedule: sched, progress: {} as any });
-                total += totalChapters;
-            });
-            
-            scheduleCache.set(key, total);
+            const { totalChapters } = computeChaptersTotals({ schedule: sched, progress: {} as any });
+            scheduleCache.set(key, { total: totalChapters, grouped: sched });
           })
         );
       }
@@ -670,7 +654,13 @@ export async function getLeaderboard(c: Context) {
 
     await Promise.all(promises);
 
-    // 5. Compute Stats (Fast)
+    // 5. Calculate Today in KST for Achievement Rate
+    const now = new Date();
+    const kstTime = now.getTime() + (9 * 60 * 60 * 1000);
+    const kstDate = new Date(kstTime);
+    const todayKST = new Date(kstDate.getUTCFullYear(), kstDate.getUTCMonth(), kstDate.getUTCDate());
+
+    // 6. Compute Stats (Fast)
     const leaderboard = (activeUsers || []).map((u: any) => {
         const plan = plansMap.get(u.shared_plan_id);
         
@@ -679,38 +669,67 @@ export async function getLeaderboard(c: Context) {
             user: { id: u.id, name: u.name, username: u.username },
             plan: null,
             achievementRate: 0,
+            progressRate: 0,
             completedDays: 0,
             totalDays: 0,
           };
         }
 
         const schedKey = plan.is_custom ? `custom:${plan.id}` : `preset:${plan.preset_id}`;
-        const totalChaptersInPlan = scheduleCache.get(schedKey) || 1; // Avoid div 0
+        const cached = scheduleCache.get(schedKey);
+        
+        if (!cached) {
+          return {
+            user: { id: u.id, name: u.name, username: u.username },
+            plan: { id: plan.id, name: plan.name, totalDays: plan.total_days },
+            achievementRate: 0,
+            progressRate: 0,
+            completedDays: u.completed_chapters_count || 0,
+            totalDays: plan.total_days,
+          };
+        }
+
+        const totalChaptersInPlan = cached.total || 1; 
+
+        // Calculate Elapsed Days for Achievement Rate
+        const [sy, sm, sd] = plan.start_date.split("-").map(Number);
+        const start = new Date(sy, sm - 1, sd);
+        const diffMs = todayKST.getTime() - start.getTime();
+        const diffDays = Math.floor(diffMs / (24 * 60 * 60 * 1000));
+        const elapsedDays = Math.max(0, Math.min(plan.total_days, diffDays + 1));
+
+        // Get target chapters up to today
+        const { totalChapters: targetChaptersUpToToday } = computeChaptersTotals({
+          schedule: cached.grouped,
+          progress: {} as any,
+          upToDay: elapsedDays
+        });
 
         const completedCount = u.completed_chapters_count || 0;
         
-        // Calculate Rate
-        const rate = Math.min(100, Math.round((completedCount / totalChaptersInPlan) * 100));
+        // Progress Rate (Overall)
+        const progressRate = Math.min(100, Math.round((completedCount / totalChaptersInPlan) * 100));
 
-        // Note: completedDays logic was "how many *days* are fully done".
-        // Now we are returning "completed *chapters* count" as 'completedDays' because
-        // the UI (FriendProfileDialog) displays it as "읽은 장수".
-        // The frontend expects this field to be the count.
-        
-        // If we really need 'days' count, we can't get it from 'completed_chapters_count'.
-        // But the previous heavy logic put 'completedChapters' (total count) into 'completedDays' field?
-        // Let's check previous code:
-        // const { completedChapters: totalCompleted } = computeChaptersTotals(...)
-        // completedDays: totalCompleted
-        // Yes, it was returning CHAPTERS count in the 'completedDays' field. So this is correct.
+        // Achievement Rate (On-track)
+        let achievementRate = 0;
+        if (targetChaptersUpToToday > 0) {
+          achievementRate = Math.min(100, Math.round((completedCount / targetChaptersUpToToday) * 100));
+        } else if (completedCount > 0) {
+          achievementRate = 100; // Already started before scheduled start?
+        }
 
         return {
           user: { id: u.id, name: u.name, username: u.username },
-          plan: { id: plan.id, name: plan.name, totalDays: plan.total_days },
-          achievementRate: rate,
-          progressRate: rate,
+          plan: { 
+            id: plan.id, 
+            name: plan.name, 
+            totalDays: plan.total_days,
+            totalChapters: totalChaptersInPlan
+          },
+          achievementRate: achievementRate,
+          progressRate: progressRate,
           completedDays: completedCount, 
-          totalDays: plan.total_days,
+          totalChapters: totalChaptersInPlan,
         };
     });
 
