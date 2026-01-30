@@ -57,6 +57,7 @@ api.patch("/plans/order", requireAuth, async (c) => (await import("./planRoutes.
 
 api.post("/progress", requireAuth, async (c) => (await import("./progressRoutes.ts")).updateProgress(c));
 api.get("/progress", requireAuth, async (c) => (await import("./progressRoutes.ts")).getProgress(c));
+api.get("/daily-stats", requireAuth, async (c) => (await import("./progressRoutes.ts")).getDailyStats(c));
 
 api.post("/friends", requireAuth, async (c) => (await import("./friendRoutes.ts")).addFriend(c));
 api.get("/friends", requireAuth, async (c) => (await import("./friendRoutes.ts")).getFriends(c));

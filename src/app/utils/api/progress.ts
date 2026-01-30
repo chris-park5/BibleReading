@@ -159,3 +159,11 @@ export async function getProgress(planId: string): Promise<{ success: boolean; p
     },
   };
 }
+
+export async function getDailyStats(planId?: string): Promise<{ success: boolean; stats: { date: string; count: number }[] }> {
+  let url = "/daily-stats";
+  if (planId) {
+    url += `?planId=${encodeURIComponent(planId)}`;
+  }
+  return fetchAPI(url);
+}
