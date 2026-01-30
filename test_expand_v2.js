@@ -1,12 +1,10 @@
-
-export function expandChapters(chapterStr: string): string[] {
-  const result: string[] = [];
+function expandChapters(chapterStr) {
+  const result = [];
   const parts = chapterStr.split(",");
   
   for (const part of parts) {
     const clean = part.trim();
 
-    // If it contains ":", extract the chapter number (e.g. "18:9-16" -> "18")
     if (clean.includes(":")) {
       const chapter = clean.split(":")[0].replace(/[^0-9]/g, "");
       if (chapter) {
@@ -17,13 +15,11 @@ export function expandChapters(chapterStr: string): string[] {
       continue;
     }
 
-    // If it contains "절", extract chapter number (e.g. "18장 9-16절" -> "18")
     if (clean.includes("절")) {
       const match = clean.match(/(\d+)장/);
       if (match && match[1]) {
         result.push(match[1]);
       } else {
-        // Fallback: try parsing the start
         const num = parseInt(clean);
         if (!isNaN(num)) result.push(String(num));
         else result.push(clean);
@@ -61,5 +57,10 @@ export function expandChapters(chapterStr: string): string[] {
       }
     }
   }
-  return Array.from(new Set(result)); // Deduplicate
+  return Array.from(new Set(result));
 }
+
+console.log("Test 1 (1-5):", expandChapters("1-5").length); // Expect 5
+console.log("Test 2 (119):", expandChapters("119").length); // Expect 1
+console.log("Test 3 (Gen 1-5):", expandChapters("창세기 1-5").length); // Expect 5
+console.log("Test 4 (Gen 1):", expandChapters("창세기 1").length); // Expect 1

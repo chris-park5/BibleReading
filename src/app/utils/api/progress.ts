@@ -19,7 +19,15 @@ export async function updateReadingProgress(
 
   return fetchAPI("/progress", {
     method: "POST",
-    body: JSON.stringify({ planId, day, readingIndex, completed, readingCount, completedChapters }),
+    body: JSON.stringify({
+      planId,
+      day,
+      readingIndex,
+      completed,
+      readingCount,
+      completedChapters,
+      currentDate: new Date().toLocaleDateString('en-CA') // YYYY-MM-DD in local time
+    }),
   });
 }
 
@@ -30,7 +38,12 @@ export async function updateProgress(
 ): Promise<{ success: boolean; progress: Progress }> {
   return fetchAPI("/progress", {
     method: "POST",
-    body: JSON.stringify({ planId, day, completed }),
+    body: JSON.stringify({
+      planId,
+      day,
+      completed,
+      currentDate: new Date().toLocaleDateString('en-CA') // YYYY-MM-DD in local time
+    }),
   });
 }
 
