@@ -12,9 +12,9 @@ export async function updateProgress(c: Context) {
   try {
     const userId = c.get("userId");
     const body = await c.req.json();
-    const { planId, day, completed, readingIndex, readingCount, completedChapters } = body as UpdateProgressRequest;
+    const { planId, day, completed, readingIndex, readingCount, completedChapters, currentDate } = body as UpdateProgressRequest;
     
-    console.log(`[updateProgress] planId=${planId}, day=${day}, idx=${readingIndex}, completed=${completed}, count=${readingCount}, chapters=${JSON.stringify(completedChapters)}`);
+    console.log(`[updateProgress] planId=${planId}, day=${day}, idx=${readingIndex}, completed=${completed}, count=${readingCount}, chapters=${JSON.stringify(completedChapters)}, date=${currentDate}`);
 
     if (!planId || day === undefined || readingIndex === undefined) {
       return c.json({ error: "Plan ID, day, and reading index required" }, 400);
@@ -53,11 +53,13 @@ export async function updateProgress(c: Context) {
 
     // 2. Update Daily Stats if there is a change
     if (delta !== 0) {
-      const today = new Date().toISOString().split('T')[0];
+      // Use provided currentDate (local) or fallback to server UTC date
+      const statDate = currentDate ? currentDate : new Date().toISOString().split('T')[0];
+      
       const { error: rpcError } = await supabase.rpc("increment_daily_reading_stat", {
         p_user_id: userId,
         p_plan_id: planId,
-        p_date: today,
+        p_date: statDate,
         p_delta: delta,
       });
       if (rpcError) {

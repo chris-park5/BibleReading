@@ -36,8 +36,13 @@ export function expandChapters(chapterStr: string): string[] {
 
     const range = trimmed.split("-");
     if (range.length === 2) {
-      const start = parseInt(range[0], 10);
-      const end = parseInt(range[1], 10);
+      // Remove non-digits to handle cases like "Gen 1" or "창세기 1"
+      const startStr = range[0].replace(/[^0-9]/g, "");
+      const endStr = range[1].replace(/[^0-9]/g, "");
+
+      const start = parseInt(startStr, 10);
+      const end = parseInt(endStr, 10);
+      
       if (!isNaN(start) && !isNaN(end) && start <= end) {
         for (let i = start; i <= end; i++) {
           result.push(String(i));
@@ -46,7 +51,14 @@ export function expandChapters(chapterStr: string): string[] {
           result.push(trimmed);
       }
     } else {
-      result.push(trimmed);
+      // Single chapter case: try to extract number if possible
+      const numStr = trimmed.replace(/[^0-9]/g, "");
+      const num = parseInt(numStr, 10);
+      if (!isNaN(num)) {
+         result.push(String(num));
+      } else {
+         result.push(trimmed);
+      }
     }
   }
   return Array.from(new Set(result)); // Deduplicate

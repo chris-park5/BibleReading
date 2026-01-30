@@ -37,6 +37,7 @@ export interface UpdateProgressRequest {
   readingIndex: number;
   readingCount: number;
   completedChapters?: string[];
+  currentDate?: string;
 }
 
 export interface Progress {
