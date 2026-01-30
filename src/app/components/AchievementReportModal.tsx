@@ -311,9 +311,9 @@ export function AchievementReportModal({ plan, progress, dailyStats = [], onClos
                         const goalHeight = (d.goal / weeklyChart.max) * 100;
                         
                         return (
-                            <div key={i} className="relative w-full h-full flex items-end justify-center group">
+                            <div key={i} className="relative w-full h-full flex items-end justify-center group cursor-pointer">
                                 {/* Bar Container */}
-                                <div className="relative w-full h-full flex items-end justify-center">
+                                <div className="relative w-full h-full flex items-end justify-center z-10">
                                     
                                     {/* 1. Goal Marker (Individual) */}
                                     {d.goal > 0 && (
@@ -344,10 +344,12 @@ export function AchievementReportModal({ plan, progress, dailyStats = [], onClos
                                     </div>
                                     
                                     {/* Tooltip */}
-                                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-50 pointer-events-none">
-                                        <div className="bg-slate-800 text-white text-[10px] font-bold py-1 px-2 rounded-lg shadow-xl whitespace-nowrap">
+                                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-200 z-[60] pointer-events-none">
+                                        <div className="bg-slate-900/95 text-white text-[10px] font-bold py-1.5 px-3 rounded-xl shadow-xl whitespace-nowrap border border-white/10">
                                             {d.count} / {d.goal}장
                                         </div>
+                                        {/* Arrow */}
+                                        <div className="w-1.5 h-1.5 bg-slate-900/95 rotate-45 absolute left-1/2 -translate-x-1/2 -bottom-0.5 border-r border-b border-white/10"></div>
                                     </div>
                                 </div>
                             </div>

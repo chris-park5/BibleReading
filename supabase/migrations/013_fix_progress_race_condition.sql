@@ -38,12 +38,10 @@ BEGIN
   IF FOUND THEN
     IF v_progress_row.completed_chapters IS NULL THEN
       -- Previously fully completed. Use p_reading_count as the best estimate.
-      -- Note: If p_reading_count changed (e.g. metadata update), this might be slightly off,
-      -- but usually it's stable.
       v_prev_count := COALESCE(p_reading_count, 0); 
     ELSE
-      -- Previously partially completed
-      v_prev_count := array_length(v_progress_row.completed_chapters, 1);
+      -- Previously partially completed. Use COALESCE because array_length returns NULL for empty.
+      v_prev_count := COALESCE(array_length(v_progress_row.completed_chapters, 1), 0);
     END IF;
   ELSE
     -- No previous record
@@ -53,8 +51,8 @@ BEGIN
   -- 2. Calculate New Count
   IF p_completed THEN
     v_new_count := COALESCE(p_reading_count, 0);
-  ELSIF p_completed_chapters IS NOT NULL AND array_length(p_completed_chapters, 1) > 0 THEN
-    v_new_count := array_length(p_completed_chapters, 1);
+  ELSIF p_completed_chapters IS NOT NULL THEN
+    v_new_count := COALESCE(array_length(p_completed_chapters, 1), 0);
   ELSE
     v_new_count := 0;
   END IF;
