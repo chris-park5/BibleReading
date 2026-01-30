@@ -1,6 +1,5 @@
-
-export function expandChapters(chapterStr: string): string[] {
-  const result: string[] = [];
+function expandChapters(chapterStr) {
+  const result = [];
   const parts = chapterStr.split(",");
   
   for (const part of parts) {
@@ -31,18 +30,24 @@ export function expandChapters(chapterStr: string): string[] {
       continue;
     }
 
+    // 한글 '장' 제거 및 하이픈 정규화
     const normalized = clean.replace(/[~–—]/g, "-");
+    
+    // "창세기 1-5" 같은 경우 "창세기 1-5"가 clean임.
+    // 여기서 "장"만 떼면 "창세기 1-5".
+    // parseInt("창세기 1") -> NaN.
+    
+    // !!! 문제 발견 가능성 !!!
+    // reading.chapters가 "창세기 1-5" 처럼 책 이름이 포함되어 있으면?
+    // 보통 reading.chapters에는 "1-5"만 들어있음. (book은 따로 있음)
+    // 하지만 만약 "창세기 1-5"가 들어오면?
+
     const trimmed = normalized.replace(/장/g, "");
 
     const range = trimmed.split("-");
     if (range.length === 2) {
-      // Remove non-digits to handle cases like "Gen 1" or "창세기 1"
-      const startStr = range[0].replace(/[^0-9]/g, "");
-      const endStr = range[1].replace(/[^0-9]/g, "");
-
-      const start = parseInt(startStr, 10);
-      const end = parseInt(endStr, 10);
-      
+      const start = parseInt(range[0], 10);
+      const end = parseInt(range[1], 10);
       if (!isNaN(start) && !isNaN(end) && start <= end) {
         for (let i = start; i <= end; i++) {
           result.push(String(i));
@@ -51,15 +56,12 @@ export function expandChapters(chapterStr: string): string[] {
           result.push(trimmed);
       }
     } else {
-      // Single chapter case: try to extract number if possible
-      const numStr = trimmed.replace(/[^0-9]/g, "");
-      const num = parseInt(numStr, 10);
-      if (!isNaN(num)) {
-         result.push(String(num));
-      } else {
-         result.push(trimmed);
-      }
+      result.push(trimmed);
     }
   }
-  return Array.from(new Set(result)); // Deduplicate
+  return Array.from(new Set(result));
 }
+
+console.log("Test 1 (1-5):", expandChapters("1-5").length);
+console.log("Test 2 (119):", expandChapters("119").length);
+console.log("Test 3 (Gen 1-5):", expandChapters("창세기 1-5").length);
