@@ -15,6 +15,12 @@ import { FriendProfileDialog } from "./friends/components/FriendProfileDialog";
 import { LeaderboardView } from "./friends/components/LeaderboardView";
 import { FriendsListView } from "./friends/components/FriendsListView";
 import { RequestsView } from "./friends/components/RequestsView";
+import { FriendsMaintenanceOverlay } from "./friends/components/FriendsMaintenanceOverlay";
+
+// ==========================================
+// CONFIGURATION
+// ==========================================
+const IS_MAINTENANCE_MODE = true; // Set to false to enable Friends Tab
 
 export function FriendsTabPage({ isActive = true }: { isActive?: boolean }) {
   const {
@@ -34,7 +40,10 @@ export function FriendsTabPage({ isActive = true }: { isActive?: boolean }) {
   } = useFriendsTab(isActive);
 
   return (
-    <div className="min-h-screen pb-24">
+    <div className="min-h-screen pb-24 relative">
+      {/* Maintenance Overlay */}
+      {IS_MAINTENANCE_MODE && <FriendsMaintenanceOverlay />}
+
       {/* Sticky Header */}
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-md border-b border-border shadow-sm transition-all duration-200">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
