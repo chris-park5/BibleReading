@@ -127,13 +127,15 @@ export function useProgress(planId: string | null) {
       day,
       readingIndex,
       completed,
-      readingCount,
+      chapterCount,
+      dayTotalReadings,
       completedChapters,
     }: {
       day: number;
       readingIndex: number;
       completed: boolean;
-      readingCount: number;
+      chapterCount: number;
+      dayTotalReadings: number;
       completedChapters?: string[];
     }) => {
       // Chain requests to ensure serial execution
@@ -146,14 +148,15 @@ export function useProgress(planId: string | null) {
         if (typeof navigator !== 'undefined' && navigator && navigator.onLine === false) {
           throw new OfflineError();
         }
-        return progressService.updateReadingProgress(planId!, day, readingIndex, completed, readingCount, completedChapters);
+        // Pass chapterCount as readingCount to the service/API
+        return progressService.updateReadingProgress(planId!, day, readingIndex, completed, chapterCount, completedChapters);
       };
 
       const nextPromise = task();
       mutationQueue.current = nextPromise;
       return nextPromise;
     },
-    onMutate: async ({ day, readingIndex, completed, readingCount, completedChapters }) => {
+    onMutate: async ({ day, readingIndex, completed, chapterCount, dayTotalReadings, completedChapters }) => {
       pendingMutations.current += 1;
 
       // Await cancellation to ensure no in-flight queries overwrite our optimistic update
@@ -217,7 +220,8 @@ export function useProgress(planId: string | null) {
 
 
         const nextCompletedDays = new Set(prevProgress.completedDays ?? []);
-        const isDayCompleted = readingCount > 0 && nextList.length >= readingCount;
+        // Use dayTotalReadings for completion check
+        const isDayCompleted = dayTotalReadings > 0 && nextList.length >= dayTotalReadings;
         if (isDayCompleted) nextCompletedDays.add(day);
         else nextCompletedDays.delete(day);
 
@@ -244,7 +248,7 @@ export function useProgress(planId: string | null) {
           day: vars.day,
           readingIndex: vars.readingIndex,
           completed: vars.completed,
-          readingCount: vars.readingCount,
+          readingCount: vars.chapterCount, // Store chapterCount for retry
         });
         return;
       }

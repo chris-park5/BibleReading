@@ -48,6 +48,11 @@ export interface Progress {
   lastUpdated: string;
 }
 
+export interface DailyStat {
+  date: string;
+  count: number;
+}
+
 // ============================================
 // Friend Types
 // ============================================

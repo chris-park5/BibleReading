@@ -30,8 +30,11 @@ export function parseChapterRanges(raw: string, bookName: string): ChapterRange[
   const verseCounts = tryGetVerseCounts(bookName);
 
   for (const part of parts) {
+    const clean = part.trim();
+    const normalized = clean.replace(/[~–—]/g, "-");
+
     // 1. "22:1-8" or "22:1-8장"
-    const colonMatch = part.match(/^(\d+):(\d+)-(\d+)(?:장|절)?$/);
+    const colonMatch = normalized.match(/^(\d+):(\d+)-(\d+)(?:장|절)?$/);
     if (colonMatch) {
       const ch = parseInt(colonMatch[1]);
       const start = parseInt(colonMatch[2]);
@@ -41,7 +44,7 @@ export function parseChapterRanges(raw: string, bookName: string): ChapterRange[
     }
 
     // 2. "22:1" or "22:1절"
-    const colonSingleMatch = part.match(/^(\d+):(\d+)(?:장|절)?$/);
+    const colonSingleMatch = normalized.match(/^(\d+):(\d+)(?:장|절)?$/);
     if (colonSingleMatch) {
       const ch = parseInt(colonSingleMatch[1]);
       const v = parseInt(colonSingleMatch[2]);
@@ -51,7 +54,7 @@ export function parseChapterRanges(raw: string, bookName: string): ChapterRange[
 
     // 3. Korean format "1장 22-25절"
     // Also handles "1장 22-25" (implicit '절' at end) or "1장22-25절"
-    const krRangeMatch = part.match(/^(\d+)장\s*(\d+)-(\d+)(?:절)?$/);
+    const krRangeMatch = normalized.match(/^(\d+)장\s*(\d+)-(\d+)(?:절)?$/);
     if (krRangeMatch) {
       const ch = parseInt(krRangeMatch[1]);
       const start = parseInt(krRangeMatch[2]);
@@ -61,7 +64,7 @@ export function parseChapterRanges(raw: string, bookName: string): ChapterRange[
     }
 
     // 4. Korean format "1장 22절"
-    const krSingleMatch = part.match(/^(\d+)장\s*(\d+)(?:절)?$/);
+    const krSingleMatch = normalized.match(/^(\d+)장\s*(\d+)(?:절)?$/);
     if (krSingleMatch) {
        const ch = parseInt(krSingleMatch[1]);
        const v = parseInt(krSingleMatch[2]);
@@ -70,7 +73,7 @@ export function parseChapterRanges(raw: string, bookName: string): ChapterRange[
     }
 
     // 5. "1-3" (Chapters 1 to 3) or "1" (Chapter 1)
-    const cleaned = part.replace(/장/g, "").replace(/절/g, "").trim(); 
+    const cleaned = normalized.replace(/장/g, "").replace(/절/g, "").trim(); 
     const dashMatch = cleaned.match(/^(\d+)-(\d+)$/);
     if (dashMatch) {
       const start = parseInt(dashMatch[1]);

@@ -24,7 +24,7 @@ export {
 
 export { createPlan, getPlans, seedPresetSchedules, deletePlan, updatePlanOrder } from "./api/plans";
 
-export { updateReadingProgress, updateProgress, getProgress } from "./api/progress";
+export { updateReadingProgress, updateProgress, getProgress, getDailyStats } from "./api/progress";
 
 export {
   addFriend,

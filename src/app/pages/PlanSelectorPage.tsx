@@ -8,7 +8,7 @@ import { CustomPlanCreator } from '../components/CustomPlanCreator';
 import * as authService from '../../services/authService';
 import * as api from '../utils/api';
 import { bundledPresetPlans, normalizeSchedule } from '../plans/bundledPresets';
-import { countChapters } from '../utils/chaptersProgress';
+import { expandChapters } from '../utils/expandChapters';
 import { Tabs, TabsContent } from '../components/ui/tabs';
 import {
   Select,
@@ -248,7 +248,7 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
                     plan.schedule.forEach((day: any) => {
                       if (day.readings) {
                         day.readings.forEach((r: any) => {
-                          totalChapters += countChapters(r.chapters);
+                          totalChapters += expandChapters(r.chapters).length;
                         });
                       }
                     });

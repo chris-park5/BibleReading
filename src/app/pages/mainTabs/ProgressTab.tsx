@@ -8,7 +8,7 @@ import { TodayReading } from "../../components/TodayReading";
 import { BibleProgressModal } from "../../components/BibleProgressModal";
 import { BIBLE_BOOKS } from "../../data/bibleBooks";
 import { computeTodayDay, startOfTodayLocal } from "./dateUtils";
-import { computeChaptersTotals, countChapters } from "../../utils/chaptersProgress";
+import { computeChaptersTotals } from "../../utils/chaptersProgress";
 import { clusterReadings } from "../../utils/chapterClustering";
 import { Check } from "lucide-react";
 import { bookMatchesQuery } from "../../utils/bookSearch";
@@ -22,6 +22,8 @@ import {
   SelectValue,
 } from "../../components/ui/select";
 import { cn } from "../../components/ui/utils";
+import { useQuery } from "@tanstack/react-query";
+import { getDailyStats } from "../../utils/api";
 
 function formatChapterCount(val: number) {
   return parseFloat(val.toFixed(1));
@@ -36,6 +38,12 @@ export function ProgressTab() {
   const activePlanId = selectedPlanId || (plans.length > 0 ? plans[0].id : null);
   const plan = usePlan(activePlanId);
   const { progress, toggleReading } = useProgress(activePlanId);
+
+  const { data: dailyStats } = useQuery({
+    queryKey: ["dailyStats", activePlanId],
+    queryFn: () => getDailyStats(activePlanId!).then(r => r.stats),
+    enabled: !!activePlanId,
+  });
 
   // NOTE:
   // - `todayDay` is computed from real calendar date + plan.startDate.
@@ -230,6 +238,7 @@ export function ProgressTab() {
           <AchievementReportModal 
             plan={plan} 
             progress={progress} 
+            dailyStats={dailyStats ?? []}
             open={showAchievementModal}
             onClose={() => setShowAchievementModal(false)} 
           />
@@ -337,8 +346,7 @@ export function ProgressTab() {
             renderDayDetails={(day, query) => {
               const entry = plan.schedule.find((s) => s.day === day);
               const allReadings = entry?.readings ?? [];
-              const readingCount = allReadings.length;
-
+              
               const isDayCompleted = progress.completedDays.includes(day);
               const completedIndices = progress.completedReadingsByDay?.[String(day)] ?? [];
               const completedSet = new Set(completedIndices);
@@ -365,6 +373,7 @@ export function ProgressTab() {
                   {filteredReadingsWithIndex.map((reading) => {
                     const expandedChapters = expandChapters(reading.chapters);
                     const originalIndex = reading.originalIndex;
+                    const chaptersCount = expandedChapters.length;
                     
                     // Determine current status
                     const isReadingCompleted = isDayCompleted || completedSet.has(originalIndex);
@@ -399,12 +408,14 @@ export function ProgressTab() {
                                   
                                   const nextChapters = Array.from(nextSet);
                                   const isNowFullyComplete = expandedChapters.length > 0 && expandedChapters.every(c => nextSet.has(c));
+                                  const dayTotalReadings = allReadings.length;
 
                                   toggleReading({
                                     day,
                                     readingIndex: originalIndex,
                                     completed: isNowFullyComplete,
-                                    readingCount,
+                                    chapterCount: chaptersCount,
+                                    dayTotalReadings,
                                     completedChapters: nextChapters
                                   });
                                 }}
@@ -442,7 +453,6 @@ export function ProgressTab() {
                 const day = selectedHistoryDay;
                 const entry = plan.schedule.find((s) => s.day === day);
                 const readings = entry?.readings ?? [];
-                const readingCount = readings.length;
 
                 const isDayCompleted = progress.completedDays.includes(day);
                 const completedIndices = progress.completedReadingsByDay?.[String(day)] ?? [];
@@ -461,15 +471,21 @@ export function ProgressTab() {
                     completedByIndex={completedByIndex}
                     completedChaptersByIndex={completedChaptersByIndex}
                     subtitle={`${day}일차 전체 보기`}
-                    onToggleReading={(readingIndex, completed, completedChapters) =>
-                      toggleReading({
-                        day,
-                        readingIndex,
-                        completed,
-                        readingCount,
-                        completedChapters,
-                      })
-                    }
+                                        onToggleReading={(readingIndex, completed, completedChapters) => {
+                                          const reading = readings[readingIndex];
+                                          const expanded = expandChapters(reading.chapters);
+                                          const chaptersCount = expanded.length;
+                                          const dayTotalReadings = readings.length;
+                                          
+                                          toggleReading({
+                                            day,
+                                            readingIndex,
+                                            completed,
+                                            chapterCount: chaptersCount,
+                                            dayTotalReadings,
+                                            completedChapters,
+                                          });
+                                        }}
                   />
                 );
               })()}
