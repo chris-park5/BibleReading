@@ -20,7 +20,7 @@ import { FriendsMaintenanceOverlay } from "./friends/components/FriendsMaintenan
 // ==========================================
 // CONFIGURATION
 // ==========================================
-const IS_MAINTENANCE_MODE = true; // Set to false to enable Friends Tab
+const IS_MAINTENANCE_MODE = false; // Set to false to enable Friends Tab
 
 export function FriendsTabPage({ isActive = true }: { isActive?: boolean }) {
   const {
