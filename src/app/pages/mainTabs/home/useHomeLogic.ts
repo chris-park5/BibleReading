@@ -8,6 +8,7 @@ import * as friendService from "../../../../services/friendService";
 import * as authService from "../../../../services/authService";
 import { enqueueReadingToggle, isOfflineLikeError, OfflineError } from "../../../utils/offlineProgressQueue";
 import { computeTodayDay, startOfTodayLocal } from "../dateUtils";
+import { expandChapters } from "../../../utils/expandChapters";
 
 type CombinedReading = {
   planId: string;
@@ -15,6 +16,7 @@ type CombinedReading = {
   day: number;
   readingIndex: number;
   readingCount: number;
+  totalReadingsCount: number;
   book: string;
   chapters: string;
   completed: boolean;
@@ -125,11 +127,14 @@ export function useHomeLogic() {
 
   // Fetch progress for ALL plans to show dots on calendar
   const allProgressQueries = useQueries({
-    queries: plans.map((plan) => ({
-      queryKey: ["progress", userId, plan.id],
-      queryFn: () => progressService.getProgress(plan.id),
-      enabled: !!userId,
-    })),
+    queries: plans.map((plan) => {
+      const isOptimistic = plan.id.startsWith("optimistic-");
+      return {
+        queryKey: ["progress", userId, plan.id],
+        queryFn: () => progressService.getProgress(plan.id),
+        enabled: !!userId && !isOptimistic,
+      };
+    }),
   });
 
   const progressByPlanId = useMemo(() => {
@@ -146,7 +151,8 @@ export function useHomeLogic() {
       day: number;
       readingIndex: number;
       completed: boolean;
-      readingCount: number;
+      readingCount: number; // This is actually chapter count for the item
+      totalReadingsCount: number; // Total items in the day
       completedChapters?: string[];
     }) => {
       if (typeof navigator !== "undefined" && navigator && navigator.onLine === false) {
@@ -161,14 +167,14 @@ export function useHomeLogic() {
         vars.completedChapters
       );
     },
-    onMutate: (vars) => {
+    onMutate: async (vars) => {
       const key = ["progress", userId, vars.planId] as const;
 
       const prevSeq = progressMutationSeqByPlanRef.current.get(vars.planId) ?? 0;
       const seq = prevSeq + 1;
       progressMutationSeqByPlanRef.current.set(vars.planId, seq);
 
-      void queryClient.cancelQueries({ queryKey: key });
+      await queryClient.cancelQueries({ queryKey: key });
 
       const previous = queryClient.getQueryData<any>(key);
 
@@ -208,7 +214,9 @@ export function useHomeLogic() {
         };
 
         const nextCompletedDays = new Set<number>(prevProgress.completedDays ?? []);
-        const isDayCompleted = vars.readingCount > 0 && nextList.length >= vars.readingCount;
+        // FIX: Use totalReadingsCount (items count) instead of readingCount (chapter count)
+        const isDayCompleted = vars.totalReadingsCount > 0 && nextList.length >= vars.totalReadingsCount;
+        
         if (isDayCompleted) nextCompletedDays.add(vars.day);
         else nextCompletedDays.delete(vars.day);
 
@@ -271,18 +279,23 @@ export function useHomeLogic() {
       const completedSet = new Set<number>(completedIndices);
       const dayChaptersMap = progress?.completedChaptersByDay?.[String(day)] ?? {};
       
-      const readingCount = reading.readings.length;
+      const totalReadingsCount = reading.readings.length;
 
       for (let readingIndex = 0; readingIndex < reading.readings.length; readingIndex++) {
         const r = reading.readings[readingIndex];
         const completedChapters = dayChaptersMap[readingIndex] ?? [];
+        
+        // Calculate exact chapter count for this reading item
+        const expanded = expandChapters(r.chapters);
+        const chapterCount = expanded.length;
         
         rows.push({
           planId: plan.id,
           planName: plan.name,
           day,
           readingIndex,
-          readingCount,
+          readingCount: chapterCount,
+          totalReadingsCount,
           book: r.book,
           chapters: r.chapters,
           completed: isDayCompleted || completedSet.has(readingIndex),
