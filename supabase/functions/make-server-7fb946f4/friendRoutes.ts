@@ -600,11 +600,10 @@ export async function getLeaderboard(c: Context) {
       return c.json({ success: true, leaderboard: [] });
     }
 
-    // 2. Get Users + Shared Plan ID + Cached Stats
-    // Optimized: Fetch 'completed_chapters_count' directly
+    // 2. Get Users + Shared Plan ID
     const { data: users, error: usersError } = await supabase
       .from("users")
-      .select("id, name, username, shared_plan_id, completed_chapters_count")
+      .select("id, name, username, shared_plan_id")
       .in("id", allUserIds);
 
     if (usersError) throw usersError;
@@ -615,6 +614,7 @@ export async function getLeaderboard(c: Context) {
         user: { id: u.id, name: u.name, username: u.username },
         plan: null,
         achievementRate: 0,
+        progressRate: 0,
         completedDays: 0,
         totalDays: 0,
       }));
@@ -633,35 +633,8 @@ export async function getLeaderboard(c: Context) {
 
     const plansMap = new Map(plansData.map((p: any) => [p.id, p]));
 
-    // 4. Bulk Fetch Schedules (Only for Total Count Calculation)
-    // We still need to know the 'Denominator' (Total Chapters in Plan) to calculate Rate.
-    const scheduleCache = new Map<string, { total: number; grouped: any[] }>(); 
-    const promises: Promise<void>[] = [];
-    const neededSchedules = new Set<string>();
-    
-    plansData.forEach((p: any) => {
-      const key = p.is_custom ? `custom:${p.id}` : `preset:${p.preset_id}`;
-      if (!neededSchedules.has(key)) {
-        neededSchedules.add(key);
-        promises.push(
-          fetchGroupedSchedule(supabase, p).then((sched) => {
-            const { totalChapters } = computeChaptersTotals({ schedule: sched, progress: {} as any });
-            scheduleCache.set(key, { total: totalChapters, grouped: sched });
-          })
-        );
-      }
-    });
-
-    await Promise.all(promises);
-
-    // 5. Calculate Today in KST for Achievement Rate
-    const now = new Date();
-    const kstTime = now.getTime() + (9 * 60 * 60 * 1000);
-    const kstDate = new Date(kstTime);
-    const todayKST = new Date(kstDate.getUTCFullYear(), kstDate.getUTCMonth(), kstDate.getUTCDate());
-
-    // 6. Compute Stats (Fast)
-    const leaderboard = (activeUsers || []).map((u: any) => {
+    // 4. Calculate Stats Dynamically (Slow but Accurate)
+    const leaderboardPromises = activeUsers.map(async (u: any) => {
         const plan = plansMap.get(u.shared_plan_id);
         
         if (!plan) {
@@ -675,63 +648,29 @@ export async function getLeaderboard(c: Context) {
           };
         }
 
-        const schedKey = plan.is_custom ? `custom:${plan.id}` : `preset:${plan.preset_id}`;
-        const cached = scheduleCache.get(schedKey);
+        // Fetch Progress & Schedule on-the-fly
+        const progress = await fetchUserProgress(u.id, plan.id);
+        const groupedSchedule = await fetchGroupedSchedule(supabase, plan);
         
-        if (!cached) {
-          return {
-            user: { id: u.id, name: u.name, username: u.username },
-            plan: { id: plan.id, name: plan.name, totalDays: plan.total_days },
-            achievementRate: 0,
-            progressRate: 0,
-            completedDays: u.completed_chapters_count || 0,
-            totalDays: plan.total_days,
-          };
-        }
-
-        const totalChaptersInPlan = cached.total || 1; 
-
-        // Calculate Elapsed Days for Achievement Rate
-        const [sy, sm, sd] = plan.start_date.split("-").map(Number);
-        const start = new Date(sy, sm - 1, sd);
-        const diffMs = todayKST.getTime() - start.getTime();
-        const diffDays = Math.floor(diffMs / (24 * 60 * 60 * 1000));
-        const elapsedDays = Math.max(0, Math.min(plan.total_days, diffDays + 1));
-
-        // Get target chapters up to today
-        const { totalChapters: targetChaptersUpToToday } = computeChaptersTotals({
-          schedule: cached.grouped,
-          progress: {} as any,
-          upToDay: elapsedDays
-        });
-
-        const completedCount = u.completed_chapters_count || 0;
-        
-        // Progress Rate (Overall)
-        const progressRate = Math.min(100, Math.round((completedCount / totalChaptersInPlan) * 100));
-
-        // Achievement Rate (On-track)
-        let achievementRate = 0;
-        if (targetChaptersUpToToday > 0) {
-          achievementRate = Math.min(100, Math.round((completedCount / targetChaptersUpToToday) * 100));
-        } else if (completedCount > 0) {
-          achievementRate = 100; // Already started before scheduled start?
-        }
+        const achievementRate = await calculateAchievementRate(supabase, u.id, plan, progress, groupedSchedule);
+        const progressRate = await calculateProgressRate(supabase, u.id, plan, progress, groupedSchedule);
+        const { completedChapters } = computeChaptersTotals({ schedule: groupedSchedule, progress });
 
         return {
           user: { id: u.id, name: u.name, username: u.username },
           plan: { 
             id: plan.id, 
             name: plan.name, 
-            totalDays: plan.total_days,
-            totalChapters: totalChaptersInPlan
+            totalDays: plan.total_days
           },
           achievementRate: achievementRate,
           progressRate: progressRate,
-          completedDays: completedCount, 
-          totalChapters: totalChaptersInPlan,
+          completedDays: completedChapters,
+          totalDays: plan.total_days,
         };
     });
+
+    const leaderboard = await Promise.all(leaderboardPromises);
 
     // Sort by achievement rate desc
     leaderboard.sort((a, b) => b.achievementRate - a.achievementRate);

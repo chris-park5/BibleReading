@@ -113,6 +113,7 @@ export function HomeTab() {
                     readingIndex: target.readingIndex,
                     completed,
                     readingCount: target.readingCount,
+                    totalReadingsCount: target.totalReadingsCount,
                     completedChapters,
                   });
                 }}
