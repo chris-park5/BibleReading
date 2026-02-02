@@ -168,7 +168,8 @@ export function AchievementReportModal({ plan, progress, dailyStats = [], onClos
     // Pre-fill daysMap with dailyStats
     dailyStats.forEach(ds => {
       const dateStr = ds.date.split('T')[0];
-      daysMap.set(dateStr, ds.count);
+      const count = ds?.count === null || ds?.count === undefined ? NaN : Number(ds.count);
+      daysMap.set(dateStr, Number.isFinite(count) ? count : 0);
     });
 
     let maxScale = 1;
@@ -199,17 +200,21 @@ export function AchievementReportModal({ plan, progress, dailyStats = [], onClos
           const daySched = scheduleMap.get(planDay);
           if (daySched?.readings) {
               daySched.readings.forEach((r: any) => {
-                  if (typeof r.chapter_count === 'number') {
-                      dailyGoal += r.chapter_count;
-                  } else {
-                      dailyGoal += expandChapters(r.chapters).length;
-                  }
+              const raw = r?.chapter_count;
+              const chapterCount = raw === null || raw === undefined ? NaN : Number(raw);
+              if (Number.isFinite(chapterCount)) {
+              dailyGoal += chapterCount;
+              return;
+              }
+              dailyGoal += expandChapters(r.chapters).length;
               });
           }
       }
       if (dailyGoal === 0 && planDay >= 1 && planDay <= plan.totalDays) dailyGoal = 1; // Fallback for empty days in plan
 
-      const isGoalMet = count >= dailyGoal && dailyGoal > 0;
+        // Guard against tiny float drift (e.g., 3.3999999999 vs 3.4)
+        const EPS = 1e-6;
+        const isGoalMet = dailyGoal > 0 && count + EPS >= dailyGoal;
       if (isGoalMet) achievedDaysCount++;
 
       // Track max for scaling
