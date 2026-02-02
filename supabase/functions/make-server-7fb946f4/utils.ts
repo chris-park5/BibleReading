@@ -401,7 +401,8 @@ export interface ChapterInstance {
 }
 
 export function parseChapterRanges(raw: string, bookName: string): ChapterRange[] {
-  const s = String(raw ?? "").trim();
+  // Pre-clean: remove zero-width spaces and trim
+  const s = String(raw ?? "").replace(/[\u200B-\u200D\uFEFF]/g, "").trim();
   if (!s) return [];
 
   const parts = s.split(",").map(p => p.trim()).filter(Boolean);
@@ -409,31 +410,36 @@ export function parseChapterRanges(raw: string, bookName: string): ChapterRange[
   const verseCounts = getVerseCounts(bookName);
 
   for (const part of parts) {
-    const colonMatch = part.match(/^(\d+):(\d+)-(\d+)(?:장|절)?$/);
+    // 1. "27:1-6" or "27:1~6" (Match numeric structure anywhere)
+    const colonMatch = part.match(/(\d+)\s*:\s*(\d+)\s*[-\~]\s*(\d+)(?:장|절)?/);
     if (colonMatch) {
       result.push({ ch: parseInt(colonMatch[1]), startVerse: parseInt(colonMatch[2]), endVerse: parseInt(colonMatch[3]) });
       continue;
     }
-    const colonSingleMatch = part.match(/^(\d+):(\d+)(?:장|절)?$/);
+    // 2. "27:1" or "시편 27:1"
+    const colonSingleMatch = part.match(/(\d+)\s*:\s*(\d+)(?:장|절)?/);
     if (colonSingleMatch) {
       const v = parseInt(colonSingleMatch[2]);
       result.push({ ch: parseInt(colonSingleMatch[1]), startVerse: v, endVerse: v });
       continue;
     }
-    const krRangeMatch = part.match(/^(\d+)장\s*(\d+)-(\d+)(?:절)?$/);
+    // 3. "27장 1-6" or "27장 1~6"
+    const krRangeMatch = part.match(/(\d+)장\s*(\d+)\s*[-\~]\s*(\d+)(?:절)?/);
     if (krRangeMatch) {
       result.push({ ch: parseInt(krRangeMatch[1]), startVerse: parseInt(krRangeMatch[2]), endVerse: parseInt(krRangeMatch[3]) });
       continue;
     }
-    const krSingleMatch = part.match(/^(\d+)장\s*(\d+)(?:절)?$/);
+    // 4. "27장 1"
+    const krSingleMatch = part.match(/(\d+)장\s*(\d+)(?:절)?/);
     if (krSingleMatch) {
        const v = parseInt(krSingleMatch[2]);
        result.push({ ch: parseInt(krSingleMatch[1]), startVerse: v, endVerse: v });
        continue;
     }
 
-    const cleaned = part.replace(/장/g, "").replace(/절/g, "").trim(); 
-    const dashMatch = cleaned.match(/^(\d+)-(\d+)$/);
+    // 5. Simple Chapter Range "1-5" or "1~5" or "1" (Fallback: remove non-digits/dash/tilde)
+    const cleaned = part.replace(/장/g, "").replace(/절/g, "").replace(/[^\d\-\~\s]/g, "").trim(); 
+    const dashMatch = cleaned.match(/^(\d+)\s*[-\~]\s*(\d+)$/);
     if (dashMatch) {
       const start = parseInt(dashMatch[1]);
       const end = parseInt(dashMatch[2]);
@@ -527,7 +533,22 @@ export function clusterReadings(
   return instances;
 }
 
-export function countChapters(raw: string): number {
+export function countChapters(raw: string, bookName?: string): number {
+  if (bookName) {
+     try {
+       const instances = clusterReadings(bookName, [{ day: 1, index: 0, rawChapters: raw }]);
+       let total = 0;
+       for (const inst of instances) {
+         for (const r of inst.readings) {
+           total += r.weight;
+         }
+       }
+       if (total > 0) return total;
+     } catch (e) {
+       // ignore
+     }
+  }
+
   const s = String(raw ?? "").trim();
   if (!s) return 0;
 

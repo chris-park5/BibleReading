@@ -13,6 +13,7 @@ export interface CreatePlanRequest {
   startDate: string;
   endDate?: string;
   totalDays: number;
+  totalChapters: number;
   schedule?: Array<{
     day: number;
     readings: Array<{ book: string; chapters: string }>;
