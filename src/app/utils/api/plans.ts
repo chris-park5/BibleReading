@@ -11,6 +11,7 @@ export async function createPlan(planData: {
   startDate: string;
   endDate?: string;
   totalDays: number;
+  totalChapters: number;
   schedule: Array<{
     day: number;
     readings: Array<{ book: string; chapters: string }>;
@@ -136,6 +137,7 @@ export async function getPlans(): Promise<{ success: boolean; plans: Plan[] }> {
       startDate: p.start_date,
       endDate: p.end_date,
       totalDays: p.total_days,
+      totalChapters: p.total_chapters,
       isCustom: p.is_custom,
       displayOrder: p.display_order,
       createdAt: p.created_at,

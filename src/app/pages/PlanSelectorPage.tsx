@@ -58,10 +58,22 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
     try {
       const normalizedSchedule = normalizeSchedule(selectedAddPlan.schedule || []);
 
+      let totalChapters = 0;
+      if (normalizedSchedule) {
+        normalizedSchedule.forEach((day: any) => {
+          if (day.readings) {
+            day.readings.forEach((r: any) => {
+              totalChapters += expandChapters(r.chapters).length;
+            });
+          }
+        });
+      }
+
       const result = await createPlanAsync({
         name: selectedAddPlan.title,
         startDate: dialogStartDate,
         totalDays: selectedAddPlan.totalDays,
+        totalChapters,
         schedule: normalizedSchedule,
         isCustom: false,
         presetId: selectedAddPlan.id,
@@ -101,6 +113,7 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
     startDate: string;
     endDate?: string;
     totalDays: number;
+    totalChapters: number;
     schedule: Array<{ day: number; readings: Array<{ book: string; chapters: string }> }>;
     isCustom: boolean;
   }) => {

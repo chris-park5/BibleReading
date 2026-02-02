@@ -600,77 +600,197 @@ export async function getLeaderboard(c: Context) {
       return c.json({ success: true, leaderboard: [] });
     }
 
-    // 2. Get Users + Shared Plan ID
-    const { data: users, error: usersError } = await supabase
+    // 2. Fetch Stats + Users + Plans
+    const { data: statsData, error: statsError } = await supabase
+      .from("user_plan_stats")
+      .select(`
+        completed_chapters,
+        user_id,
+        plan_id,
+        users!inner (id, name, username, shared_plan_id),
+        plans!inner (id, name, total_days, total_chapters, start_date, is_custom, preset_id)
+      `)
+      .in("user_id", allUserIds);
+
+    if (statsError) throw statsError;
+
+    // Filter to Active Plan
+    const activeStats = (statsData || []).filter((row: any) => 
+      row.users.shared_plan_id === row.plan_id
+    );
+
+    // 3. Bulk Fetch Schedules
+    const distinctPlanIds = new Set<string>();
+    const distinctPresetIds = new Set<string>();
+    const planMap = new Map<string, any>();
+
+    activeStats.forEach((row: any) => {
+      planMap.set(row.plan_id, row.plans);
+      if (row.plans.is_custom) {
+        distinctPlanIds.add(row.plan_id);
+      } else if (row.plans.preset_id) {
+        distinctPresetIds.add(row.plans.preset_id);
+      }
+    });
+
+    // Schedule Cache: Key = PlanID or PresetID -> Schedule Array
+    const scheduleCache = new Map<string, any[]>();
+
+    // Fetch Custom Schedules
+    if (distinctPlanIds.size > 0) {
+      const { data: customSchedules, error: customError } = await supabase
+        .from("plan_schedules")
+        .select("plan_id, day, book, chapters, chapter_count")
+        .in("plan_id", Array.from(distinctPlanIds));
+      
+      if (customError) throw customError;
+
+      (customSchedules || []).forEach((s: any) => {
+        if (!scheduleCache.has(s.plan_id)) {
+          scheduleCache.set(s.plan_id, []);
+        }
+        scheduleCache.get(s.plan_id)!.push(s);
+      });
+    }
+
+    // Fetch Preset Schedules
+    if (distinctPresetIds.size > 0) {
+      const { data: presetSchedules, error: presetError } = await supabase
+        .from("preset_schedules")
+        .select("preset_id, day, book, chapters, chapter_count")
+        .in("preset_id", Array.from(distinctPresetIds));
+        
+      if (presetError) throw presetError;
+
+      (presetSchedules || []).forEach((s: any) => {
+        if (!scheduleCache.has(s.preset_id)) {
+          scheduleCache.set(s.preset_id, []);
+        }
+        scheduleCache.get(s.preset_id)!.push(s);
+      });
+    }
+
+    // Helper to group flat rows into the structure needed by computeChaptersTotals
+    const groupSchedule = (rows: any[]) => {
+      const map = new Map<number, any>();
+      rows.forEach(row => {
+        const d = Number(row.day);
+        if (!map.has(d)) map.set(d, { day: d, readings: [] });
+        map.get(d).readings.push({ book: row.book, chapters: row.chapters });
+      });
+      return Array.from(map.values());
+    };
+
+    // 4. Construct Leaderboard
+    const now = new Date();
+    const kstTime = now.getTime() + (9 * 60 * 60 * 1000);
+    const kstDate = new Date(kstTime);
+    const todayKST = new Date(kstDate.getUTCFullYear(), kstDate.getUTCMonth(), kstDate.getUTCDate());
+
+    // Map stats by user_id for easy lookup
+    const statsByUser = new Map<string, any>();
+    activeStats.forEach((row: any) => statsByUser.set(row.user_id, row));
+
+    // We need to iterate over *allUserIds* to handle users with no stats
+    // But we need user details for them.
+    // Optimization: Just use the users found in activeStats + separate fetch if needed?
+    // Let's stick to activeStats for the "Leaderboard". 
+    // If a friend has no active plan or no stats, they might not appear.
+    // But requirement usually implies showing them with 0.
+    // Let's fetch all users details to be safe.
+    const { data: allUsers } = await supabase
       .from("users")
       .select("id, name, username, shared_plan_id")
       .in("id", allUserIds);
 
-    if (usersError) throw usersError;
-
-    const activeUsers = (users || []).filter((u: any) => u.shared_plan_id);
-    if (activeUsers.length === 0) {
-      const emptyLeaderboard = (users || []).map((u: any) => ({
-        user: { id: u.id, name: u.name, username: u.username },
-        plan: null,
-        achievementRate: 0,
-        progressRate: 0,
-        completedDays: 0,
-        totalDays: 0,
-      }));
-      return c.json({ success: true, leaderboard: emptyLeaderboard });
-    }
-
-    const planIds = [...new Set(activeUsers.map((u: any) => u.shared_plan_id))];
-
-    // 3. Bulk Fetch Plans
-    const { data: plansData, error: plansError } = await supabase
-      .from("plans")
-      .select("id, name, total_days, start_date, is_custom, preset_id")
-      .in("id", planIds);
-
-    if (plansError) throw plansError;
-
-    const plansMap = new Map(plansData.map((p: any) => [p.id, p]));
-
-    // 4. Calculate Stats Dynamically (Slow but Accurate)
-    const leaderboardPromises = activeUsers.map(async (u: any) => {
-        const plan = plansMap.get(u.shared_plan_id);
-        
-        if (!plan) {
-          return {
-            user: { id: u.id, name: u.name, username: u.username },
-            plan: null,
-            achievementRate: 0,
-            progressRate: 0,
-            completedDays: 0,
-            totalDays: 0,
-          };
+    const leaderboard = await Promise.all((allUsers || []).map(async (u: any) => {
+        if (!u.shared_plan_id) {
+             return {
+                user: { id: u.id, name: u.name, username: u.username },
+                plan: null,
+                achievementRate: 0,
+                progressRate: 0,
+                completedDays: 0,
+                totalDays: 0,
+             };
         }
 
-        // Fetch Progress & Schedule on-the-fly
-        const progress = await fetchUserProgress(u.id, plan.id);
-        const groupedSchedule = await fetchGroupedSchedule(supabase, plan);
+        const statRow = statsByUser.get(u.id);
         
-        const achievementRate = await calculateAchievementRate(supabase, u.id, plan, progress, groupedSchedule);
-        const progressRate = await calculateProgressRate(supabase, u.id, plan, progress, groupedSchedule);
-        const { completedChapters } = computeChaptersTotals({ schedule: groupedSchedule, progress });
+        // If we have stats, use them. If not, we might need to fetch plan details separately 
+        // if we really want to show "0%".
+        // For now, if no stats, return 0.
+        if (!statRow) {
+             return {
+                user: { id: u.id, name: u.name, username: u.username },
+                plan: null,
+                achievementRate: 0,
+                progressRate: 0,
+                completedDays: 0,
+                totalDays: 0,
+             };
+        }
+
+        const plan = statRow.plans;
+        const totalChapters = plan.total_chapters || 1189;
+        const completed = statRow.completed_chapters || 0;
+
+        // Progress Rate
+        const progressRate = Math.min(100, Math.round((completed / totalChapters) * 100));
+
+        // Achievement Rate (Actual)
+        let achievementRate = 0;
+        
+        const [sy, sm, sd] = plan.start_date.split("-").map(Number);
+        const start = new Date(sy, sm - 1, sd);
+        const diffMs = todayKST.getTime() - start.getTime();
+        const diffDays = Math.floor(diffMs / (24 * 60 * 60 * 1000));
+        const elapsedDays = Math.max(0, Math.min(plan.total_days, diffDays + 1));
+        
+        // Retrieve Schedule
+        const scheduleKey = plan.is_custom ? plan.id : plan.preset_id;
+        const flatSchedule = scheduleCache.get(scheduleKey) || [];
+        
+        // OPTIMIZED: Calculate Expected via Sum (Avoids Parsing)
+        let expected = 0;
+        flatSchedule.forEach((s: any) => {
+           if (Number(s.day) <= elapsedDays) {
+             expected += (s.chapter_count || 0);
+           }
+        });
+        
+        // Fallback for expected if chapter_count is missing (0) but schedule exists
+        if (expected === 0 && flatSchedule.length > 0 && elapsedDays > 0) {
+             const groupedSchedule = groupSchedule(flatSchedule);
+             const { totalChapters: computedExpected } = computeChaptersTotals({
+                schedule: groupedSchedule,
+                progress: {}, 
+                upToDay: elapsedDays
+             });
+             expected = computedExpected;
+        }
+
+        if (expected > 0) {
+            achievementRate = Math.round((completed / expected) * 100);
+        } else if (completed > 0) {
+             // Started early?
+            achievementRate = 100;
+        }
 
         return {
           user: { id: u.id, name: u.name, username: u.username },
           plan: { 
             id: plan.id, 
             name: plan.name, 
-            totalDays: plan.total_days
+            totalDays: plan.total_days,
+            totalChapters: totalChapters
           },
-          achievementRate: achievementRate,
-          progressRate: progressRate,
-          completedDays: completedChapters,
+          achievementRate,
+          progressRate,
+          completedDays: completed, 
           totalDays: plan.total_days,
         };
-    });
-
-    const leaderboard = await Promise.all(leaderboardPromises);
+    }));
 
     // Sort by achievement rate desc
     leaderboard.sort((a, b) => b.achievementRate - a.achievementRate);

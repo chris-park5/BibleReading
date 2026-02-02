@@ -14,6 +14,7 @@ export type PlanData = {
   startDate: string;
   endDate?: string;
   totalDays: number;
+  totalChapters: number;
   schedule: Array<{ day: number; readings: Reading[] }>;
   isCustom: boolean;
 };
@@ -500,6 +501,7 @@ export function useCustomPlanCreator({
         startDate,
         endDate,
         totalDays,
+        totalChapters,
         schedule: fixed.schedule,
         isCustom: true,
       });

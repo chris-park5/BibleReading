@@ -3,7 +3,7 @@
  */
 
 import { Context } from "npm:hono";
-import { getSupabaseClient, handleError } from "./utils.ts";
+import { getSupabaseClient, handleError, countChapters } from "./utils.ts";
 import type { CreatePlanRequest, UpdatePlanOrderRequest } from "./types.ts";
 
 const supabase = getSupabaseClient();
@@ -108,6 +108,7 @@ export async function seedPresetSchedules(c: Context) {
         day: d.day,
         book: r.book,
         chapters: r.chapters,
+        chapter_count: countChapters(r.chapters, r.book),
         order_index: index,
       }))
     );
@@ -138,7 +139,7 @@ export async function createPlan(c: Context) {
     const userId = c.get("userId");
     const body = (await c.req.json()) as CreatePlanRequest;
 
-    const { name, startDate, endDate, totalDays, schedule, isCustom, presetId } = body;
+    const { name, startDate, endDate, totalDays, totalChapters, schedule, isCustom, presetId } = body;
 
     // Validation
     if (!name || !startDate || !totalDays) {
@@ -185,6 +186,7 @@ export async function createPlan(c: Context) {
           name,
           description: null,
           total_days: totalDays,
+          total_chapters: totalChapters ?? 0,
         });
 
         if (presetInsertError) throw presetInsertError;
@@ -224,6 +226,7 @@ export async function createPlan(c: Context) {
         start_date: startDate,
         end_date: endDate,
         total_days: totalDays,
+        total_chapters: totalChapters ?? 0,
         is_custom: isCustom,
         display_order: nextOrder,
       })
@@ -251,6 +254,7 @@ export async function createPlan(c: Context) {
           day: day.day,
           book: reading.book,
           chapters: reading.chapters,
+          chapter_count: countChapters(reading.chapters, reading.book),
           order_index: index,
         }))
       );
@@ -308,6 +312,7 @@ export async function createPlan(c: Context) {
           day: day.day,
           book: reading.book,
           chapters: reading.chapters,
+          chapter_count: countChapters(reading.chapters, reading.book),
           order_index: index,
         }))
       );
