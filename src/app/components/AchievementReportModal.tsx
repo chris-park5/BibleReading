@@ -199,7 +199,11 @@ export function AchievementReportModal({ plan, progress, dailyStats = [], onClos
           const daySched = scheduleMap.get(planDay);
           if (daySched?.readings) {
               daySched.readings.forEach((r: any) => {
-                  dailyGoal += expandChapters(r.chapters).length;
+                  if (typeof r.chapter_count === 'number') {
+                      dailyGoal += r.chapter_count;
+                  } else {
+                      dailyGoal += expandChapters(r.chapters).length;
+                  }
               });
           }
       }
@@ -346,7 +350,7 @@ export function AchievementReportModal({ plan, progress, dailyStats = [], onClos
                                     {/* Tooltip */}
                                     <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-200 z-[60] pointer-events-none">
                                         <div className="bg-slate-900/95 text-white text-[10px] font-bold py-1.5 px-3 rounded-xl shadow-xl whitespace-nowrap border border-white/10">
-                                            {d.count} / {d.goal}장
+                                            {parseFloat(d.count.toFixed(1))} / {parseFloat(d.goal.toFixed(1))}장
                                         </div>
                                         {/* Arrow */}
                                         <div className="w-1.5 h-1.5 bg-slate-900/95 rotate-45 absolute left-1/2 -translate-x-1/2 -bottom-0.5 border-r border-b border-white/10"></div>

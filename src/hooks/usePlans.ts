@@ -66,6 +66,7 @@ export function usePlans() {
         name: vars?.name ?? '새 계획',
         startDate: vars?.startDate ?? new Date().toISOString().split('T')[0],
         totalDays: Number(vars?.totalDays ?? 0),
+        totalChapters: Number(vars?.totalChapters ?? 0),
         schedule: Array.isArray(vars?.schedule) ? vars.schedule : [],
         isCustom: Boolean(vars?.isCustom ?? true),
         presetId: vars?.presetId ?? null,
