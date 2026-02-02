@@ -380,15 +380,15 @@ export async function getPlans(c: Context) {
       )
     );
 
-    const customScheduleByPlanId = new Map<string, Array<{ day: number; book: string; chapters: string }>>();
-    const presetScheduleByPresetId = new Map<string, Array<{ day: number; book: string; chapters: string }>>();
+    const customScheduleByPlanId = new Map<string, Array<{ day: number; book: string; chapters: string; chapter_count?: number }>>();
+    const presetScheduleByPresetId = new Map<string, Array<{ day: number; book: string; chapters: string; chapter_count?: number }>>();
 
     if (customPlanIds.length > 0) {
       const customRows = await selectAllRows<any>(
         (from, to) =>
           supabase
             .from("plan_schedules")
-            .select("plan_id, day, book, chapters, order_index")
+            .select("plan_id, day, book, chapters, order_index, chapter_count")
             .in("plan_id", customPlanIds)
             // Deterministic ordering for stable pagination
             .order("plan_id", { ascending: true })
@@ -403,7 +403,7 @@ export async function getPlans(c: Context) {
       (customRows ?? []).forEach((r: any) => {
         const pid = String(r.plan_id);
         if (!customScheduleByPlanId.has(pid)) customScheduleByPlanId.set(pid, []);
-        customScheduleByPlanId.get(pid)!.push({ day: r.day, book: r.book, chapters: r.chapters });
+        customScheduleByPlanId.get(pid)!.push({ day: r.day, book: r.book, chapters: r.chapters, chapter_count: r.chapter_count });
       });
     }
 
@@ -412,7 +412,7 @@ export async function getPlans(c: Context) {
         (from, to) =>
           supabase
             .from("preset_schedules")
-            .select("preset_id, day, book, chapters, order_index")
+            .select("preset_id, day, book, chapters, order_index, chapter_count")
             .in("preset_id", presetIds)
             // Deterministic ordering for stable pagination
             .order("preset_id", { ascending: true })
@@ -427,17 +427,17 @@ export async function getPlans(c: Context) {
       (presetRows ?? []).forEach((r: any) => {
         const pid = String(r.preset_id);
         if (!presetScheduleByPresetId.has(pid)) presetScheduleByPresetId.set(pid, []);
-        presetScheduleByPresetId.get(pid)!.push({ day: r.day, book: r.book, chapters: r.chapters });
+        presetScheduleByPresetId.get(pid)!.push({ day: r.day, book: r.book, chapters: r.chapters, chapter_count: r.chapter_count });
       });
     }
 
-    const buildSchedule = (rows: Array<{ day: number; book: string; chapters: string }>) => {
-      const scheduleMap = new Map<number, Array<{ book: string; chapters: string }>>();
+    const buildSchedule = (rows: Array<{ day: number; book: string; chapters: string; chapter_count?: number }>) => {
+      const scheduleMap = new Map<number, Array<{ book: string; chapters: string; chapter_count?: number }>>();
       (rows ?? []).forEach((s: any) => {
         const dayNum = Number(s.day);
         if (!Number.isFinite(dayNum)) return;
         if (!scheduleMap.has(dayNum)) scheduleMap.set(dayNum, []);
-        scheduleMap.get(dayNum)!.push({ book: s.book, chapters: stripZeroWidth(s.chapters) });
+        scheduleMap.get(dayNum)!.push({ book: s.book, chapters: stripZeroWidth(s.chapters), chapter_count: s.chapter_count });
       });
       return Array.from(scheduleMap.entries())
         .map(([day, readings]) => ({ day, readings }))
