@@ -60,15 +60,21 @@ export async function getPlans(): Promise<{ success: boolean; plans: Plan[] }> {
     )
   );
 
-  const customScheduleByPlanId = new Map<string, Array<{ day: number; book: string; chapters: string }>>();
-  const presetScheduleByPresetId = new Map<string, Array<{ day: number; book: string; chapters: string }>>();
+  const customScheduleByPlanId = new Map<
+    string,
+    Array<{ day: number; book: string; chapters: string; chapter_count?: number }>
+  >();
+  const presetScheduleByPresetId = new Map<
+    string,
+    Array<{ day: number; book: string; chapters: string; chapter_count?: number }>
+  >();
 
   if (customPlanIds.length > 0) {
     const customRows = await fetchAll<any>(
       async (from, to) =>
         await supabase
           .from("plan_schedules")
-          .select("plan_id, day, book, chapters")
+          .select("plan_id, day, book, chapters, chapter_count")
           .in("plan_id", customPlanIds)
           // Deterministic ordering for stable pagination
           .order("plan_id", { ascending: true })
@@ -83,7 +89,14 @@ export async function getPlans(): Promise<{ success: boolean; plans: Plan[] }> {
     (customRows ?? []).forEach((r: any) => {
       const pid = String(r.plan_id);
       if (!customScheduleByPlanId.has(pid)) customScheduleByPlanId.set(pid, []);
-      customScheduleByPlanId.get(pid)!.push({ day: r.day, book: r.book, chapters: r.chapters });
+      const raw = r.chapter_count;
+      const chapterCount = raw === null || raw === undefined ? NaN : Number(raw);
+      customScheduleByPlanId.get(pid)!.push({
+        day: r.day,
+        book: r.book,
+        chapters: r.chapters,
+        chapter_count: Number.isFinite(chapterCount) ? chapterCount : undefined,
+      });
     });
   }
 
@@ -92,7 +105,7 @@ export async function getPlans(): Promise<{ success: boolean; plans: Plan[] }> {
       async (from, to) =>
         await supabase
           .from("preset_schedules")
-          .select("preset_id, day, book, chapters")
+          .select("preset_id, day, book, chapters, chapter_count")
           .in("preset_id", presetIds)
           // Deterministic ordering for stable pagination
           .order("preset_id", { ascending: true })
@@ -107,17 +120,28 @@ export async function getPlans(): Promise<{ success: boolean; plans: Plan[] }> {
     (presetRows ?? []).forEach((r: any) => {
       const pid = String(r.preset_id);
       if (!presetScheduleByPresetId.has(pid)) presetScheduleByPresetId.set(pid, []);
-      presetScheduleByPresetId.get(pid)!.push({ day: r.day, book: r.book, chapters: r.chapters });
+      const raw = r.chapter_count;
+      const chapterCount = raw === null || raw === undefined ? NaN : Number(raw);
+      presetScheduleByPresetId.get(pid)!.push({
+        day: r.day,
+        book: r.book,
+        chapters: r.chapters,
+        chapter_count: Number.isFinite(chapterCount) ? chapterCount : undefined,
+      });
     });
   }
 
-  const buildSchedule = (rows: Array<{ day: number; book: string; chapters: string }>) => {
-    const scheduleMap = new Map<number, Array<{ book: string; chapters: string }>>();
+  const buildSchedule = (rows: Array<{ day: number; book: string; chapters: string; chapter_count?: number }>) => {
+    const scheduleMap = new Map<number, Array<{ book: string; chapters: string; chapter_count?: number }>>();
     (rows ?? []).forEach((s: any) => {
       const dayNum = Number(s.day);
       if (!Number.isFinite(dayNum)) return;
       if (!scheduleMap.has(dayNum)) scheduleMap.set(dayNum, []);
-      scheduleMap.get(dayNum)!.push({ book: s.book, chapters: stripZeroWidth(s.chapters) });
+      scheduleMap.get(dayNum)!.push({
+        book: s.book,
+        chapters: stripZeroWidth(s.chapters),
+        chapter_count: typeof s.chapter_count === "number" && Number.isFinite(s.chapter_count) ? s.chapter_count : undefined,
+      });
     });
     return Array.from(scheduleMap.entries())
       .map(([day, readings]) => ({ day, readings }))

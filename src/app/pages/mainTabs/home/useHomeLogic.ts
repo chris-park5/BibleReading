@@ -286,8 +286,12 @@ export function useHomeLogic() {
         const completedChapters = dayChaptersMap[readingIndex] ?? [];
         
         // Calculate exact chapter count for this reading item
-        const expanded = expandChapters(r.chapters);
-        const chapterCount = expanded.length;
+        // Prefer DB-backed chapter_count (can be fractional), fallback to expanded chapter length.
+        const rawChapterCount = (r as any)?.chapter_count;
+        const parsedChapterCount = rawChapterCount === null || rawChapterCount === undefined ? NaN : Number(rawChapterCount);
+        const chapterCount = Number.isFinite(parsedChapterCount)
+          ? parsedChapterCount
+          : expandChapters(r.chapters).length;
         
         rows.push({
           planId: plan.id,
