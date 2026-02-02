@@ -20,6 +20,44 @@ import type {
   SetSharePlanRequest,
 } from "./types.ts";
 
+type Ymd = { y: number; m: number; d: number };
+
+function parseYyyyMmDd(value: string): Ymd | null {
+  const [y, m, d] = String(value || "").split("-").map((v) => Number(v));
+  if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) return null;
+  if (y < 1900 || m < 1 || m > 12 || d < 1 || d > 31) return null;
+  return { y, m, d };
+}
+
+function getYyyyMmDdInTimeZone(date: Date, timeZone: string): Ymd {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+
+  const y = Number(parts.find((p) => p.type === "year")?.value);
+  const m = Number(parts.find((p) => p.type === "month")?.value);
+  const d = Number(parts.find((p) => p.type === "day")?.value);
+
+  if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) {
+    const iso = date.toISOString().slice(0, 10);
+    const parsed = parseYyyyMmDd(iso);
+    return parsed ?? { y: 1970, m: 1, d: 1 };
+  }
+
+  return { y, m, d };
+}
+
+function dayNumberUtc(ymd: Ymd): number {
+  return Math.floor(Date.UTC(ymd.y, ymd.m - 1, ymd.d) / (24 * 60 * 60 * 1000));
+}
+
+function diffDaysYyyyMmDd(start: Ymd, end: Ymd): number {
+  return dayNumberUtc(end) - dayNumberUtc(start);
+}
+
 const supabase = getSupabaseClient();
 
 // ============================================
@@ -580,6 +618,11 @@ export async function getLeaderboard(c: Context) {
   try {
     const userId = c.get("userId");
 
+    const toNum = (value: unknown, fallback = 0) => {
+      const n = typeof value === "number" ? value : Number(value);
+      return Number.isFinite(n) ? n : fallback;
+    };
+
     // 1. Get all friends (accepted)
     const { data: friendships, error: fsError } = await supabase
       .from("friendships")
@@ -682,10 +725,8 @@ export async function getLeaderboard(c: Context) {
     };
 
     // 4. Construct Leaderboard
-    const now = new Date();
-    const kstTime = now.getTime() + (9 * 60 * 60 * 1000);
-    const kstDate = new Date(kstTime);
-    const todayKST = new Date(kstDate.getUTCFullYear(), kstDate.getUTCMonth(), kstDate.getUTCDate());
+    // Use timezone-safe KST calendar-day math (avoid UTC runtime day-boundary drift)
+    const todayKST = getYyyyMmDdInTimeZone(new Date(), "Asia/Seoul");
 
     // Map stats by user_id for easy lookup
     const statsByUser = new Map<string, any>();
@@ -732,30 +773,45 @@ export async function getLeaderboard(c: Context) {
         }
 
         const plan = statRow.plans;
-        const totalChapters = plan.total_chapters || 1189;
-        const completed = statRow.completed_chapters || 0;
-
-        // Progress Rate
-        const progressRate = Math.min(100, Math.round((completed / totalChapters) * 100));
+        const completed = toNum(statRow.completed_chapters, 0);
 
         // Achievement Rate (Actual)
         let achievementRate = 0;
         
-        const [sy, sm, sd] = plan.start_date.split("-").map(Number);
-        const start = new Date(sy, sm - 1, sd);
-        const diffMs = todayKST.getTime() - start.getTime();
-        const diffDays = Math.floor(diffMs / (24 * 60 * 60 * 1000));
+        const startDateStr = typeof plan.start_date === "string" ? plan.start_date : "";
+        const startYmd = parseYyyyMmDd(startDateStr);
+        const diffDays = startYmd ? diffDaysYyyyMmDd(startYmd, todayKST) : 0;
         const elapsedDays = Math.max(0, Math.min(plan.total_days, diffDays + 1));
         
         // Retrieve Schedule
         const scheduleKey = plan.is_custom ? plan.id : plan.preset_id;
         const flatSchedule = scheduleCache.get(scheduleKey) || [];
+
+        // Compute totalChapters (full plan) from DB field if present, else from schedule.
+        let totalChapters = toNum(plan.total_chapters, 0);
+        if (totalChapters <= 0 && flatSchedule.length > 0) {
+          totalChapters = 0;
+          flatSchedule.forEach((s: any) => {
+            totalChapters += toNum(s.chapter_count, 0);
+          });
+        }
+        if (totalChapters <= 0 && flatSchedule.length > 0) {
+          const groupedSchedule = groupSchedule(flatSchedule);
+          const { totalChapters: computedTotal } = computeChaptersTotals({
+            schedule: groupedSchedule,
+            progress: {},
+          });
+          totalChapters = toNum(computedTotal, 0);
+        }
+
+        // Progress Rate (overall completion). Do NOT clamp here; UI can clamp the bar width.
+        const progressRate = totalChapters > 0 ? (completed / totalChapters) * 100 : 0;
         
         // OPTIMIZED: Calculate Expected via Sum (Avoids Parsing)
         let expected = 0;
         flatSchedule.forEach((s: any) => {
            if (Number(s.day) <= elapsedDays) {
-             expected += (s.chapter_count || 0);
+             expected += toNum(s.chapter_count, 0);
            }
         });
         
@@ -787,7 +843,10 @@ export async function getLeaderboard(c: Context) {
           },
           achievementRate,
           progressRate,
-          completedDays: completed, 
+          // Legacy field name used by the current UI (actually chapters, not days)
+          completedDays: completed,
+          // New explicit field name (safe to ignore on older clients)
+          completedChapters: completed,
           totalDays: plan.total_days,
         };
     }));

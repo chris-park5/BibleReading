@@ -112,45 +112,62 @@ export async function getProgress(planId: string): Promise<{ success: boolean; p
   const completedDays: number[] = [];
   
   if (planRow) {
-    const scheduleCountByDay = new Map<number, number>();
+    // 4. Calculate completed days without downloading the whole schedule.
+    // Use a DB-side grouped query (RPC) to get required item counts per day.
+    let scheduleCountByDay = new Map<number, number>();
 
-    if (planRow.is_custom) {
-      const scheduleRows = await fetchAll<any>(
-        async (from, to) =>
-          await supabase
-            .from("plan_schedules")
-            .select("day")
-            .eq("plan_id", planRow.id)
-            .order("day", { ascending: true })
-            .range(from, to),
-        1000
-      );
+    const { data: dayCounts, error: dayCountsError } = await supabase
+      .rpc("get_schedule_item_counts_by_day", { p_plan_id: planId });
 
-      (scheduleRows ?? []).forEach((r: any) => {
+    if (!dayCountsError) {
+      (dayCounts ?? []).forEach((r: any) => {
         const dayNum = Number(r.day);
-        if (!Number.isFinite(dayNum)) return;
-        scheduleCountByDay.set(dayNum, (scheduleCountByDay.get(dayNum) ?? 0) + 1);
+        const requiredCount = Number(r.required_count);
+        if (!Number.isFinite(dayNum) || !Number.isFinite(requiredCount)) return;
+        scheduleCountByDay.set(dayNum, requiredCount);
       });
-    } else if (planRow.preset_id) {
-      const scheduleRows = await fetchAll<any>(
-        async (from, to) =>
-          await supabase
-            .from("preset_schedules")
-            .select("day")
-            .eq("preset_id", planRow.preset_id)
-            .order("day", { ascending: true })
-            .range(from, to),
-        1000
-      );
+    } else {
+      // Fallback for environments where the RPC isn't deployed yet.
+      // This is slower because it scans all schedule rows, but preserves correctness.
+      scheduleCountByDay = new Map<number, number>();
 
-      (scheduleRows ?? []).forEach((r: any) => {
-        const dayNum = Number(r.day);
-        if (!Number.isFinite(dayNum)) return;
-        scheduleCountByDay.set(dayNum, (scheduleCountByDay.get(dayNum) ?? 0) + 1);
-      });
+      if (planRow.is_custom) {
+        const scheduleRows = await fetchAll<any>(
+          async (from, to) =>
+            await supabase
+              .from("plan_schedules")
+              .select("day")
+              .eq("plan_id", planRow.id)
+              .order("day", { ascending: true })
+              .range(from, to),
+          1000
+        );
+
+        (scheduleRows ?? []).forEach((r: any) => {
+          const dayNum = Number(r.day);
+          if (!Number.isFinite(dayNum)) return;
+          scheduleCountByDay.set(dayNum, (scheduleCountByDay.get(dayNum) ?? 0) + 1);
+        });
+      } else if (planRow.preset_id) {
+        const scheduleRows = await fetchAll<any>(
+          async (from, to) =>
+            await supabase
+              .from("preset_schedules")
+              .select("day")
+              .eq("preset_id", planRow.preset_id)
+              .order("day", { ascending: true })
+              .range(from, to),
+          1000
+        );
+
+        (scheduleRows ?? []).forEach((r: any) => {
+          const dayNum = Number(r.day);
+          if (!Number.isFinite(dayNum)) return;
+          scheduleCountByDay.set(dayNum, (scheduleCountByDay.get(dayNum) ?? 0) + 1);
+        });
+      }
     }
 
-    // 4. Calculate completed days
     for (const [dayNum, completedSet] of completedSetsByDay.entries()) {
       const requiredCount = scheduleCountByDay.get(dayNum) ?? 0;
       if (requiredCount > 0 && completedSet.size >= requiredCount) {

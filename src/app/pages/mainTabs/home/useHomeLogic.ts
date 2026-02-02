@@ -125,17 +125,52 @@ export function useHomeLogic() {
   const queryClient = useQueryClient();
   const progressMutationSeqByPlanRef = useRef(new Map<string, number>());
 
+  // Spread out progress fetching to avoid a burst of N simultaneous requests
+  // (especially when a user has many plans).
+  const [progressPrefetchStage, setProgressPrefetchStage] = useState(0);
+  const PROGRESS_PREFETCH_BATCH_SIZE = 2;
+
   // Fetch progress for ALL plans to show dots on calendar
+  // but stage it to reduce initial loading pressure.
   const allProgressQueries = useQueries({
-    queries: plans.map((plan) => {
+    queries: plans.map((plan, idx) => {
       const isOptimistic = plan.id.startsWith("optimistic-");
+
+      // Always prioritize progress for plans that are active on the current viewDate.
+      // Others are enabled gradually in small batches.
+      const isPlanRelevantForViewDate = viewPlans.some((vp) => vp.plan.id === plan.id);
+      const isEnabledByStage = idx < progressPrefetchStage * PROGRESS_PREFETCH_BATCH_SIZE;
+
       return {
         queryKey: ["progress", userId, plan.id],
         queryFn: () => progressService.getProgress(plan.id),
-        enabled: !!userId && !isOptimistic,
+        enabled: !!userId && !isOptimistic && (isPlanRelevantForViewDate || isEnabledByStage),
       };
     }),
   });
+
+  useEffect(() => {
+    if (!userId) return;
+    const realPlans = plans.filter((p) => !p.id.startsWith("optimistic-"));
+    if (realPlans.length === 0) return;
+
+    // Reset when plan list changes meaningfully.
+    setProgressPrefetchStage(1);
+
+    const maxStages = Math.ceil(realPlans.length / PROGRESS_PREFETCH_BATCH_SIZE);
+    if (maxStages <= 1) return;
+
+    let stage = 1;
+    const timer = setInterval(() => {
+      stage += 1;
+      setProgressPrefetchStage(stage);
+      if (stage >= maxStages) {
+        clearInterval(timer);
+      }
+    }, 350);
+
+    return () => clearInterval(timer);
+  }, [plans, userId]);
 
   const progressByPlanId = useMemo(() => {
     const map = new Map<string, any>();
@@ -259,6 +294,10 @@ export function useHomeLogic() {
       const latest = progressMutationSeqByPlanRef.current.get(ctx.planId) ?? 0;
       if (ctx.seq !== latest) return;
       queryClient.setQueryData(ctx.key, data);
+
+      // Refresh weekly activity chart data (ProgressTab/AchievementReportModal)
+      // which reads from the dailyStats query.
+      queryClient.invalidateQueries({ queryKey: ["dailyStats", ctx.planId] });
     },
     onSettled: (_data, _error, vars) => {
       const key = ["progress", userId, vars.planId] as const;

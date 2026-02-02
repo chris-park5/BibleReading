@@ -147,7 +147,7 @@ export function FriendProfileDialog({ friendId, onClose }: { friendId: string | 
                   <div className="relative h-2 bg-[#F8FAFC] rounded-full overflow-hidden border border-slate-100/50">
                     <div 
                       className="absolute top-0 left-0 h-full bg-[#2563EB] rounded-full shadow-[0_0_8px_rgba(37,99,235,0.3)] transition-all duration-1000 ease-out"
-                      style={{ width: `${Math.round(status.progressRate ?? 0)}%` }}
+                      style={{ width: `${Math.min(100, Math.round(status.progressRate ?? 0))}%` }}
                     />
                   </div>
 
