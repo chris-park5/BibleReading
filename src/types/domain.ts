@@ -9,7 +9,7 @@ export interface Plan {
   totalChapters?: number;
   schedule: Array<{
     day: number;
-    readings: Array<{ book: string; chapters: string; chapter_count?: number }>;
+    readings: Array<{ book: string; chapters: string }>;
   }>;
   isCustom: boolean;
   displayOrder?: number;
