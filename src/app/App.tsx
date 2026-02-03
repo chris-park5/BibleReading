@@ -160,8 +160,27 @@ export default function App() {
   const [hash, setHash] = useState(() => window.location.hash);
   const [isOnline, setIsOnline] = useState(() => (typeof navigator !== "undefined" ? navigator.onLine : true));
 
-  const isFetching = useIsFetching();
-  const isMutating = useIsMutating();
+  // Filter out background sync that shouldn't block route/tab transitions.
+  // This prevents the full-screen skeleton overlay from showing when
+  // progress/dailyStats are syncing in the background.
+  const isFetching = useIsFetching({
+    predicate: (q) => {
+      const key = (q.queryKey ?? []) as any[];
+      const head = key[0];
+      if (head === "progress") return false;
+      if (head === "dailyStats") return false;
+      return true;
+    },
+  });
+
+  const isMutating = useIsMutating({
+    predicate: (m) => {
+      const key = (m.options as any)?.mutationKey as any[] | undefined;
+      const head = Array.isArray(key) ? key[0] : undefined;
+      if (head === "progress-update") return false;
+      return true;
+    },
+  });
   const [showLoadingOverlay, setShowLoadingOverlay] = useState(false);
   const navSeqRef = useRef(0);
   const isFetchingRef = useRef(0);
@@ -302,7 +321,7 @@ export default function App() {
       return;
     }
 
-    // 200ms 안에 끝나면 오버레이를 띄우지 않아서 깜빡임 방지
+    // 500ms 안에 끝나면 오버레이를 띄우지 않아서 깜빡임 방지
     const t = window.setTimeout(() => {
       if (seq !== navSeqRef.current) return;
       // Important: only show loader for *route changes*.
@@ -311,7 +330,7 @@ export default function App() {
       if ((isFetchingRef.current ?? 0) > 0 || (isMutatingRef.current ?? 0) > 0) {
         setShowLoadingOverlay(true);
       }
-    }, 200);
+    }, 500);
 
     return () => window.clearTimeout(t);
   }, [hash, isOnline]);

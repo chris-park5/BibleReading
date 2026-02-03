@@ -744,17 +744,10 @@ export async function calculateAchievementRate(
 ): Promise<number> {
   const schedule = groupedSchedule || await fetchGroupedSchedule(supabase, plan);
 
-  // Calculate Today in KST
-  const now = new Date();
-  const kstTime = now.getTime() + (9 * 60 * 60 * 1000);
-  const kstDate = new Date(kstTime);
-  const todayKST = new Date(kstDate.getUTCFullYear(), kstDate.getUTCMonth(), kstDate.getUTCDate());
-
-  // Calculate elapsedDays
-  const [sy, sm, sd] = plan.start_date.split("-").map(Number);
-  const start = new Date(sy, sm - 1, sd);
-  const diffMs = todayKST.getTime() - start.getTime();
-  const diffDays = Math.floor(diffMs / (24 * 60 * 60 * 1000));
+  // Calculate elapsedDays using KST calendar days (timezone-safe even in UTC runtimes)
+  const startYmd = parseYyyyMmDd(plan.start_date);
+  const todayYmd = getYyyyMmDdInTimeZone(new Date(), "Asia/Seoul");
+  const diffDays = startYmd ? diffDaysYyyyMmDd(startYmd, todayYmd) : 0;
   const elapsedDays = Math.max(0, Math.min(plan.total_days, diffDays + 1));
 
   // Compute Totals
@@ -771,6 +764,45 @@ export async function calculateAchievementRate(
 
   if (elapsedTarget === 0) return 0;
   return (totalCompleted / elapsedTarget) * 100;
+}
+
+type Ymd = { y: number; m: number; d: number };
+
+function parseYyyyMmDd(value: string): Ymd | null {
+  const [y, m, d] = String(value || "").split("-").map((v) => Number(v));
+  if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) return null;
+  if (y < 1900 || m < 1 || m > 12 || d < 1 || d > 31) return null;
+  return { y, m, d };
+}
+
+function getYyyyMmDdInTimeZone(date: Date, timeZone: string): Ymd {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+
+  const y = Number(parts.find((p) => p.type === "year")?.value);
+  const m = Number(parts.find((p) => p.type === "month")?.value);
+  const d = Number(parts.find((p) => p.type === "day")?.value);
+
+  // Fallbacks should never happen in modern runtimes, but keep it safe.
+  if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) {
+    const iso = date.toISOString().slice(0, 10);
+    const parsed = parseYyyyMmDd(iso);
+    return parsed ?? { y: 1970, m: 1, d: 1 };
+  }
+
+  return { y, m, d };
+}
+
+function dayNumberUtc(ymd: Ymd): number {
+  return Math.floor(Date.UTC(ymd.y, ymd.m - 1, ymd.d) / (24 * 60 * 60 * 1000));
+}
+
+function diffDaysYyyyMmDd(start: Ymd, end: Ymd): number {
+  return dayNumberUtc(end) - dayNumberUtc(start);
 }
 
 /**

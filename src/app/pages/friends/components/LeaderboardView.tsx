@@ -18,7 +18,9 @@ export function LeaderboardView({
   // Sort based on metric
   const sortedLeaderboard = [...leaderboard].sort((a, b) => {
     if (metric === "rate") return b.achievementRate - a.achievementRate;
-    return b.completedDays - a.completedDays;
+    const bCount = typeof b.completedChapters === "number" ? b.completedChapters : b.completedDays;
+    const aCount = typeof a.completedChapters === "number" ? a.completedChapters : a.completedDays;
+    return (bCount ?? 0) - (aCount ?? 0);
   });
 
   const top10 = sortedLeaderboard.slice(0, 10);
@@ -152,7 +154,7 @@ function LeaderboardItem({
         <div className={cn("font-bold text-lg", isSticky ? "text-white" : "text-primary")}>
           {metric === "rate"
             ? `${Math.round(item.achievementRate)}%`
-            : `${Math.floor(item.completedDays)}장`}
+            : `${Math.round(((typeof item.completedChapters === "number" ? item.completedChapters : item.completedDays) ?? 0) * 10) / 10}장`}
         </div>
         <p className={cn("text-xs", isSticky ? "text-white/80" : "text-muted-foreground")}>
           {metric === "rate" ? "달성률" : "읽은 장수"}
