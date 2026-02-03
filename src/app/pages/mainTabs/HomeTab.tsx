@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { TodayReading } from "../../components/TodayReading";
 import { DayEmptyState } from "./home/DayEmptyState";
 import { HomeEmptyState } from "./home/HomeEmptyState";
@@ -6,6 +7,8 @@ import { ReadingHistorySection } from "./home/ReadingHistorySection";
 import { useHomeLogic } from "./home/useHomeLogic";
 import { WeeklyCalendar } from "./home/WeeklyCalendar";
 import { Skeleton } from "../../components/ui/skeleton";
+import { ToggleGroup, ToggleGroupItem } from "../../components/ui/toggle-group";
+import { BibleReadingByBook } from "./home/BibleReadingByBook";
 
 function HomeTabSkeleton() {
   return (
@@ -30,8 +33,23 @@ function HomeTabSkeleton() {
 }
 
 export function HomeTab() {
+  const [viewMode, setViewMode] = useState<"daily" | "bible">(() => {
+    if (typeof window === "undefined") return "daily";
+    const saved = window.localStorage.getItem("homeViewMode");
+    return saved === "bible" ? "bible" : "daily";
+  });
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem("homeViewMode", viewMode);
+    } catch {
+      // ignore
+    }
+  }, [viewMode]);
+
   const {
     plans,
+    progressByPlanId,
     userName,
     streak,
     longestStreak,
@@ -53,7 +71,66 @@ export function HomeTab() {
     isAllPlansCompletedForDate,
     hasAnyPlanForDate,
     isLoading,
-  } = useHomeLogic();
+  } = useHomeLogic({ prefetchAllProgress: viewMode === "bible" });
+
+  type BatchedUpdate = {
+    planId: string;
+    day: number;
+    readingIndex: number;
+    completed: boolean;
+    readingCount: number;
+    totalReadingsCount: number;
+    completedChapters?: string[];
+  };
+
+  // Micro-batch Bible mode updates to avoid UI jank when applying many updates at once
+  // (e.g., "전체 읽기/해제" or rapid consecutive taps).
+  const pendingBibleUpdatesRef = useRef<Map<string, BatchedUpdate>>(new Map());
+  const bibleFlushTimerRef = useRef<number | null>(null);
+  const BIBLE_UPDATE_BATCH_SIZE = 12;
+  const BIBLE_UPDATE_FLUSH_DELAY_MS = 0;
+
+  const flushBibleUpdates = () => {
+    bibleFlushTimerRef.current = null;
+    if (pendingBibleUpdatesRef.current.size === 0) return;
+
+    const entries = Array.from(pendingBibleUpdatesRef.current.entries());
+    const batch = entries.slice(0, BIBLE_UPDATE_BATCH_SIZE);
+
+    // Remove from queue first (so enqueueing during mutate won't double-send)
+    for (const [k] of batch) pendingBibleUpdatesRef.current.delete(k);
+
+    for (const [, u] of batch) {
+      updateReadingMutation.mutate(u);
+    }
+
+    if (pendingBibleUpdatesRef.current.size > 0) {
+      bibleFlushTimerRef.current = window.setTimeout(flushBibleUpdates, BIBLE_UPDATE_FLUSH_DELAY_MS);
+    }
+  };
+
+  const enqueueBibleUpdates = (updates: BatchedUpdate[]) => {
+    for (const u of updates) {
+      // Coalesce: if same reading item is updated multiple times quickly,
+      // only keep the last one.
+      const k = `${u.planId}:${u.day}:${u.readingIndex}`;
+      pendingBibleUpdatesRef.current.set(k, u);
+    }
+
+    if (bibleFlushTimerRef.current == null) {
+      bibleFlushTimerRef.current = window.setTimeout(flushBibleUpdates, BIBLE_UPDATE_FLUSH_DELAY_MS);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (bibleFlushTimerRef.current != null) {
+        window.clearTimeout(bibleFlushTimerRef.current);
+        bibleFlushTimerRef.current = null;
+      }
+      pendingBibleUpdatesRef.current.clear();
+    };
+  }, []);
 
   if (isLoading) {
     return <HomeTabSkeleton />;
@@ -72,6 +149,19 @@ export function HomeTab() {
         <div>
           <h1 className="text-xl font-bold">반가워요, {userName}님!</h1>
         </div>
+
+        <ToggleGroup
+          type="single"
+          value={viewMode}
+          onValueChange={(v) => {
+            if (v === "daily" || v === "bible") setViewMode(v);
+          }}
+          variant="outline"
+          className="w-full"
+        >
+          <ToggleGroupItem value="daily">일일 읽기</ToggleGroupItem>
+          <ToggleGroupItem value="bible">성경별 읽기</ToggleGroupItem>
+        </ToggleGroup>
 
         {/* Weekly Calendar Strip */}
         <WeeklyCalendar
@@ -98,26 +188,38 @@ export function HomeTab() {
                 today={today}
               />
             ) : (
-              <TodayReading
-                day={isToday ? undefined : displayDay}
-                subtitle={isToday ? "오늘의 읽기" : "이날의 읽기"}
-                readings={readings}
-                completedByIndex={completedByIndex}
-                completedChaptersByIndex={completedChaptersByIndex}
-                onToggleReading={(index, completed, completedChapters) => {
-                  const target = combined[index];
-                  if (!target) return;
-                  updateReadingMutation.mutate({
-                    planId: target.planId,
-                    day: target.day,
-                    readingIndex: target.readingIndex,
-                    completed,
-                    readingCount: target.readingCount,
-                    totalReadingsCount: target.totalReadingsCount,
-                    completedChapters,
-                  });
-                }}
-              />
+              viewMode === "daily" ? (
+                <TodayReading
+                  day={isToday ? undefined : displayDay}
+                  subtitle={isToday ? "오늘의 읽기" : "이날의 읽기"}
+                  readings={readings}
+                  completedByIndex={completedByIndex}
+                  completedChaptersByIndex={completedChaptersByIndex}
+                  onToggleReading={(index, completed, completedChapters) => {
+                    const target = combined[index];
+                    if (!target) return;
+                    updateReadingMutation.mutate({
+                      planId: target.planId,
+                      day: target.day,
+                      readingIndex: target.readingIndex,
+                      completed,
+                      readingCount: target.readingCount,
+                      totalReadingsCount: target.totalReadingsCount,
+                      completedChapters,
+                    });
+                  }}
+                />
+              ) : (
+                <BibleReadingByBook
+                  plans={plans}
+                  progressByPlanId={progressByPlanId}
+                  applyUpdates={(updates) => {
+                    // Fire-and-forget + micro-batch: keep optimistic behavior, but avoid
+                    // blocking the UI thread when a lot of updates are triggered at once.
+                    enqueueBibleUpdates(updates);
+                  }}
+                />
+              )
             )}
 
             <div className="pt-6 border-t border-border/50">

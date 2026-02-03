@@ -623,6 +623,27 @@ export async function getLeaderboard(c: Context) {
       return Number.isFinite(n) ? n : fallback;
     };
 
+    // PostgREST (Supabase) commonly caps responses (often ~1000 rows) unless range is used.
+    // Leaderboard calculations require the full schedule; otherwise expected can become 0
+    // which previously caused an incorrect 100% achievement rate.
+    const fetchAll = async <T>(
+      queryFactory: (from: number, to: number) => Promise<{ data: T[] | null; error: any }>,
+      pageSize = 1000
+    ): Promise<T[]> => {
+      const all: T[] = [];
+      let from = 0;
+      while (true) {
+        const to = from + pageSize - 1;
+        const { data, error } = await queryFactory(from, to);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        all.push(...data);
+        if (data.length < pageSize) break;
+        from += pageSize;
+      }
+      return all;
+    };
+
     // 1. Get all friends (accepted)
     const { data: friendships, error: fsError } = await supabase
       .from("friendships")
@@ -681,12 +702,21 @@ export async function getLeaderboard(c: Context) {
 
     // Fetch Custom Schedules
     if (distinctPlanIds.size > 0) {
-      const { data: customSchedules, error: customError } = await supabase
-        .from("plan_schedules")
-        .select("plan_id, day, book, chapters, chapter_count")
-        .in("plan_id", Array.from(distinctPlanIds));
-      
-      if (customError) throw customError;
+      const customSchedules = await fetchAll<any>(
+        async (from, to) =>
+          await supabase
+            .from("plan_schedules")
+            .select("plan_id, day, book, chapters, chapter_count")
+            .in("plan_id", Array.from(distinctPlanIds))
+            // Deterministic ordering for stable pagination
+            .order("plan_id", { ascending: true })
+            .order("day", { ascending: true })
+            .order("order_index", { ascending: true })
+            .order("book", { ascending: true })
+            .order("chapters", { ascending: true })
+            .range(from, to),
+        1000
+      );
 
       (customSchedules || []).forEach((s: any) => {
         if (!scheduleCache.has(s.plan_id)) {
@@ -698,12 +728,21 @@ export async function getLeaderboard(c: Context) {
 
     // Fetch Preset Schedules
     if (distinctPresetIds.size > 0) {
-      const { data: presetSchedules, error: presetError } = await supabase
-        .from("preset_schedules")
-        .select("preset_id, day, book, chapters, chapter_count")
-        .in("preset_id", Array.from(distinctPresetIds));
-        
-      if (presetError) throw presetError;
+      const presetSchedules = await fetchAll<any>(
+        async (from, to) =>
+          await supabase
+            .from("preset_schedules")
+            .select("preset_id, day, book, chapters, chapter_count")
+            .in("preset_id", Array.from(distinctPresetIds))
+            // Deterministic ordering for stable pagination
+            .order("preset_id", { ascending: true })
+            .order("day", { ascending: true })
+            .order("order_index", { ascending: true })
+            .order("book", { ascending: true })
+            .order("chapters", { ascending: true })
+            .range(from, to),
+        1000
+      );
 
       (presetSchedules || []).forEach((s: any) => {
         if (!scheduleCache.has(s.preset_id)) {
@@ -827,10 +866,13 @@ export async function getLeaderboard(c: Context) {
         }
 
         if (expected > 0) {
-            achievementRate = Math.round((completed / expected) * 100);
-        } else if (completed > 0) {
-             // Started early?
-            achievementRate = 100;
+          achievementRate = Math.round((completed / expected) * 100);
+        } else if (elapsedDays <= 0 && completed > 0) {
+          // Started early: Award 100% for reading before start date
+          achievementRate = 100;
+        } else {
+          // If expected is 0 but time has passed (data error or empty schedule), return 0.
+          achievementRate = 0;
         }
 
         return {

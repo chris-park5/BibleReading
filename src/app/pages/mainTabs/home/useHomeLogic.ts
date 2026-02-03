@@ -10,7 +10,7 @@ import { enqueueReadingToggle, isOfflineLikeError, OfflineError } from "../../..
 import { computeTodayDay, startOfTodayLocal } from "../dateUtils";
 import { expandChapters } from "../../../utils/expandChapters";
 
-type CombinedReading = {
+export type CombinedReading = {
   planId: string;
   planName: string;
   day: number;
@@ -23,7 +23,13 @@ type CombinedReading = {
   completedChapters: string[];
 };
 
-export function useHomeLogic() {
+export function useHomeLogic(
+  {
+    prefetchAllProgress = false,
+  }: {
+    prefetchAllProgress?: boolean;
+  } = {},
+) {
   const { plans, isLoading: isPlansLoading } = usePlans();
   const userId = useAuthStore((s) => s.user?.id ?? null);
   const userName = useAuthStore((s) => s.user?.name ?? "사용자");
@@ -124,6 +130,22 @@ export function useHomeLogic() {
 
   const queryClient = useQueryClient();
   const progressMutationSeqByPlanRef = useRef(new Map<string, number>());
+  const progressMutationQueueByPlanRef = useRef(new Map<string, Promise<unknown>>());
+  const progressPendingMutationsByPlanRef = useRef(new Map<string, number>());
+
+  const incPending = (planId: string) => {
+    const prev = progressPendingMutationsByPlanRef.current.get(planId) ?? 0;
+    const next = prev + 1;
+    progressPendingMutationsByPlanRef.current.set(planId, next);
+    return next;
+  };
+
+  const decPending = (planId: string) => {
+    const prev = progressPendingMutationsByPlanRef.current.get(planId) ?? 0;
+    const next = Math.max(0, prev - 1);
+    progressPendingMutationsByPlanRef.current.set(planId, next);
+    return next;
+  };
 
   // Spread out progress fetching to avoid a burst of N simultaneous requests
   // (especially when a user has many plans).
@@ -144,7 +166,10 @@ export function useHomeLogic() {
       return {
         queryKey: ["progress", userId, plan.id],
         queryFn: () => progressService.getProgress(plan.id),
-        enabled: !!userId && !isOptimistic && (isPlanRelevantForViewDate || isEnabledByStage),
+        enabled:
+          !!userId &&
+          !isOptimistic &&
+          (prefetchAllProgress || isPlanRelevantForViewDate || isEnabledByStage),
       };
     }),
   });
@@ -154,10 +179,16 @@ export function useHomeLogic() {
     const realPlans = plans.filter((p) => !p.id.startsWith("optimistic-"));
     if (realPlans.length === 0) return;
 
+    const maxStages = Math.ceil(realPlans.length / PROGRESS_PREFETCH_BATCH_SIZE);
+    if (prefetchAllProgress) {
+      // Immediately enable all progress queries.
+      setProgressPrefetchStage(maxStages + 1);
+      return;
+    }
+
     // Reset when plan list changes meaningfully.
     setProgressPrefetchStage(1);
 
-    const maxStages = Math.ceil(realPlans.length / PROGRESS_PREFETCH_BATCH_SIZE);
     if (maxStages <= 1) return;
 
     let stage = 1;
@@ -170,7 +201,7 @@ export function useHomeLogic() {
     }, 350);
 
     return () => clearInterval(timer);
-  }, [plans, userId]);
+  }, [plans, userId, prefetchAllProgress]);
 
   const progressByPlanId = useMemo(() => {
     const map = new Map<string, any>();
@@ -181,6 +212,7 @@ export function useHomeLogic() {
   }, [allProgressQueries, plans]);
 
   const updateReadingMutation = useMutation({
+    mutationKey: ["progress-update"],
     mutationFn: (vars: {
       planId: string;
       day: number;
@@ -190,20 +222,33 @@ export function useHomeLogic() {
       totalReadingsCount: number; // Total items in the day
       completedChapters?: string[];
     }) => {
-      if (typeof navigator !== "undefined" && navigator && navigator.onLine === false) {
-        throw new OfflineError();
-      }
-      return progressService.updateReadingProgress(
-        vars.planId,
-        vars.day,
-        vars.readingIndex,
-        vars.completed,
-        vars.readingCount,
-        vars.completedChapters
-      );
+      // Serialize requests per plan so rapid consecutive toggles don't race.
+      const previous = progressMutationQueueByPlanRef.current.get(vars.planId) ?? Promise.resolve();
+
+      const task = async () => {
+        await previous.catch(() => {});
+
+        if (typeof navigator !== "undefined" && navigator && navigator.onLine === false) {
+          throw new OfflineError();
+        }
+        return progressService.updateReadingProgress(
+          vars.planId,
+          vars.day,
+          vars.readingIndex,
+          vars.completed,
+          vars.readingCount,
+          vars.completedChapters,
+        );
+      };
+
+      const nextPromise = task();
+      progressMutationQueueByPlanRef.current.set(vars.planId, nextPromise);
+      return nextPromise;
     },
     onMutate: async (vars) => {
       const key = ["progress", userId, vars.planId] as const;
+
+      incPending(vars.planId);
 
       const prevSeq = progressMutationSeqByPlanRef.current.get(vars.planId) ?? 0;
       const seq = prevSeq + 1;
@@ -274,6 +319,21 @@ export function useHomeLogic() {
       const latest = progressMutationSeqByPlanRef.current.get(ctx.planId) ?? 0;
       if (ctx.seq !== latest) return;
 
+      const pending = progressPendingMutationsByPlanRef.current.get(ctx.planId) ?? 0;
+      // If other toggles are queued/in-flight, don't rollback (it will cause flicker/disappearing checks).
+      if (pending > 1) {
+        if (isOfflineLikeError(err)) {
+          void enqueueReadingToggle({
+            planId: vars.planId,
+            day: vars.day,
+            readingIndex: vars.readingIndex,
+            completed: vars.completed,
+            readingCount: vars.readingCount,
+          });
+        }
+        return;
+      }
+
       if (isOfflineLikeError(err)) {
         void enqueueReadingToggle({
           planId: vars.planId,
@@ -293,15 +353,22 @@ export function useHomeLogic() {
       if (!ctx?.key) return;
       const latest = progressMutationSeqByPlanRef.current.get(ctx.planId) ?? 0;
       if (ctx.seq !== latest) return;
-      queryClient.setQueryData(ctx.key, data);
 
-      // Refresh weekly activity chart data (ProgressTab/AchievementReportModal)
-      // which reads from the dailyStats query.
-      queryClient.invalidateQueries({ queryKey: ["dailyStats", ctx.planId] });
+      const pending = progressPendingMutationsByPlanRef.current.get(ctx.planId) ?? 0;
+      // Only let the last queued mutation write the server response into cache.
+      // Otherwise it can overwrite newer optimistic state.
+      if (pending <= 1) {
+        queryClient.setQueryData(ctx.key, data);
+      }
     },
     onSettled: (_data, _error, vars) => {
+      const remaining = decPending(vars.planId);
+      if (remaining > 0) return;
+
       const key = ["progress", userId, vars.planId] as const;
-      return queryClient.invalidateQueries({ queryKey: key });
+      // Only refetch once after the rapid sequence drains.
+      queryClient.invalidateQueries({ queryKey: key });
+      queryClient.invalidateQueries({ queryKey: ["dailyStats", vars.planId] });
     },
   });
 
@@ -398,6 +465,7 @@ export function useHomeLogic() {
   return {
     // Data
     plans,
+    progressByPlanId,
     userName,
     streak,
     longestStreak,
