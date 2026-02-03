@@ -165,4 +165,3 @@ export function DashboardPage({ embedded = false }: { embedded?: boolean }) {
     </div>
   );
 }
-
