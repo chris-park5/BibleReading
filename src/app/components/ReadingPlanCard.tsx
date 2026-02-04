@@ -55,7 +55,7 @@ export function ReadingPlanCard({
         if (!isClickable) return;
         if (e.key === "Enter" || e.key === " ") onSelect();
       }}
-      className={`w-full p-6 rounded-xl text-left transition-all ${
+      className={`w-full p-6 rounded-[32px] text-left transition-all ${
         isDisabled
           ? "bg-muted/40 opacity-60 cursor-not-allowed border-none shadow-none"
           : isSelected
@@ -67,7 +67,7 @@ export function ReadingPlanCard({
     >
       <div className="flex items-start gap-4">
         <div
-          className={`p-3 rounded-lg ${
+          className={`p-3 rounded-[18px] ${
             isSelected ? "bg-primary/10" : "bg-muted"
           }`}
         >

@@ -238,7 +238,7 @@ export function HomeTab() {
 
       <div className="max-w-4xl mx-auto px-6 pt-6 pb-10 space-y-8">
         {/* Greeting Section */}
-        <div className="pt-1">
+        <div className="pt-1 font-noto-kr">
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
             반가워요, <span className="font-medium">{userName}</span>님
           </h1>

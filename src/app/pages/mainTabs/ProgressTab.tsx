@@ -265,7 +265,7 @@ export function ProgressTab() {
           <h2 className="text-lg font-bold">읽기 기록</h2>
         </div>
 
-        <div className="bg-card text-card-foreground border-none shadow-sm rounded-xl p-4 space-y-4">
+        <div className="bg-card text-card-foreground border-none shadow-sm rounded-[32px] p-4 space-y-4">
           <ReadingHistory
             schedule={plan.schedule}
             completedDays={(() => {
@@ -368,7 +368,7 @@ export function ProgressTab() {
 
               if (filteredReadingsWithIndex.length === 0) {
                 return (
-                  <div className="bg-card text-card-foreground border border-border rounded-xl p-4 text-sm text-muted-foreground text-center">
+                  <div className="bg-card text-card-foreground border border-border rounded-[24px] p-4 text-sm text-muted-foreground text-center">
                     선택한 날짜({day}일차)에 해당하는 읽기 항목이 없습니다.
                   </div>
                 );

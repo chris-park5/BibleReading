@@ -264,7 +264,7 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
           {/* Add Plan Tab */}
           <TabsContent value="add-plan" className="space-y-8 mt-0">
             {/* Custom Plan Button Section */}
-            <div className="bg-card border-none shadow-sm rounded-xl p-6">
+            <div className="bg-card border-none shadow-sm rounded-[32px] p-6">
                 <h3 className="text-lg font-semibold mb-2">나만의 계획 만들기</h3>
                 <p className="text-muted-foreground text-sm mb-4">원하는 범위와 기간을 설정하여 맞춤형 읽기표를 생성합니다.</p>
                 <button
@@ -341,7 +341,7 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
             <DialogTitle>{selectedMyPlan?.name}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="p-4 bg-muted/30 rounded-xl space-y-3">
+            <div className="p-4 bg-muted/30 rounded-[24px] space-y-3">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">시작 날짜</span>
                 <span className="font-medium">{selectedMyPlan?.startDate}</span>
