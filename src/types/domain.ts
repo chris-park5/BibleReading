@@ -5,6 +5,18 @@ export interface Plan {
   name: string;
   startDate: string;
   endDate?: string;
+  status?: "active" | "completed" | "archived";
+  completedAt?: string;
+  archivedAt?: string;
+  completionSnapshot?: {
+    completedAt?: string;
+    startDate?: string;
+    endDate?: string;
+    totalDays?: number;
+    totalChapters?: number;
+    completedChapters?: number;
+    badges?: string[];
+  };
   totalDays: number;
   totalChapters?: number;
   schedule: Array<{

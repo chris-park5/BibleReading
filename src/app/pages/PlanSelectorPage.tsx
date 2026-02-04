@@ -25,6 +25,7 @@ import {
   DialogFooter,
   DialogDescription,
 } from '../components/ui/dialog';
+import { AchievementReportModal } from '../components/AchievementReportModal';
 
 export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
   const { plans, createPlanAsync, deletePlanAsync, isCreating, isDeleting } = usePlans();
@@ -38,10 +39,14 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
   const [selectedMyPlan, setSelectedMyPlan] = useState<any | null>(null);
   const [selectedAddPlan, setSelectedAddPlan] = useState<any | null>(null);
   const [dialogStartDate, setDialogStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [showCompletedReport, setShowCompletedReport] = useState(false);
 
   const devPageEnabled = import.meta.env.VITE_ENABLE_DEV_PAGE === 'true';
 
   const presetPlans = [...bundledPresetPlans, ...api.getDeveloperPresetPlans()];
+
+  const activePlans = useMemo(() => plans.filter((p: any) => (p?.status ?? "active") === "active"), [plans]);
+  const completedPlans = useMemo(() => plans.filter((p: any) => (p?.status ?? "active") === "completed"), [plans]);
 
   const handleSignOut = async () => {
     await authService.signOut();
@@ -178,7 +183,7 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           {/* My Plans Tab */}
           <TabsContent value="my-plans" className="space-y-6 mt-0">
-            {plans.length === 0 ? (
+            {activePlans.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 px-4 text-center space-y-4 bg-muted/20 rounded-2xl border border-dashed border-border/50">
                 <div className="p-4 bg-background rounded-full shadow-sm">
                    <BookOpen className="w-8 h-8 text-muted-foreground/50" />
@@ -214,13 +219,39 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
                   </button>
                 </div>
                 <div className="grid gap-4 md:grid-cols-2">
-                  {plans.map((plan) => (
+                  {activePlans.map((plan) => (
                     <ReadingPlanCard
                       key={plan.id}
                       id={plan.id}
                       title={plan.name}
                       description="" // Hide description in list
                       duration=""    // Hide duration in list
+                      isSelected={false}
+                      onSelect={() => setSelectedMyPlan(plan)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {completedPlans.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold flex items-center gap-2">
+                    <span className="bg-primary/10 text-primary p-1 rounded-md">
+                      <BookOpen className="w-4 h-4" />
+                    </span>
+                    완료된 계획
+                  </h2>
+                </div>
+                <div className="grid gap-4 md:grid-cols-2">
+                  {completedPlans.map((plan: any) => (
+                    <ReadingPlanCard
+                      key={plan.id}
+                      id={plan.id}
+                      title={plan.name}
+                      description="" 
+                      duration={plan?.completedAt ? `완료: ${String(plan.completedAt).split("T")[0]}` : "완료"}
                       isSelected={false}
                       onSelect={() => setSelectedMyPlan(plan)}
                     />
@@ -333,13 +364,24 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
             </div>
           </div>
           <DialogFooter className="flex gap-2 sm:justify-between">
-            <button
-              onClick={handleDeletePlan}
-              className="flex items-center justify-center gap-2 px-4 py-2 bg-destructive/10 text-destructive hover:bg-destructive/20 rounded-lg transition-colors text-sm font-medium w-full sm:w-auto"
-            >
-              <Trash2 className="w-4 h-4" />
-              계획 삭제
-            </button>
+            <div className="flex gap-2 w-full sm:w-auto sm:justify-start">
+              {(selectedMyPlan?.status ?? 'active') === 'completed' ? (
+                <button
+                  onClick={() => setShowCompletedReport(true)}
+                  className="flex items-center justify-center gap-2 px-4 py-2 bg-primary/10 text-primary hover:bg-primary/20 rounded-lg transition-colors text-sm font-medium w-full sm:w-auto"
+                >
+                  리포트 보기
+                </button>
+              ) : (
+                <button
+                  onClick={handleDeletePlan}
+                  className="flex items-center justify-center gap-2 px-4 py-2 bg-destructive/10 text-destructive hover:bg-destructive/20 rounded-lg transition-colors text-sm font-medium w-full sm:w-auto"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  계획 삭제
+                </button>
+              )}
+            </div>
             <button
               onClick={() => setSelectedMyPlan(null)}
               className="px-4 py-2 bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded-lg transition-colors text-sm font-medium w-full sm:w-auto"
@@ -349,6 +391,19 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {selectedMyPlan && (selectedMyPlan?.status ?? 'active') === 'completed' && showCompletedReport && (
+        <AchievementReportModal
+          plan={selectedMyPlan}
+          // Snapshot 기반이므로 progress는 더미로 전달 (모달 내부에서 snapshot 모드로만 렌더)
+          progress={{ userId: '', planId: selectedMyPlan.id, completedDays: [], lastUpdated: '' } as any}
+          dailyStats={[]}
+          open={true}
+          onClose={() => setShowCompletedReport(false)}
+          variant="completed"
+          snapshot={selectedMyPlan?.completionSnapshot}
+        />
+      )}
 
       {/* Add Plan Details Dialog */}
       <Dialog open={!!selectedAddPlan} onOpenChange={(open) => !open && setSelectedAddPlan(null)}>

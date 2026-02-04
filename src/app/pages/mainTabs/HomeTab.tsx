@@ -3,12 +3,13 @@ import { TodayReading } from "../../components/TodayReading";
 import { DayEmptyState } from "./home/DayEmptyState";
 import { HomeEmptyState } from "./home/HomeEmptyState";
 import { HomeHeader } from "./home/HomeHeader";
-import { ReadingHistorySection } from "./home/ReadingHistorySection";
 import { useHomeLogic } from "./home/useHomeLogic";
 import { WeeklyCalendar } from "./home/WeeklyCalendar";
 import { Skeleton } from "../../components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "../../components/ui/toggle-group";
 import { BibleReadingByBook } from "./home/BibleReadingByBook";
+import { AchievementReportModal } from "../../components/AchievementReportModal";
+import { setHashTab } from "./tabHash";
 
 function HomeTabSkeleton() {
   return (
@@ -71,6 +72,8 @@ export function HomeTab() {
     isAllPlansCompletedForDate,
     hasAnyPlanForDate,
     isLoading,
+    completedCelebration,
+    dismissCompletedCelebration,
   } = useHomeLogic({ prefetchAllProgress: viewMode === "bible" });
 
   type BatchedUpdate = {
@@ -138,6 +141,23 @@ export function HomeTab() {
 
   return (
     <div className="min-h-screen pb-20 relative">
+      {completedCelebration && (
+        <AchievementReportModal
+          plan={completedCelebration.plan}
+          progress={completedCelebration.progress}
+          dailyStats={[]}
+          open={true}
+          onClose={dismissCompletedCelebration}
+          variant="completed"
+          primaryAction={{
+            label: "완료된 계획 보기",
+            onClick: () => {
+              dismissCompletedCelebration();
+              setHashTab("add");
+            },
+          }}
+        />
+      )}
       <HomeHeader
         incomingRequestsCount={incomingRequestsCount}
         streak={streak ?? 0}
@@ -222,9 +242,6 @@ export function HomeTab() {
               )
             )}
 
-            <div className="pt-6 border-t border-border/50">
-              <ReadingHistorySection />
-            </div>
           </>
         )}
       </div>
