@@ -37,7 +37,7 @@ export function HomeHeader({
             <DropdownMenuTrigger asChild>
               <button className="relative flex items-center gap-1.5 p-1 hover:bg-accent rounded-full transition-colors outline-none pl-3 group">
                 {incomingRequestsCount > 0 && (
-                  <span className="text-[10px] sm:text-[11px] font-bold text-red-500 animate-pulse whitespace-nowrap">
+                  <span className="hidden sm:inline text-[11px] font-bold text-red-500 animate-pulse whitespace-nowrap">
                     새 친구 요청이 있습니다
                   </span>
                 )}
