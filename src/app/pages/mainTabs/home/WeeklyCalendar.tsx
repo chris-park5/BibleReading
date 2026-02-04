@@ -26,11 +26,11 @@ export function WeeklyCalendar({
 }: WeeklyCalendarProps) {
   return (
     <div>
-      <div className="bg-card/50 border-none shadow-sm rounded-xl p-1 relative">
+      <div className="bg-card border border-border/50 shadow-sm rounded-[32px] p-2 relative">
         <div className="flex items-center gap-1">
           <button
             onClick={handlePrevDay}
-            className="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground"
+            className="p-2 hover:bg-muted/60 rounded-[18px] transition-colors text-muted-foreground"
             title="이전 날"
           >
             <ChevronLeft className="w-4 h-4" />
@@ -48,10 +48,11 @@ export function WeeklyCalendar({
                   key={i}
                   onClick={() => setViewDate(date)}
                   className={cn(
-                    "flex flex-col items-center justify-center w-9 h-14 rounded-lg transition-all duration-200",
-                    isSelected
-                      ? "bg-primary text-primary-foreground shadow-md scale-105"
-                      : "hover:bg-muted text-muted-foreground"
+                    "flex flex-col items-center justify-center w-10 h-14 rounded-[22px] transition-all duration-200",
+                    isSelected && "bg-primary/12 ring-1 ring-primary/18 shadow-sm",
+                    !isSelected && isDateToday && "bg-primary/6 ring-1 ring-primary/15",
+                    !isSelected && !isDateToday && "hover:bg-muted/60",
+                    isSelected ? "text-primary" : isDateToday ? "text-foreground" : "text-muted-foreground",
                   )}
                 >
                   <span className="text-[10px] font-medium opacity-80">
@@ -62,7 +63,7 @@ export function WeeklyCalendar({
                   <span
                     className={cn(
                       "text-sm font-bold",
-                      isSelected && "text-white"
+                      isSelected && "text-primary"
                     )}
                   >
                     {date.getDate()}
@@ -75,11 +76,11 @@ export function WeeklyCalendar({
                           "h-full w-full rounded-full",
                           isCompleted
                             ? isSelected
-                              ? "bg-white"
-                              : "bg-green-500"
-                            : isDateToday && !isSelected
+                              ? "bg-emerald-500"
+                              : "bg-emerald-500"
+                            : isDateToday
                             ? "bg-primary"
-                            : "bg-transparent"
+                            : "bg-transparent",
                         )}
                       />
                     )}
@@ -91,7 +92,7 @@ export function WeeklyCalendar({
 
           <button
             onClick={handleNextDay}
-            className="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground"
+            className="p-2 hover:bg-muted/60 rounded-[18px] transition-colors text-muted-foreground"
             title="다음 날"
           >
             <ChevronRight className="w-4 h-4" />
@@ -104,7 +105,7 @@ export function WeeklyCalendar({
         <div className="flex justify-center mt-2">
           <button
             onClick={() => setViewDate(today)}
-            className="text-xs font-medium text-primary hover:underline flex items-center gap-1 bg-primary/5 px-3 py-1 rounded-full"
+            className="text-xs font-medium text-primary hover:underline flex items-center gap-1 bg-primary/6 px-4 py-2 rounded-[999px]"
           >
             오늘 날짜로 돌아가기
           </button>

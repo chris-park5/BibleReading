@@ -53,11 +53,11 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
 
   return (
     <div 
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-6 z-50"
+      className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 sm:p-6 z-[100]"
       onDragOver={handleGlobalDragOver}
     >
-      <div className="bg-card text-card-foreground border-none shadow-xl rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto relative">
-        <div className="sticky top-0 bg-card/80 backdrop-blur border-b border-border p-6 z-20">
+      <div className="bg-card text-card-foreground shadow-xl rounded-[28px] max-w-2xl w-full max-h-[90vh] overflow-y-auto relative border border-slate-100">
+        <div className="sticky top-0 bg-card/80 backdrop-blur border-b border-slate-100 px-5 py-4 sm:px-6 sm:py-5 z-20">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-3 bg-primary/10 rounded-lg">
@@ -77,7 +77,7 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
           </div>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="px-5 py-5 sm:p-6 space-y-6">
           {/* Stepper */}
           <CustomPlanStepper
             step={step}
@@ -96,7 +96,7 @@ export function CustomPlanCreator({ onClose, onSave }: CustomPlanCreatorProps) {
           {step === 3 && <Step3OrderConfirmation {...hookProps} />}
         </div>
 
-        <div className="sticky bottom-0 bg-card/80 backdrop-blur border-t border-border p-6 space-y-3">
+        <div className="sticky bottom-0 bg-card/80 backdrop-blur border-t border-slate-100 px-5 py-4 sm:p-6 space-y-3">
           {/* 수치 기반 요약 */}
           <div className="text-xs sm:text-sm text-muted-foreground">
             {selectedBooks.length === 0 ||

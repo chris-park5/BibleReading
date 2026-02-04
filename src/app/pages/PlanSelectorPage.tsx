@@ -146,8 +146,8 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
   return (
     <div className={embedded ? "" : "min-h-screen pb-24"}>
       {!embedded && (
-        <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-md border-b border-border shadow-sm transition-all duration-200">
-          <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border shadow-sm transition-all duration-200">
+          <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between gap-3">
             <div>
               <p className="text-xl font-bold text-foreground">계획</p>
             </div>
@@ -166,7 +166,7 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
         </div>
       )}
 
-      <div className={embedded ? "p-4 sm:p-6" : "max-w-4xl mx-auto p-4 sm:p-6 space-y-6 pt-6"}>
+      <div className={embedded ? "px-6 pt-6 pb-10" : "max-w-4xl mx-auto px-6 pt-6 pb-10 space-y-8"}>
         {!embedded && devPageEnabled && (
           <div className="flex justify-end">
             <button
@@ -184,7 +184,7 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
           {/* My Plans Tab */}
           <TabsContent value="my-plans" className="space-y-6 mt-0">
             {activePlans.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 px-4 text-center space-y-4 bg-muted/20 rounded-2xl border border-dashed border-border/50">
+              <div className="flex flex-col items-center justify-center py-16 px-6 text-center space-y-4 bg-muted/20 rounded-[32px] border border-dashed border-border/50">
                 <div className="p-4 bg-background rounded-full shadow-sm">
                    <BookOpen className="w-8 h-8 text-muted-foreground/50" />
                 </div>
@@ -196,7 +196,7 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
                 </div>
                 <button
                     onClick={() => setActiveTab("add-plan")}
-                    className="mt-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-colors"
+                    className="mt-2 px-5 py-3 bg-primary text-primary-foreground rounded-[18px] text-sm font-medium hover:opacity-90 transition-colors"
                 >
                     계획 추가하러 가기
                 </button>

@@ -133,24 +133,24 @@ function ReadingItem({
   return (
     <div className="space-y-2">
       <div 
-          className={`relative overflow-hidden rounded-lg border transition-all ${
+          className={`relative overflow-hidden rounded-[24px] border transition-all ${
             isFullyCompleted 
-              ? "border-green-200" 
+              ? "border-emerald-200 bg-emerald-50/40" 
               : isPartial 
-                ? "border-amber-200" 
-                : "border-border"
+                ? "border-amber-200 bg-amber-50/40 border-dashed" 
+                : "border-border bg-card"
           }`}
       >
           {/* Progress Bar Background */}
           <div 
               className={`absolute inset-0 h-full transition-all duration-500 ease-in-out ${
-                    isFullyCompleted ? "bg-green-50 opacity-100" : "bg-amber-50 opacity-100"
+                    isFullyCompleted ? "bg-emerald-100/40 opacity-100" : isPartial ? "bg-amber-100/40 opacity-100" : "bg-muted/20 opacity-100"
               }`}
               style={{ width: `${progressPercent}%` }}
           />
 
-          <div 
-              className="relative flex items-center justify-between p-4 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+            <div 
+              className="relative flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
               onClick={() => onToggleExpand(index)}
           >
               <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -170,7 +170,7 @@ function ReadingItem({
                       className="shrink-0"
                   >
                       {isFullyCompleted ? (
-                          <CheckCircle className="w-7 h-7 text-green-600" />
+                          <CheckCircle className="w-7 h-7 text-emerald-600" />
                       ) : isPartial ? (
                           <CircleDashed className="w-7 h-7 text-amber-600" />
                       ) : (
@@ -242,20 +242,20 @@ export function TodayReading({
   };
 
   return (
-    <div className="bg-card text-card-foreground rounded-xl border-none shadow-sm p-6">
+    <div className="bg-card text-card-foreground rounded-[32px] border border-border/50 shadow-sm px-7 py-7">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <div className="p-3 bg-primary/10 rounded-lg">
+          <div className="p-3 bg-primary/10 rounded-[18px]">
             <BookOpenCheck className="w-6 h-6 text-primary" />
           </div>
           <div>
-            <h2>{typeof day === "number" ? `Day ${day}` : "오늘"}</h2>
+            <h2 className="text-base font-bold">{typeof day === "number" ? `Day ${day}` : "오늘"}</h2>
             {subtitle ? <p className="text-sm text-muted-foreground">{subtitle}</p> : null}
           </div>
         </div>
         <div
-          className={`flex items-center gap-2 px-3 py-2 rounded-lg ${
-            allCompleted ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+          className={`flex items-center gap-2 px-4 py-2 rounded-[999px] ${
+            allCompleted ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-muted/40 text-muted-foreground border border-border/50"
           }`}
         >
           {allCompleted ? (

@@ -28,49 +28,53 @@ export function Step2BookSelection({
   const isAllSelected = activeTestament === "OT" ? otAllSelected : ntAllSelected;
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-      <div className="bg-muted/30 rounded-2xl p-5 space-y-5">
+    <div className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-500">
+      <div className="rounded-[28px] bg-slate-50/60 border border-slate-100 shadow-sm p-4 sm:p-5 space-y-4">
         <div className="flex items-center justify-between">
-          <div className="text-base font-semibold text-foreground flex items-center gap-2">
+          <div className="text-sm font-semibold text-foreground flex items-center gap-2">
             책 선택
-            <span className="text-xs font-normal text-muted-foreground bg-background/50 px-2 py-0.5 rounded-full">
-              {selectedBooks.length}권 선택됨
+            <span className="text-[11px] font-bold text-slate-600 bg-white/80 px-2 py-0.5 rounded-full border border-slate-100 shadow-sm">
+              {selectedBooks.length}권
             </span>
           </div>
         </div>
 
-        {/* Sliding Segmented Control */}
-        <div className="bg-muted rounded-xl p-1 flex relative">
-          <button
-            type="button"
-            onClick={() => setActiveTestament("OT")}
+        {/* Thin Sliding Segmented Control */}
+        <div className="relative w-full rounded-full bg-white border border-slate-100 p-1 shadow-sm overflow-hidden">
+          <div
             className={cn(
-              "flex-1 py-2 text-sm font-medium rounded-lg transition-all duration-200 z-10",
-              activeTestament === "OT"
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+              "absolute inset-y-1 w-1/2 rounded-full bg-blue-50 border border-blue-100 transition-transform duration-200 ease-out",
+              activeTestament === "OT" ? "translate-x-0" : "translate-x-full"
             )}
-          >
-            구약
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTestament("NT")}
-            className={cn(
-              "flex-1 py-2 text-sm font-medium rounded-lg transition-all duration-200 z-10",
-              activeTestament === "NT"
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground hover:bg-background/50"
-            )}
-          >
-            신약
-          </button>
+          />
+          <div className="relative grid grid-cols-2">
+            <button
+              type="button"
+              onClick={() => setActiveTestament("OT")}
+              className={cn(
+                "py-1.5 text-xs font-bold rounded-full transition-colors",
+                activeTestament === "OT" ? "text-blue-700" : "text-slate-500 hover:text-slate-700"
+              )}
+            >
+              구약
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTestament("NT")}
+              className={cn(
+                "py-1.5 text-xs font-bold rounded-full transition-colors",
+                activeTestament === "NT" ? "text-blue-700" : "text-slate-500 hover:text-slate-700"
+              )}
+            >
+              신약
+            </button>
+          </div>
         </div>
 
-        {/* Bulk Actions Toolbar (Compact) */}
-        <div className="flex items-center gap-2 bg-background/60 rounded-xl p-1.5 border border-border/40 shadow-sm">
+        {/* Compact Controls */}
+        <div className="flex items-center gap-2 flex-wrap rounded-2xl bg-white/70 border border-slate-100 shadow-sm p-1.5">
           {/* Bulk Repeat Stepper */}
-          <div className="flex items-center bg-muted/50 rounded-lg p-0.5 shrink-0">
+          <div className="flex items-center rounded-full bg-white border border-slate-100 shadow-sm ring-1 ring-blue-50 p-0.5 shrink-0">
             <button
               type="button"
               onClick={() => {
@@ -78,11 +82,12 @@ export function Step2BookSelection({
                 setRepeat(v);
                 if (isAllSelected) setSectionAll(activeTestament, v);
               }}
-              className="w-7 h-7 flex items-center justify-center rounded-md bg-background hover:bg-accent text-muted-foreground shadow-sm transition-all active:scale-95"
+              className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-slate-50 text-slate-600 transition-colors active:scale-95"
+              aria-label="회독수 감소"
             >
               <Minus className="w-3 h-3" />
             </button>
-            <div className="w-9 text-center text-xs font-bold text-foreground">
+            <div className="px-2 text-[11px] font-extrabold text-slate-800 tabular-nums">
               {currentRepeat}회
             </div>
             <button
@@ -92,7 +97,8 @@ export function Step2BookSelection({
                 setRepeat(v);
                 if (isAllSelected) setSectionAll(activeTestament, v);
               }}
-              className="w-7 h-7 flex items-center justify-center rounded-md bg-background hover:bg-accent text-muted-foreground shadow-sm transition-all active:scale-95"
+              className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-slate-50 text-slate-600 transition-colors active:scale-95"
+              aria-label="회독수 증가"
             >
               <Plus className="w-3 h-3" />
             </button>
@@ -108,27 +114,28 @@ export function Step2BookSelection({
               }
             }}
             className={cn(
-              "flex-1 flex items-center justify-center gap-2 py-1.5 rounded-lg text-xs font-bold transition-all border shadow-sm",
+              "flex-1 min-w-[120px] inline-flex items-center justify-center gap-2 px-3 py-2 rounded-full text-xs font-extrabold transition-all border shadow-sm",
               isAllSelected
-                ? "bg-primary text-primary-foreground border-primary shadow-inner"
-                : "bg-background border-border hover:bg-accent text-foreground"
+                ? "bg-blue-600 text-white border-blue-600"
+                : "bg-white border-slate-100 hover:bg-slate-50 text-slate-800"
             )}
           >
-            {isAllSelected ? "선택 해제" : "전체 선택"}
+            {isAllSelected ? "전체 해제" : "전체 선택"}
           </button>
 
           <button
             type="button"
             onClick={() => clearSection(activeTestament)}
-            className="w-9 h-9 flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors shrink-0"
+            className="w-9 h-9 flex items-center justify-center text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-full transition-colors shrink-0"
             title="초기화"
+            aria-label="초기화"
           >
             <RotateCcw className="w-4 h-4" />
           </button>
         </div>
 
         {/* Book List */}
-        <div className="max-h-[400px] overflow-y-auto pr-1 space-y-1 custom-scrollbar">
+        <div className="max-h-[52vh] overflow-y-auto pr-1 space-y-1 custom-scrollbar">
           {currentBooks.map((bn) => {
             const count = countsByBook.get(bn) ?? 0;
             const isSelected = count > 0;
@@ -137,45 +144,56 @@ export function Step2BookSelection({
               <div
                 key={bn}
                 className={cn(
-                  "flex items-center justify-between p-2 rounded-xl transition-all duration-200 select-none group",
+                  "flex items-center justify-between px-2.5 py-2 rounded-2xl transition-all duration-200 select-none group",
                   isSelected
-                    ? "bg-primary/5"
-                    : "bg-transparent hover:bg-muted/40"
+                    ? "bg-blue-50/60 border border-blue-100 shadow-sm"
+                    : "bg-transparent border border-transparent hover:bg-white/60 hover:border-slate-100"
                 )}
               >
-                <div 
-                  className="flex-1 cursor-pointer flex items-center gap-3"
+                <button
+                  type="button"
+                  className="flex-1 text-left cursor-pointer flex items-center gap-3"
                   onClick={() => setBookCount(bn, isSelected ? 0 : 1)}
                 >
-                  <div className={cn(
-                    "w-5 h-5 rounded-full border flex items-center justify-center transition-colors",
-                    isSelected 
-                      ? "bg-primary border-primary text-primary-foreground" 
-                      : "border-muted-foreground/30 bg-background group-hover:border-primary/30"
-                  )}>
+                  <div
+                    className={cn(
+                      "w-5 h-5 rounded-full border flex items-center justify-center transition-colors",
+                      isSelected
+                        ? "bg-blue-600 border-blue-600 text-white"
+                        : "border-slate-200 bg-white group-hover:border-blue-200"
+                    )}
+                  >
                     {isSelected && <Check className="w-3 h-3" />}
                   </div>
-                  <span className={cn(
-                    "text-sm font-medium transition-colors",
-                    isSelected ? "text-primary" : "text-foreground/80"
-                  )}>
+                  <span
+                    className={cn(
+                      "text-sm font-semibold transition-colors",
+                      isSelected ? "text-slate-900" : "text-slate-700"
+                    )}
+                  >
                     {bn}
                   </span>
-                </div>
+                </button>
 
                 {/* Micro Stepper */}
-                <div className="flex items-center bg-background rounded-lg border border-border/40 shadow-sm p-0.5 ml-2">
+                <div
+                  className={cn(
+                    "flex items-center rounded-full bg-white border border-slate-100 shadow-sm ring-1 ring-blue-50 p-0.5 ml-2",
+                    isSelected ? "" : "opacity-95"
+                  )}
+                >
                   <button
                     type="button"
                     onClick={() => setBookCount(bn, Math.max(0, count - 1))}
-                    className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-muted text-muted-foreground transition-colors active:scale-95"
+                    className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-slate-50 text-slate-600 transition-colors active:scale-95"
+                    aria-label={`${bn} 회독수 감소`}
                   >
                     <Minus className="w-3 h-3" />
                   </button>
                   <div
                     className={cn(
-                      "w-8 text-center text-sm font-bold transition-all",
-                      isSelected ? "text-primary scale-110" : "text-muted-foreground/40"
+                      "w-8 text-center text-[12px] font-extrabold tabular-nums transition-colors",
+                      isSelected ? "text-blue-700" : "text-slate-400"
                     )}
                   >
                     {count}
@@ -183,7 +201,8 @@ export function Step2BookSelection({
                   <button
                     type="button"
                     onClick={() => setBookCount(bn, count + 1)}
-                    className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-muted text-muted-foreground transition-colors active:scale-95"
+                    className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-slate-50 text-slate-600 transition-colors active:scale-95"
+                    aria-label={`${bn} 회독수 증가`}
                   >
                     <Plus className="w-3 h-3" />
                   </button>

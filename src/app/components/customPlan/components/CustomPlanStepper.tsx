@@ -44,12 +44,10 @@ export function CustomPlanStepper({
 
   return (
     <div className="relative">
-      {/* Progress Bar Background */}
-      <div className="absolute top-4 left-0 w-full h-0.5 bg-muted rounded-full -z-10" />
-      
-      {/* Active Progress Bar */}
-      <div 
-        className="absolute top-4 left-0 h-0.5 bg-primary rounded-full -z-10 transition-all duration-300 ease-out"
+      {/* Progress Bar */}
+      <div className="absolute top-3.5 left-0 w-full h-px bg-slate-100 rounded-full -z-10" />
+      <div
+        className="absolute top-3.5 left-0 h-px bg-blue-500/70 rounded-full -z-10 transition-all duration-300 ease-out"
         style={{ width: `${progressPercent}%` }}
       />
 
@@ -68,20 +66,20 @@ export function CustomPlanStepper({
             >
               <div
                 className={cn(
-                  "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all duration-300 z-10",
+                  "w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-extrabold border transition-all duration-300 z-10 shadow-sm",
                   isCompleted
-                    ? "bg-primary border-primary text-primary-foreground scale-100"
+                    ? "bg-blue-600 border-blue-600 text-white"
                     : isActive
-                    ? "bg-background border-primary text-primary scale-110 shadow-sm"
-                    : "bg-background border-muted text-muted-foreground group-hover:border-muted-foreground/50"
+                    ? "bg-white border-blue-200 text-blue-700 scale-110 ring-1 ring-blue-50"
+                    : "bg-white border-slate-200 text-slate-400 group-hover:border-slate-300"
                 )}
               >
                 {isCompleted ? <Check className="w-4 h-4 stroke-[3]" /> : s.id}
               </div>
               <span
                 className={cn(
-                  "text-xs font-medium transition-colors duration-300",
-                  isActive ? "text-primary" : "text-muted-foreground"
+                  "text-[11px] font-bold transition-colors duration-300",
+                  isActive ? "text-slate-900" : isCompleted ? "text-slate-600" : "text-slate-400"
                 )}
               >
                 {s.label}

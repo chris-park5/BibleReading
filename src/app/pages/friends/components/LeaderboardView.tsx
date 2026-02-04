@@ -2,6 +2,14 @@ import { useState } from "react";
 import { Badge } from "../../../components/ui/badge";
 import { cn } from "../../../components/ui/utils";
 
+function formatPercentSmart(value: unknown, digits = 1): string {
+  const n = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(n)) return "0";
+  const factor = 10 ** digits;
+  const rounded = Math.round(n * factor) / factor;
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(digits);
+}
+
 export function LeaderboardView({
   leaderboard,
   loading,
@@ -153,7 +161,7 @@ function LeaderboardItem({
       <div className="text-right">
         <div className={cn("font-bold text-lg", isSticky ? "text-white" : "text-primary")}>
           {metric === "rate"
-            ? `${item.achievementRate.toFixed(1)}%`
+            ? `${formatPercentSmart(item.achievementRate, 1)}%`
             : `${Math.round(((typeof item.completedChapters === "number" ? item.completedChapters : item.completedDays) ?? 0) * 10) / 10}장`}
         </div>
         <p className={cn("text-xs", isSticky ? "text-white/80" : "text-muted-foreground")}>

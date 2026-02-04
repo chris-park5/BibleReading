@@ -7,15 +7,15 @@ export function RouteLoadingOverlay({ visible, variant = "default" }: { visible:
     <div className="fixed inset-0 z-50 flex flex-col bg-background">
       {variant === "friends" ? (
         <div className="flex-1 overflow-y-auto pb-24">
-          <div className="sticky top-0 z-10 bg-background/95 border-b border-border">
-            <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border shadow-sm transition-all duration-200">
+            <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between gap-3">
               <Skeleton className="h-7 w-16" />
               <Skeleton className="h-8 w-24 rounded-full" />
             </div>
           </div>
-          <div className="max-w-4xl mx-auto p-4 sm:p-6 space-y-6 pt-6">
+          <div className="max-w-4xl mx-auto px-6 pt-6 pb-10 space-y-8">
             <div className="flex items-center gap-3 mb-2">
-              <Skeleton className="w-12 h-12 rounded-lg" />
+              <Skeleton className="w-12 h-12 rounded-[18px]" />
               <div className="space-y-2">
                 <Skeleton className="h-5 w-32" />
                 <Skeleton className="h-4 w-40" />
@@ -32,8 +32,8 @@ export function RouteLoadingOverlay({ visible, variant = "default" }: { visible:
       ) : (
         /* Default / Home Skeleton */
         <div className="flex-1 overflow-y-auto pb-24">
-          <div className="sticky top-0 z-10 bg-background/95 border-b border-border shadow-sm h-14 flex items-center px-4">
-             <div className="w-full flex justify-between items-center max-w-4xl mx-auto">
+          <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border shadow-sm transition-all duration-200 h-14 flex items-center">
+             <div className="w-full flex justify-between items-center max-w-4xl mx-auto px-6">
                 <Skeleton className="h-6 w-6 rounded-md" />
                 <div className="flex gap-2">
                     <Skeleton className="h-6 w-16 rounded-full" />
@@ -41,7 +41,7 @@ export function RouteLoadingOverlay({ visible, variant = "default" }: { visible:
                 </div>
              </div>
           </div>
-          <div className="max-w-4xl mx-auto p-4 space-y-6 pt-4">
+          <div className="max-w-4xl mx-auto px-6 pt-6 pb-10 space-y-8">
             <Skeleton className="h-8 w-48" />
             <Skeleton className="h-36 w-full rounded-xl" />
             <Skeleton className="h-64 w-full rounded-xl" />

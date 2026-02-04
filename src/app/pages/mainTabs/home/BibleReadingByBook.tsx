@@ -345,24 +345,24 @@ export function BibleReadingByBook({ plans, progressByPlanId, applyUpdates }: Pr
 
   return (
     <div className="bg-card text-card-foreground rounded-[28px] border-none shadow-sm p-7">
-      <div className="flex items-center justify-between mb-5">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
+        <div className="flex items-center gap-3 min-w-0">
           <div className="p-3 bg-primary/10 rounded-[18px]">
             <BookOpen className="w-6 h-6 text-primary" />
           </div>
-          <div>
-            <h2 className="text-lg font-bold">성경별 읽기</h2>
+          <div className="min-w-0">
+            <h2 className="text-lg font-bold truncate">성경별 읽기</h2>
           </div>
         </div>
 
         {availablePlans.length > 0 ? (
-          <div className="w-44">
+          <div className="w-full sm:w-44 sm:shrink-0">
             <Select value={planFilterId} onValueChange={setPlanFilterId}>
               <SelectTrigger className="h-9">
                 <SelectValue placeholder="계획 선택" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={PLAN_FILTER_ALL}>전체 계획</SelectItem>
+                <SelectItem value={PLAN_FILTER_ALL}>전체</SelectItem>
                 {availablePlans.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
                     {p.name}
