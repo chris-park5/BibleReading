@@ -201,8 +201,8 @@ export function ProgressTab() {
   return (
     <div className="min-h-screen pb-24">
       {/* Sticky Header with Plan Selection */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-md border-b border-border shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border shadow-sm transition-all duration-200">
+        <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between gap-4">
           <h2 className="text-xl font-bold whitespace-nowrap">진행률</h2>
           {activePlans.length > 0 && (
             <div className="flex-1 max-w-[200px]">
@@ -226,11 +226,11 @@ export function ProgressTab() {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto p-4 space-y-6 pt-6">
+      <div className="max-w-4xl mx-auto px-6 pt-6 pb-10 space-y-8">
           <button 
             type="button"
             onClick={() => setShowAchievementModal(true)}
-            className="w-full text-left bg-card text-card-foreground border-none shadow-sm rounded-xl p-4 transition-all active:scale-[0.98] hover:bg-accent/50"
+            className="w-full text-left bg-card text-card-foreground border border-border/50 shadow-sm rounded-[32px] px-7 py-6 transition-all active:scale-[0.99] hover:bg-accent/40"
           >
             <p className="text-sm text-muted-foreground">달성률</p>
             <p className="text-2xl font-semibold">{completionRateElapsed}%</p>
