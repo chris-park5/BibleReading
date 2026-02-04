@@ -199,7 +199,7 @@ export function MainTabsPage() {
         </div>
       </main>
 
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/65">
         <div className="max-w-4xl mx-auto grid grid-cols-5 px-2 pb-[env(safe-area-inset-bottom)]">
           {tabs.map((t) => {
             const Icon = t.icon;
@@ -209,12 +209,16 @@ export function MainTabsPage() {
                 key={t.key}
                 type="button"
                 onClick={() => setHashTab(t.key)}
-                className={`py-3 flex flex-col items-center gap-1 text-xs transition-colors ${
-                  active ? "text-primary" : "text-muted-foreground"
-                }`}
+                className="py-2.5 flex flex-col items-center gap-1 text-[11px] transition-colors"
               >
-                <Icon className="w-5 h-5" />
-                <span>{t.label}</span>
+                <div
+                  className={`h-9 w-9 rounded-[999px] flex items-center justify-center transition-colors ${
+                    active ? "bg-primary/10 text-primary" : "text-muted-foreground"
+                  }`}
+                >
+                  <Icon className="w-[22px] h-[22px]" strokeWidth={active ? 2 : 1.75} />
+                </div>
+                <span className={active ? "text-primary font-medium" : "text-muted-foreground"}>{t.label}</span>
               </button>
             );
           })}
