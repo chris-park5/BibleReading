@@ -133,6 +133,68 @@ export function usePlans() {
       return queryClient.invalidateQueries({ queryKey: plansQueryKey });
     },
   });
+
+  const completePlanMutation = useMutation({
+    mutationFn: (vars: { planId: string; snapshot?: Plan["completionSnapshot"] }) =>
+      planService.completePlanWithSnapshot(vars.planId, vars.snapshot),
+    onMutate: async (vars: { planId: string; snapshot?: Plan["completionSnapshot"] }) => {
+      if (!userId) return;
+      void queryClient.cancelQueries({ queryKey: plansQueryKey });
+
+      const previous = queryClient.getQueryData<any>(plansQueryKey);
+      const completedAt = new Date().toISOString();
+
+      queryClient.setQueryData<any>(plansQueryKey, (current) => {
+        const currentPlans: Plan[] = current?.plans ?? [];
+        return {
+          ...(current ?? {}),
+          plans: currentPlans.map((p) =>
+            p.id === vars.planId
+              ? ({
+                  ...p,
+                  status: "completed",
+                  completedAt,
+                  completionSnapshot: vars.snapshot ? { ...vars.snapshot, completedAt } : (p as any).completionSnapshot,
+                } as any)
+              : p
+          ),
+        };
+      });
+
+      return { previous };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previous) {
+        queryClient.setQueryData(plansQueryKey, ctx.previous);
+      }
+    },
+    onSuccess: (data, _vars) => {
+      const updated = data?.plan;
+      if (!updated) return;
+
+      // Merge returned plan (schedule is empty from the endpoint; keep existing schedule)
+      queryClient.setQueryData<any>(plansQueryKey, (current) => {
+        const currentPlans: Plan[] = current?.plans ?? [];
+        return {
+          ...(current ?? {}),
+          plans: currentPlans.map((p) =>
+            p.id === updated.id
+              ? ({
+                  ...p,
+                  status: updated.status ?? "completed",
+                  completedAt: (updated as any).completedAt ?? (p as any).completedAt,
+                  archivedAt: (updated as any).archivedAt ?? (p as any).archivedAt,
+                  completionSnapshot: (updated as any).completionSnapshot ?? (p as any).completionSnapshot,
+                } as any)
+              : p
+          ),
+        };
+      });
+    },
+    onSettled: () => {
+      return queryClient.invalidateQueries({ queryKey: plansQueryKey });
+    },
+  });
   
   return {
     plans: data?.plans || [],
@@ -145,6 +207,9 @@ export function usePlans() {
     deletePlan: deletePlanMutation.mutate,
     deletePlanAsync: deletePlanMutation.mutateAsync,
     isDeleting: deletePlanMutation.isPending,
+    completePlan: completePlanMutation.mutate,
+    completePlanAsync: completePlanMutation.mutateAsync,
+    isCompleting: completePlanMutation.isPending,
   };
 }
 

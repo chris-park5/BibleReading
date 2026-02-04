@@ -186,12 +186,12 @@ export function FriendsPanel({ onClose, currentPlanId }: FriendsPanelProps) {
                       <div
                         className="bg-primary h-3 rounded-full transition-all"
                         style={{
-                          width: `${Math.round(friendProgress.progressRate ?? 0)}%`,
+                          width: `${Math.min(100, friendProgress.progressRate ?? 0)}%`,
                         }}
                       />
                     </div>
                     <span>
-                      {Math.round(friendProgress.progressRate ?? 0)}%
+                      {(friendProgress.progressRate ?? 0).toFixed(1)}%
                     </span>
                   </div>
                 </div>

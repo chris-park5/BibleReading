@@ -6,6 +6,7 @@ import { computeChaptersTotals } from "../utils/chaptersProgress";
 import { useMemo } from "react";
 import { cn } from "./ui/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "./ui/dialog";
+import { computeCompletionBadgesFromSchedule } from "../utils/planCompletionSnapshot";
 
 interface AchievementReportModalProps {
   plan: Plan;
@@ -13,11 +14,26 @@ interface AchievementReportModalProps {
   dailyStats?: { date: string; count: number }[];
   onClose: () => void;
   open: boolean;
+  variant?: "default" | "completed";
+  primaryAction?: { label: string; onClick: () => void };
+  snapshot?: Plan["completionSnapshot"];
 }
 
-export function AchievementReportModal({ plan, progress, dailyStats = [], onClose, open }: AchievementReportModalProps) {
+export function AchievementReportModal({
+  plan,
+  progress,
+  dailyStats = [],
+  onClose,
+  open,
+  variant = "default",
+  primaryAction,
+  snapshot,
+}: AchievementReportModalProps) {
   const today = startOfTodayLocal();
   const currentDay = computeTodayDay(plan, today);
+
+  const effectiveSnapshot = snapshot ?? (plan as any)?.completionSnapshot;
+  const isSnapshotMode = !!effectiveSnapshot;
 
   // 1. Calculate Stats
   const { 
@@ -28,6 +44,22 @@ export function AchievementReportModal({ plan, progress, dailyStats = [], onClos
     completedChaptersCount,
     weeklyChart
   } = useMemo(() => {
+    if (isSnapshotMode) {
+      const snap = effectiveSnapshot as any;
+      const completedAt = snap?.completedAt ? new Date(String(snap.completedAt)) : new Date();
+      const total = Number(snap?.totalChapters ?? 0);
+      const completed = Number(snap?.completedChapters ?? total);
+
+      return {
+        streak: 0,
+        projectedEndDate: completedAt,
+        daysAhead: 0,
+        achievementRate: 100,
+        completedChaptersCount: Number.isFinite(completed) ? completed : 0,
+        weeklyChart: null as any,
+      };
+    }
+
     // --- Consistency with ProgressTab ---
     const elapsedDays = Math.max(0, Math.min(plan.totalDays, currentDay));
     const { completedChapters } = computeChaptersTotals({ schedule: plan.schedule, progress });
@@ -246,7 +278,7 @@ export function AchievementReportModal({ plan, progress, dailyStats = [], onClos
         weeklyAverage: Math.round((totalWeeklyRead / 7) * 10) / 10
       }
     };
-  }, [plan, progress, today, currentDay, dailyStats]);
+  }, [plan, progress, today, currentDay, dailyStats, isSnapshotMode, effectiveSnapshot]);
 
   const yyyymmdd = (d: Date) => `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
 
@@ -255,10 +287,28 @@ export function AchievementReportModal({ plan, progress, dailyStats = [], onClos
       <DialogContent className="max-w-md p-0 overflow-hidden border-none shadow-2xl rounded-3xl bg-white">
         {/* Header Area */}
         <DialogHeader className="px-8 pt-8 pb-4 text-left">
-          <DialogTitle className="text-2xl font-bold text-slate-900 tracking-tight">리포트</DialogTitle>
+          <DialogTitle className="text-2xl font-bold text-slate-900 tracking-tight">
+            {variant === "completed" ? "완독 축하!" : "리포트"}
+          </DialogTitle>
           <DialogDescription className="text-base text-slate-500 font-medium">
-            나의 읽기 여정
+            {variant === "completed" ? "계획을 끝까지 완주했어요" : "나의 읽기 여정"}
           </DialogDescription>
+
+          {variant === "completed" && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {(
+                (effectiveSnapshot as any)?.badges ??
+                computeCompletionBadgesFromSchedule(plan.schedule)
+              ).map((b: string) => (
+                <span
+                  key={b}
+                  className="inline-flex items-center rounded-full bg-blue-50 text-blue-700 border border-blue-100 px-3 py-1 text-xs font-bold"
+                >
+                  {b}
+                </span>
+              ))}
+            </div>
+          )}
         </DialogHeader>
 
         <div className="px-8 pb-10 space-y-10 overflow-y-auto max-h-[75vh] custom-scrollbar">
@@ -293,6 +343,7 @@ export function AchievementReportModal({ plan, progress, dailyStats = [], onClos
           </div>
 
           {/* 2. Weekly Activity Chart (New Design) */}
+          {!isSnapshotMode && (
           <div>
              <div className="flex items-center justify-between mb-6">
                  <div>
@@ -417,6 +468,7 @@ export function AchievementReportModal({ plan, progress, dailyStats = [], onClos
                  </div>
              </div>
           </div>
+          )}
 
           {/* 3. Streak & Count (Simplified) */}
           <div className="grid grid-cols-2 gap-4">
@@ -448,6 +500,18 @@ export function AchievementReportModal({ plan, progress, dailyStats = [], onClos
                 <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-yellow-50 rounded-full opacity-50 group-hover:scale-110 transition-transform duration-500"></div>
              </div>
           </div>
+
+          {primaryAction && (
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={primaryAction.onClick}
+                className="w-full rounded-2xl bg-slate-900 text-white py-3 text-sm font-bold hover:bg-slate-800 active:scale-[0.99] transition"
+              >
+                {primaryAction.label}
+              </button>
+            </div>
+          )}
 
         </div>
       </DialogContent>

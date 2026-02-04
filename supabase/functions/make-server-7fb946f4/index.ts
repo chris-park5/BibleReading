@@ -53,6 +53,7 @@ api.post("/preset-schedules/seed", requireAuth, async (c) => (await import("./pl
 api.post("/plans", requireAuth, async (c) => (await import("./planRoutes.ts")).createPlan(c));
 api.get("/plans", requireAuth, async (c) => (await import("./planRoutes.ts")).getPlans(c));
 api.delete("/plans/:planId", requireAuth, async (c) => (await import("./planRoutes.ts")).deletePlan(c));
+api.post("/plans/:planId/complete", requireAuth, async (c) => (await import("./planRoutes.ts")).completePlan(c));
 api.patch("/plans/order", requireAuth, async (c) => (await import("./planRoutes.ts")).updatePlanOrder(c));
 
 api.post("/progress", requireAuth, async (c) => (await import("./progressRoutes.ts")).updateProgress(c));

@@ -9,6 +9,9 @@ import * as authService from "../../../../services/authService";
 import { enqueueReadingToggle, isOfflineLikeError, OfflineError } from "../../../utils/offlineProgressQueue";
 import { computeTodayDay, startOfTodayLocal } from "../dateUtils";
 import { expandChapters } from "../../../utils/expandChapters";
+import { computeChaptersTotals } from "../../../utils/chaptersProgress";
+import type { Plan } from "../../../../types/domain";
+import { buildCompletionSnapshot } from "../../../utils/planCompletionSnapshot";
 
 export type CombinedReading = {
   planId: string;
@@ -30,9 +33,17 @@ export function useHomeLogic(
     prefetchAllProgress?: boolean;
   } = {},
 ) {
-  const { plans, isLoading: isPlansLoading } = usePlans();
+  const { plans: allPlans, isLoading: isPlansLoading, completePlanAsync } = usePlans();
   const userId = useAuthStore((s) => s.user?.id ?? null);
   const userName = useAuthStore((s) => s.user?.name ?? "사용자");
+
+  const plans = useMemo(() => {
+    // Home(읽기)에서는 '진행 중' 계획만 대상으로 한다.
+    return (allPlans ?? []).filter((p: Plan) => (p as any)?.status !== "completed" && (p as any)?.status !== "archived");
+  }, [allPlans]);
+
+  const [completedCelebration, setCompletedCelebration] = useState<null | { plan: Plan; progress: any }>(null);
+  const completingPlanIdsRef = useRef<Set<string>>(new Set());
 
   // Fetch Streak
   const { data: streakData, isLoading: isStreakLoading } = useQuery({
@@ -210,6 +221,45 @@ export function useHomeLogic(
     }
     return map;
   }, [allProgressQueries, plans]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (completedCelebration) return;
+
+    for (const plan of plans) {
+      if (!plan?.id || plan.id.startsWith("optimistic-")) continue;
+      if (completingPlanIdsRef.current.has(plan.id)) continue;
+
+      const progress = progressByPlanId.get(plan.id);
+      if (!progress) continue;
+
+      const { totalChapters, completedChapters } = computeChaptersTotals({ schedule: plan.schedule, progress });
+      const EPS = 1e-6;
+      const isComplete = totalChapters > 0 && completedChapters + EPS >= totalChapters;
+      if (!isComplete) continue;
+
+      const seenKey = `planCompletedCelebrated:${plan.id}`;
+      const alreadySeen = window.localStorage.getItem(seenKey) === "1";
+      if (alreadySeen) continue;
+
+      try {
+        window.localStorage.setItem(seenKey, "1");
+      } catch {
+        // ignore
+      }
+
+      completingPlanIdsRef.current.add(plan.id);
+      setCompletedCelebration({ plan, progress });
+
+      // Fire-and-forget: mark as completed in DB.
+      const snapshot = buildCompletionSnapshot(plan, progress);
+      void completePlanAsync({ planId: plan.id, snapshot }).catch(() => {
+        // ignore
+      });
+
+      break;
+    }
+  }, [plans, progressByPlanId, completedCelebration, completePlanAsync]);
 
   const updateReadingMutation = useMutation({
     mutationKey: ["progress-update"],
@@ -497,5 +547,8 @@ export function useHomeLogic(
     hasAnyPlanForDate,
 
     isLoading: isPlansLoading || isStreakLoading,
+
+    completedCelebration,
+    dismissCompletedCelebration: () => setCompletedCelebration(null),
   };
 }
