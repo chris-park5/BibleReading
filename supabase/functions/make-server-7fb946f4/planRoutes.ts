@@ -456,6 +456,9 @@ export async function getPlans(c: Context) {
         name: p.name,
         startDate: p.start_date,
         endDate: p.end_date,
+        status: p.status ?? "active",
+        completedAt: p.completed_at ?? undefined,
+        archivedAt: p.archived_at ?? undefined,
         totalDays: p.total_days,
         isCustom: p.is_custom,
         displayOrder: p.display_order,
@@ -467,6 +470,105 @@ export async function getPlans(c: Context) {
     return c.json({ success: true, plans });
   } catch (error) {
     return c.json(handleError(error, "Failed to get plans"), 500);
+  }
+}
+
+export async function completePlan(c: Context) {
+  try {
+    const userId = c.get("userId");
+    const planId = c.req.param("planId");
+
+    let clientSnapshot: any = null;
+    try {
+      // optional body
+      clientSnapshot = await c.req.json();
+    } catch {
+      clientSnapshot = null;
+    }
+
+    if (!planId) {
+      return c.json({ error: "Plan ID is required" }, 400);
+    }
+
+    // Fetch current plan metadata
+    const { data: existing, error: lookupError } = await supabase
+      .from("plans")
+      .select(
+        "id, user_id, preset_id, name, start_date, end_date, total_days, total_chapters, is_custom, display_order, created_at, status, completed_at, archived_at"
+      )
+      .eq("id", planId)
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (lookupError) throw lookupError;
+    if (!existing) return c.json({ error: "Plan not found" }, 404);
+
+    const completedAtIso = new Date().toISOString();
+    const totalChapters = Number(existing.total_chapters ?? 0);
+
+    const snapshot = {
+      // Server-authoritative basics
+      completedAt: completedAtIso,
+      startDate: existing.start_date,
+      endDate: existing.end_date,
+      totalDays: existing.total_days,
+      totalChapters,
+      completedChapters: totalChapters,
+      // Optional client additions (e.g., badges)
+      ...(clientSnapshot && typeof clientSnapshot === "object" ? clientSnapshot : null),
+    };
+
+    const { data: plan, error } = await supabase
+      .from("plans")
+      .update({
+        status: "completed",
+        completed_at: completedAtIso,
+        completion_snapshot: snapshot,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", planId)
+      .eq("user_id", userId)
+      .select(
+        "id, user_id, preset_id, name, start_date, end_date, total_days, total_chapters, is_custom, display_order, created_at, status, completed_at, archived_at, completion_snapshot"
+      )
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!plan) return c.json({ error: "Plan not found" }, 404);
+
+    // Optional cleanup: custom plan schedules can be purged after snapshot.
+    if (plan.is_custom) {
+      try {
+        await supabase.from("plan_schedules").delete().eq("plan_id", planId);
+      } catch {
+        // ignore cleanup failures
+      }
+    }
+
+    return c.json({
+      success: true,
+      plan: {
+        id: plan.id,
+        userId: plan.user_id,
+        presetId: plan.preset_id,
+        name: plan.name,
+        startDate: plan.start_date,
+        endDate: plan.end_date,
+        totalDays: plan.total_days,
+        totalChapters: plan.total_chapters,
+        isCustom: plan.is_custom,
+        displayOrder: plan.display_order,
+        createdAt: plan.created_at,
+        status: plan.status ?? "completed",
+        completedAt: plan.completed_at ?? undefined,
+        archivedAt: plan.archived_at ?? undefined,
+        completionSnapshot: plan.completion_snapshot ?? undefined,
+        // schedule is fetched via getPlans; not included here
+        schedule: [],
+      },
+    });
+  } catch (error) {
+    return c.json(handleError(error, "Failed to complete plan"), 500);
   }
 }
 

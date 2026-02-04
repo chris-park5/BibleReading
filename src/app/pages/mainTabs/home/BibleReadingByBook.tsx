@@ -5,6 +5,7 @@ import type { Plan, Progress } from "../../../../types/domain";
 import { BIBLE_BOOKS, getBookChapters, getBookIndex, matchesBookSearch } from "../../../data/bibleBooks";
 import { expandChapters } from "../../../utils/expandChapters";
 import { Input } from "../../../components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../components/ui/tabs";
 import { Checkbox } from "../../../components/ui/checkbox";
 import { cn } from "../../../components/ui/utils";
@@ -50,6 +51,32 @@ export function BibleReadingByBook({ plans, progressByPlanId, applyUpdates }: Pr
   const [tab, setTab] = useState<Testament>("old");
   const [expandedBook, setExpandedBook] = useState<string | null>(null);
 
+  const PLAN_FILTER_ALL = "__all__";
+  const [planFilterId, setPlanFilterId] = useState<string>(() => {
+    if (typeof window === "undefined") return PLAN_FILTER_ALL;
+    return window.localStorage.getItem("bible-plan-filter") ?? PLAN_FILTER_ALL;
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("bible-plan-filter", planFilterId);
+  }, [planFilterId]);
+
+  const availablePlans = useMemo(() => {
+    return plans.filter((p) => p && !p.id.startsWith("optimistic-"));
+  }, [plans]);
+
+  useEffect(() => {
+    if (planFilterId === PLAN_FILTER_ALL) return;
+    const exists = availablePlans.some((p) => p.id === planFilterId);
+    if (!exists) setPlanFilterId(PLAN_FILTER_ALL);
+  }, [availablePlans, planFilterId]);
+
+  const plansInScope = useMemo(() => {
+    if (planFilterId === PLAN_FILTER_ALL) return availablePlans;
+    return availablePlans.filter((p) => p.id === planFilterId);
+  }, [availablePlans, planFilterId]);
+
   // Simple cooldown to avoid firing multiple network mutations from accidental rapid taps.
   // Keeps UI responsive because optimistic updates still happen immediately.
   const lastChapterTapAtRef = useRef(new Map<string, number>());
@@ -57,8 +84,8 @@ export function BibleReadingByBook({ plans, progressByPlanId, applyUpdates }: Pr
   const isProgressLoading = useMemo(() => {
     // Note: progress can be null either because it hasn't loaded yet, or because
     // the plan has no progress row. In practice, we treat null as "not ready".
-    return plans.some((p) => !p.id.startsWith("optimistic-") && progressByPlanId.get(p.id) == null);
-  }, [plans, progressByPlanId]);
+    return plansInScope.some((p) => progressByPlanId.get(p.id) == null);
+  }, [plansInScope, progressByPlanId]);
 
   const filteredBooks = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -96,9 +123,8 @@ export function BibleReadingByBook({ plans, progressByPlanId, applyUpdates }: Pr
     const byItemKey = new Map<string, Occurrence>();
     const planNames = new Set<string>();
 
-    for (const plan of plans) {
+    for (const plan of plansInScope) {
       if (!plan?.schedule) continue;
-      if (plan.id.startsWith("optimistic-")) continue;
 
       const progress = progressByPlanId.get(plan.id) ?? null;
 
@@ -157,7 +183,7 @@ export function BibleReadingByBook({ plans, progressByPlanId, applyUpdates }: Pr
       items: Array.from(byItemKey.values()),
       planNames: Array.from(planNames),
     };
-  }, [plans, progressByPlanId, selectedBook]);
+  }, [plansInScope, progressByPlanId, selectedBook]);
 
   const chapterStats = useMemo(() => {
     const totalByChapter = new Map<string, number>();
@@ -328,6 +354,24 @@ export function BibleReadingByBook({ plans, progressByPlanId, applyUpdates }: Pr
             <h2 className="text-lg font-bold">성경별 읽기</h2>
           </div>
         </div>
+
+        {availablePlans.length > 0 ? (
+          <div className="w-44">
+            <Select value={planFilterId} onValueChange={setPlanFilterId}>
+              <SelectTrigger className="h-9">
+                <SelectValue placeholder="계획 선택" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={PLAN_FILTER_ALL}>전체 계획</SelectItem>
+                {availablePlans.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        ) : null}
       </div>
 
       <div className="mb-4">

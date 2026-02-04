@@ -160,6 +160,10 @@ export async function getPlans(): Promise<{ success: boolean; plans: Plan[] }> {
       name: p.name,
       startDate: p.start_date,
       endDate: p.end_date,
+      status: (p.status ?? "active") as any,
+      completedAt: p.completed_at ?? undefined,
+      archivedAt: p.archived_at ?? undefined,
+      completionSnapshot: p.completion_snapshot ?? undefined,
       totalDays: p.total_days,
       totalChapters: p.total_chapters,
       isCustom: p.is_custom,
@@ -189,6 +193,22 @@ export async function deletePlan(planId: string): Promise<{ success: boolean }> 
   if (!planId) throw new Error("Plan ID is required");
 
   return fetchAPI(`/plans/${planId}`, { method: "DELETE" }, true, 60_000);
+}
+
+export async function completePlan(
+  planId: string,
+  snapshot?: Plan["completionSnapshot"]
+): Promise<{ success: boolean; plan?: Plan }> {
+  if (!planId) throw new Error("Plan ID is required");
+  return fetchAPI(
+    `/plans/${planId}/complete`,
+    {
+      method: "POST",
+      body: snapshot ? JSON.stringify(snapshot) : undefined,
+    },
+    true,
+    60_000
+  );
 }
 
 export async function updatePlanOrder(planId: string, newOrder: number): Promise<{ success: boolean }> {

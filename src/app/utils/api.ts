@@ -22,7 +22,7 @@ export {
   checkStreak,
 } from "./api/auth";
 
-export { createPlan, getPlans, seedPresetSchedules, deletePlan, updatePlanOrder } from "./api/plans";
+export { createPlan, getPlans, seedPresetSchedules, deletePlan, completePlan, updatePlanOrder } from "./api/plans";
 
 export { updateReadingProgress, updateProgress, getProgress, getDailyStats } from "./api/progress";
 

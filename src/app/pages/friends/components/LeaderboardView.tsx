@@ -153,7 +153,7 @@ function LeaderboardItem({
       <div className="text-right">
         <div className={cn("font-bold text-lg", isSticky ? "text-white" : "text-primary")}>
           {metric === "rate"
-            ? `${Math.round(item.achievementRate)}%`
+            ? `${item.achievementRate.toFixed(1)}%`
             : `${Math.round(((typeof item.completedChapters === "number" ? item.completedChapters : item.completedDays) ?? 0) * 10) / 10}장`}
         </div>
         <p className={cn("text-xs", isSticky ? "text-white/80" : "text-muted-foreground")}>

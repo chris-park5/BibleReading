@@ -31,11 +31,17 @@ function formatChapterCount(val: number) {
 
 export function ProgressTab() {
   const { plans } = usePlans();
+  const activePlans = useMemo(
+    () => plans.filter((p: any) => (p?.status ?? "active") === "active"),
+    [plans]
+  );
   const selectedPlanId = usePlanStore((s) => s.selectedPlanId);
   const { selectPlan } = usePlanStore();
 
   // 계획이 있으면 자동으로 첫 번째 계획 선택 (selectedPlanId가 없을 때)
-  const activePlanId = selectedPlanId || (plans.length > 0 ? plans[0].id : null);
+  const activePlanId =
+    (selectedPlanId && activePlans.some((p) => p.id === selectedPlanId) ? selectedPlanId : null) ||
+    (activePlans.length > 0 ? activePlans[0].id : null);
   const plan = usePlan(activePlanId);
   const { progress, toggleReading } = useProgress(activePlanId);
 
@@ -198,7 +204,7 @@ export function ProgressTab() {
       <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-md border-b border-border shadow-sm">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
           <h2 className="text-xl font-bold whitespace-nowrap">진행률</h2>
-          {plans.length > 0 && (
+          {activePlans.length > 0 && (
             <div className="flex-1 max-w-[200px]">
               <Select
                 value={activePlanId ?? undefined}
@@ -208,7 +214,7 @@ export function ProgressTab() {
                   <SelectValue placeholder="계획 선택" />
                 </SelectTrigger>
                 <SelectContent>
-                  {plans.map((p) => (
+                  {activePlans.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
                       {p.name}
                     </SelectItem>

@@ -593,94 +593,71 @@ export function computeChaptersTotals({
   progress: any;
   upToDay?: number;
 }): { totalChapters: number; completedChapters: number } {
+  let totalChapters = 0;
+  let completedChapters = 0;
+
   const completedDaysSet = new Set(progress.completedDays || []);
   const completedReadingsByDay = progress.completedReadingsByDay || {};
   const completedChaptersByDay = progress.completedChaptersByDay || {};
 
-  const readingsByBook = new Map<string, Array<{ day: number; index: number; rawChapters: string }>>();
-  
-  for (const entry of schedule) {
-    if (!entry || !entry.readings) continue;
-    const day = Number(entry.day);
+  for (const dayEntry of schedule) {
+    const day = Number(dayEntry.day);
     if (!Number.isFinite(day)) continue;
-    const readings = entry.readings;
-    for (let i = 0; i < readings.length; i++) {
-      const r = readings[i];
-      if (!r.book) continue;
-      if (!readingsByBook.has(r.book)) {
-        readingsByBook.set(r.book, []);
+
+    // If strictly calculating target up to a day, skip future days
+    if (typeof upToDay === "number" && day > upToDay) continue;
+
+    const readings = dayEntry.readings || [];
+    readings.forEach((r: any, index: number) => {
+      // Use pre-calculated chapter_count if available (Plan Unit logic),
+      // otherwise fall back to parsing (Legacy/Bible logic).
+      let count = Number(r.chapter_count);
+      if (!count || count <= 0) {
+        // Pass ONLY chapters string to force "Simple Count" (Plan Unit) logic.
+        // Passing r.book would trigger "Canonical Bible" logic (weights),
+        // which causes the 1336 vs 1449 discrepancy for split chapters.
+        count = countChapters(r.chapters);
       }
-      readingsByBook.get(r.book)!.push({ day, index: i, rawChapters: r.chapters });
-    }
-  }
 
-  let totalChapters = 0;
-  let completedChapters = 0;
+      totalChapters += count;
 
-  for (const [book, items] of readingsByBook.entries()) {
-    items.sort((a, b) => {
-        if (a.day !== b.day) return a.day - b.day;
-        return a.index - b.index;
-    });
+      // Determine Completion
+      let isDone = false;
+      let partialCount = 0;
+      const dayStr = String(day);
 
-    const instances = clusterReadings(book, items);
-
-    for (const inst of instances) {
-      const scheduledRefs = typeof upToDay === "number" 
-        ? inst.readings.filter(r => r.day <= upToDay)
-        : inst.readings;
-
-      if (scheduledRefs.length === 0) continue;
-
-      let instProgress = 0;
-      let instScheduledWeight = 0;
-      let allScheduledDone = true;
-
-      for (const ref of scheduledRefs) {
-        instScheduledWeight += ref.weight;
-
-        let isDone = false;
-        if (completedDaysSet.has(ref.day)) {
-          isDone = true;
-        } else {
-          const dayStr = String(ref.day);
-          const doneIndices = completedReadingsByDay[dayStr];
-          if (doneIndices && doneIndices.includes(ref.index)) {
-            isDone = true;
-          } else {
-            const doneChapters = completedChaptersByDay[dayStr]?.[ref.index];
-            if (doneChapters && doneChapters.includes(String(inst.ch))) {
-              isDone = true;
-            }
-          }
-        }
-
-        if (isDone) {
-          instProgress += ref.weight;
-        } else {
-          allScheduledDone = false;
+      // 1. Full Day Completed
+      if (completedDaysSet.has(day)) {
+        isDone = true;
+      }
+      // 2. Specific Item Completed
+      else if (
+        completedReadingsByDay[dayStr] &&
+        completedReadingsByDay[dayStr].includes(index)
+      ) {
+        isDone = true;
+      }
+      // 3. Partial Completion
+      else {
+        const partials = completedChaptersByDay[dayStr]?.[index];
+        if (Array.isArray(partials)) {
+          partialCount = partials.length;
         }
       }
 
-      totalChapters += instScheduledWeight;
-
-      if (allScheduledDone) {
-        completedChapters += instScheduledWeight;
+      if (isDone) {
+        completedChapters += count;
       } else {
-        completedChapters += instProgress;
+        // For partials, we add the number of completed sub-chapters.
+        // Cap it at the item count to avoid overflow anomalies.
+        completedChapters += Math.min(count, partialCount);
       }
-    }
+    });
   }
 
-  if (typeof upToDay === "undefined") {
-      totalChapters = Math.round(totalChapters);
-      completedChapters = Math.round(completedChapters * 100) / 100;
-  } else {
-      totalChapters = Math.round(totalChapters * 100) / 100;
-      completedChapters = Math.round(completedChapters * 100) / 100;
-  }
-
-  if (completedChapters > totalChapters) completedChapters = totalChapters;
+  // Round for clean output
+  totalChapters = Math.round(totalChapters * 100) / 100;
+  completedChapters = Math.round(completedChapters * 100) / 100;
 
   return { totalChapters, completedChapters };
 }
@@ -694,25 +671,33 @@ export async function fetchGroupedSchedule(
 ): Promise<any[]> {
   let scheduleRows: any[] = [];
   if (plan.is_custom) {
-    const { data } = await supabase
-      .from("plan_schedules")
-      .select("day, book, chapters")
-      .eq("plan_id", plan.id)
-      .order("day", { ascending: true })
-      .order("order_index", { ascending: true })
-      .order("book", { ascending: true })
-      .order("chapters", { ascending: true });
-    scheduleRows = data || [];
+    scheduleRows = await selectAllRows<any>(
+      (from, to) =>
+        supabase
+          .from("plan_schedules")
+          .select("day, book, chapters, chapter_count")
+          .eq("plan_id", plan.id)
+          .order("day", { ascending: true })
+          .order("order_index", { ascending: true })
+          .order("book", { ascending: true })
+          .order("chapters", { ascending: true })
+          .range(from, to),
+      1000
+    );
   } else {
-    const { data } = await supabase
-      .from("preset_schedules")
-      .select("day, book, chapters")
-      .eq("preset_id", plan.preset_id)
-      .order("day", { ascending: true })
-      .order("order_index", { ascending: true })
-      .order("book", { ascending: true })
-      .order("chapters", { ascending: true });
-    scheduleRows = data || [];
+    scheduleRows = await selectAllRows<any>(
+      (from, to) =>
+        supabase
+          .from("preset_schedules")
+          .select("day, book, chapters, chapter_count")
+          .eq("preset_id", plan.preset_id)
+          .order("day", { ascending: true })
+          .order("order_index", { ascending: true })
+          .order("book", { ascending: true })
+          .order("chapters", { ascending: true })
+          .range(from, to),
+      1000
+    );
   }
 
   const groupedSchedule: any[] = [];
@@ -724,7 +709,11 @@ export async function fetchGroupedSchedule(
       dayMap.set(d, entry);
       groupedSchedule.push(entry);
     }
-    dayMap.get(d).readings.push({ book: row.book, chapters: row.chapters });
+    dayMap.get(d).readings.push({ 
+      book: row.book, 
+      chapters: row.chapters,
+      chapter_count: row.chapter_count 
+    });
   });
 
   return groupedSchedule;

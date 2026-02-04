@@ -90,7 +90,7 @@ export function FriendProfileDialog({ friendId, onClose }: { friendId: string | 
                   <span className="text-[10px] font-bold text-[#94A3B8]">진행률</span>
                 </div>
                 <div className="text-2xl font-black text-[#0F172A]">
-                  {Math.round(status.progressRate ?? 0)}<span className="text-xs text-[#94A3B8] ml-0.5 font-bold">%</span>
+                  {(status.progressRate ?? 0).toFixed(1)}<span className="text-xs text-[#94A3B8] ml-0.5 font-bold">%</span>
                 </div>
               </div>
 
@@ -100,7 +100,7 @@ export function FriendProfileDialog({ friendId, onClose }: { friendId: string | 
                   <span className="text-[10px] font-bold text-[#94A3B8]">달성률</span>
                 </div>
                 <div className="text-2xl font-black text-[#0F172A]">
-                  {Math.round(status.achievementRate)}<span className="text-xs text-[#94A3B8] ml-0.5 font-bold">%</span>
+                  {status.achievementRate.toFixed(1)}<span className="text-xs text-[#94A3B8] ml-0.5 font-bold">%</span>
                 </div>
               </div>
 

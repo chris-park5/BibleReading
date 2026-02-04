@@ -66,6 +66,20 @@ export async function deletePlan(planId: string): Promise<{
 }
 
 /**
+ * 계획 완료 처리
+ */
+export async function completePlan(planId: string): Promise<{ success: boolean; plan?: Plan }> {
+  return api.completePlan(planId);
+}
+
+export async function completePlanWithSnapshot(
+  planId: string,
+  snapshot?: Plan["completionSnapshot"]
+): Promise<{ success: boolean; plan?: Plan }> {
+  return api.completePlan(planId, snapshot);
+}
+
+/**
  * 계획 순서 변경
  */
 export async function updatePlanOrder(
