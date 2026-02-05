@@ -13,6 +13,40 @@ import { setHashTab } from "./tabHash";
 import { expandChapters } from "../../utils/expandChapters";
 import { cn } from "../../components/ui/utils";
 
+function ProgressRing({ percent }: { percent: number }) {
+  const size = 56;
+  const stroke = 6;
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const clamped = Math.max(0, Math.min(100, percent));
+  const offset = c - (clamped / 100) * c;
+
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="shrink-0">
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={r}
+        strokeWidth={stroke}
+        className="stroke-muted-foreground/15"
+        fill="none"
+      />
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={r}
+        strokeWidth={stroke}
+        strokeLinecap="round"
+        className="stroke-primary transition-all duration-1000 ease-in-out"
+        fill="none"
+        strokeDasharray={c}
+        strokeDashoffset={offset}
+        transform={`rotate(-90 ${size / 2} ${size / 2})`}
+      />
+    </svg>
+  );
+}
+
 function HomeTabSkeleton() {
   return (
     <div className="min-h-screen pb-20 relative">
@@ -177,40 +211,6 @@ export function HomeTab() {
     return <HomeTabSkeleton />;
   }
 
-  const ProgressRing = ({ percent }: { percent: number }) => {
-    const size = 56;
-    const stroke = 6;
-    const r = (size - stroke) / 2;
-    const c = 2 * Math.PI * r;
-    const clamped = Math.max(0, Math.min(100, percent));
-    const offset = c - (clamped / 100) * c;
-
-    return (
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="shrink-0">
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          strokeWidth={stroke}
-          className="stroke-muted-foreground/15"
-          fill="none"
-        />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          strokeWidth={stroke}
-          strokeLinecap="round"
-          className="stroke-primary"
-          fill="none"
-          strokeDasharray={c}
-          strokeDashoffset={offset}
-          transform={`rotate(-90 ${size / 2} ${size / 2})`}
-        />
-      </svg>
-    );
-  };
-
   return (
     <div className="min-h-screen pb-20 relative">
       {completedCelebration && (
@@ -261,7 +261,7 @@ export function HomeTab() {
           className={cn(
             "w-full text-left rounded-[36px] border border-border/50 bg-card shadow-sm px-7 py-6 transition-all",
             "hover:shadow-md hover:border-border/70 active:scale-[0.99]",
-            todaySummary.isDone && "bg-emerald-50/40 border-emerald-200/60",
+            todaySummary.isDone && "bg-blue-100/40 border-blue-300/50",
             !todaySummary.isDone && todaySummary.hasAny && "bg-blue-50/30 border-blue-200/40",
             !todaySummary.hasAny && "cursor-default active:scale-100 hover:shadow-sm",
           )}

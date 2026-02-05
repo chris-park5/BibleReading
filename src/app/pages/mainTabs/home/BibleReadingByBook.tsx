@@ -224,37 +224,68 @@ export function BibleReadingByBook({ plans, progressByPlanId, applyUpdates }: Pr
     if (total <= 0) return;
 
     const done = chapterStats.completedByChapter.get(chapter) ?? 0;
-    const shouldMarkOneMore = done < total;
+    const isFullyDone = done >= total;
+    const shouldMarkOneMore = !isFullyDone;
 
     const occsRaw = selectedBookOccurrences.byChapter.get(chapter) ?? [];
     const occs = sortOccurrences(occsRaw);
 
     // IMPORTANT: completion in this view means "required times for this chapter".
-    // So we only increment/decrement ONE occurrence per tap, not all occurrences.
-    const target = shouldMarkOneMore
-      ? occs.find((occ) => !occ.effectiveSet.has(chapter))
-      : [...occs].reverse().find((occ) => occ.effectiveSet.has(chapter));
+    // - While not fully done, we increment ONE occurrence per tap.
+    // - Once fully done, the next tap cycles back to 0 by clearing this chapter from ALL occurrences.
 
-    if (!target) return;
+    if (shouldMarkOneMore) {
+      const target = occs.find((occ) => !occ.effectiveSet.has(chapter));
+      if (!target) return;
 
-    const currentSet = new Set<string>(target.effectiveSet);
-    if (shouldMarkOneMore) currentSet.add(chapter);
-    else currentSet.delete(chapter);
+      const currentSet = new Set<string>(target.effectiveSet);
+      currentSet.add(chapter);
 
-    const isNowFullyComplete = target.allChapters.length > 0 && target.allChapters.every((c) => currentSet.has(c));
-    const nextCompletedChapters = sortChaptersNumeric(Array.from(currentSet));
+      const isNowFullyComplete = target.allChapters.length > 0 && target.allChapters.every((c) => currentSet.has(c));
+      const nextCompletedChapters = sortChaptersNumeric(Array.from(currentSet));
 
-    applyUpdates([
-      {
-        planId: target.planId,
-        day: target.day,
-        readingIndex: target.readingIndex,
+      applyUpdates([
+        {
+          planId: target.planId,
+          day: target.day,
+          readingIndex: target.readingIndex,
+          completed: isNowFullyComplete,
+          readingCount: target.readingCount,
+          totalReadingsCount: target.totalReadingsCount,
+          completedChapters: isNowFullyComplete ? target.allChapters : nextCompletedChapters,
+        },
+      ]);
+      return;
+    }
+
+    const updates: UpdateVars[] = [];
+    for (const occ of occs) {
+      if (!occ.effectiveSet.has(chapter)) continue;
+
+      const currentSet = new Set<string>(occ.effectiveSet);
+      currentSet.delete(chapter);
+
+      const isNowFullyComplete = occ.allChapters.length > 0 && occ.allChapters.every((c) => currentSet.has(c));
+      const nextCompletedChapters = sortChaptersNumeric(Array.from(currentSet));
+
+      updates.push({
+        planId: occ.planId,
+        day: occ.day,
+        readingIndex: occ.readingIndex,
         completed: isNowFullyComplete,
-        readingCount: target.readingCount,
-        totalReadingsCount: target.totalReadingsCount,
-        completedChapters: isNowFullyComplete ? target.allChapters : nextCompletedChapters,
-      },
-    ]);
+        readingCount: occ.readingCount,
+        totalReadingsCount: occ.totalReadingsCount,
+        completedChapters: isNowFullyComplete ? occ.allChapters : nextCompletedChapters,
+      });
+    }
+
+    if (updates.length === 0) return;
+    updates.sort((a, b) => {
+      if (a.planId !== b.planId) return a.planId.localeCompare(b.planId);
+      if (a.day !== b.day) return a.day - b.day;
+      return a.readingIndex - b.readingIndex;
+    });
+    applyUpdates(updates);
   };
 
   const handleMarkAllInBook = () => {
