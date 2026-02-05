@@ -232,6 +232,30 @@ export function TodayReading({
   const allCompleted = readings.length > 0 && completedByIndex.every(Boolean);
   const [expandedIndices, setExpandedIndices] = useState<Set<number>>(new Set());
 
+  const hasAnyProgress = readings.some((_, index) => {
+    return Boolean(completedByIndex[index]) || (completedChaptersByIndex[index]?.length ?? 0) > 0;
+  });
+
+  const bulkState: boolean | "indeterminate" = allCompleted ? true : hasAnyProgress ? "indeterminate" : false;
+
+  const setAllReadings = (nextComplete: boolean) => {
+    if (readings.length === 0) return;
+
+    for (let index = 0; index < readings.length; index++) {
+      const isFullyCompleted = Boolean(completedByIndex[index]);
+      const hasPartial = (completedChaptersByIndex[index]?.length ?? 0) > 0;
+
+      if (nextComplete) {
+        if (isFullyCompleted) continue;
+        const allChapters = Array.from(new Set(expandChapters(readings[index].chapters)));
+        onToggleReading(index, true, allChapters);
+      } else {
+        if (!isFullyCompleted && !hasPartial) continue;
+        onToggleReading(index, false, []);
+      }
+    }
+  };
+
   const toggleExpand = (index: number) => {
     setExpandedIndices((prev) => {
       const next = new Set(prev);
@@ -243,7 +267,7 @@ export function TodayReading({
 
   return (
     <div className="bg-card text-card-foreground rounded-[32px] border border-border/50 shadow-sm px-7 py-7">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-start justify-between mb-6 gap-3">
         <div className="flex items-center gap-3">
           <div className="p-3 bg-primary/10 rounded-[18px]">
             <BookOpenCheck className="w-6 h-6 text-primary" />
@@ -253,18 +277,24 @@ export function TodayReading({
             {subtitle ? <p className="text-sm text-muted-foreground">{subtitle}</p> : null}
           </div>
         </div>
-        <div
-          className={`flex items-center gap-2 px-4 py-2 rounded-[999px] ${
-            allCompleted ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-muted/40 text-muted-foreground border border-border/50"
-          }`}
+        <button
+          type="button"
+          disabled={readings.length === 0}
+          onClick={() => {
+            if (bulkState === true) setAllReadings(false);
+            else setAllReadings(true);
+          }}
+          className={
+            "shrink-0 inline-flex items-center justify-center select-none rounded-full px-3 py-1 text-[11px] font-bold transition-all duration-300 mt-2 " +
+            (readings.length === 0
+              ? "bg-muted/5 text-muted-foreground/20 cursor-not-allowed"
+              : bulkState === true
+                ? "bg-emerald-50/60 text-emerald-600 border border-emerald-100/50 shadow-none hover:bg-emerald-100/40 active:scale-95"
+                : "bg-muted/20 text-muted-foreground/50 hover:bg-muted/40 hover:text-muted-foreground border border-border/20 active:scale-95")
+          }
         >
-          {allCompleted ? (
-            <CheckCircle className="w-5 h-5" />
-          ) : (
-            <Circle className="w-5 h-5" />
-          )}
-          <span className="text-sm">{allCompleted ? "완료" : "진행 중"}</span>
-        </div>
+          {bulkState === true ? "전체 해제" : "전체 완료"}
+        </button>
       </div>
 
       <div className="space-y-4">
