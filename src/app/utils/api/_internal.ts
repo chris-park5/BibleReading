@@ -1,48 +1,35 @@
-import { createClient } from "@supabase/supabase-js";
-import { projectId, publicAnonKey } from "../../../../utils/supabase/info";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-// ============================================================================
-// Configuration
-// ============================================================================
+const supabaseUrlRaw = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const functionsBaseRaw = import.meta.env.VITE_SUPABASE_FUNCTIONS_BASE;
 
-const HOSTNAME = typeof window !== "undefined" ? window.location.hostname : "";
-const IS_LOCALHOST = HOSTNAME === "localhost" || HOSTNAME === "127.0.0.1";
+if (!supabaseUrlRaw) {
+  throw new Error("VITE_SUPABASE_URL is missing");
+}
+if (!supabaseAnonKey) {
+  throw new Error("VITE_SUPABASE_ANON_KEY is missing");
+}
+if (!functionsBaseRaw) {
+  throw new Error("VITE_SUPABASE_FUNCTIONS_BASE is missing");
+}
 
-const SUPABASE_URL_RAW = (() => {
-  const fromEnv = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-  if (fromEnv) return fromEnv;
-  if (IS_LOCALHOST) return `https://${projectId}.supabase.co`;
-  throw new Error(
-    "배포 환경 설정 오류: VITE_SUPABASE_URL이 설정되어 있지 않습니다. (Vercel Environment Variables에 Supabase Project URL을 추가하세요)"
-  );
-})();
+const supabaseUrl = String(supabaseUrlRaw).replace(/\/+$/, "");
+const functionsBase = String(functionsBaseRaw).replace(/\/+$/, "");
 
-const SUPABASE_URL = SUPABASE_URL_RAW.replace(/\/+$/, "");
+export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKey);
 
-const SUPABASE_ANON_KEY = (() => {
-  const fromEnv = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
-  if (fromEnv) return fromEnv;
-  if (IS_LOCALHOST) return publicAnonKey;
-  throw new Error(
-    "배포 환경 설정 오류: VITE_SUPABASE_ANON_KEY가 설정되어 있지 않습니다. (Vercel Environment Variables에 Supabase anon key를 추가하세요)"
-  );
-})();
+let accessTokenOverride: string | null = null;
 
-const FUNCTIONS_BASE_RAW = (() => {
-  const fromEnv = import.meta.env.VITE_SUPABASE_FUNCTIONS_BASE as string | undefined;
-  if (fromEnv) return fromEnv;
-  // Safe default: same Supabase project as SUPABASE_URL
-  return `${SUPABASE_URL}/functions/v1/make-server-7fb946f4`;
-})();
+export function setAccessToken(token: string | null) {
+  accessTokenOverride = token;
+}
 
-const FUNCTIONS_BASE = FUNCTIONS_BASE_RAW.replace(/\/+$/, "");
+export function getAccessToken() {
+  return accessTokenOverride;
+}
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-let accessToken: string | null = null;
-
-const DEFAULT_API_TIMEOUT_MS = 10_000;
-const SESSION_RECOVERY_TIMEOUT_MS = 8_000;
+export const SESSION_TIMEOUT_MS = 10_000;
 
 function sleep(ms: number) {
   return new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -58,154 +45,96 @@ export async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, mes
   ]);
 }
 
-async function tryRecoverSessionToken(): Promise<void> {
-  if (accessToken) return;
-  try {
-    const { data } = await supabase.auth.getSession();
-    if (data.session?.access_token) accessToken = data.session.access_token;
-  } catch {
-    // ignore: proceed without session token (server may reject and we'll surface the error)
-  }
-}
+async function resolveAuthToken(authRequired: boolean): Promise<string | null> {
+  if (!authRequired) return null;
 
-export async function getBearerTokenOrThrow(useAuth: boolean): Promise<string | null> {
-  if (!useAuth) return null;
+  if (accessTokenOverride) return accessTokenOverride;
 
-  // Always fetch the latest session. Supabase client handles caching and refreshing automatically.
   const { data } = await supabase.auth.getSession();
-  const token = data.session?.access_token;
+  const token = data?.session?.access_token;
+  if (token) return token;
 
-  if (token) {
-    accessToken = token; // Update local cache for synchronous access if needed elsewhere
-    return token;
-  }
-
-  // Do not fall back to anon key for Authorization; the Edge Function verifies JWT.
   throw new Error("로그인이 필요합니다. 다시 로그인해주세요.");
 }
 
-export function setAccessToken(token: string | null) {
-  accessToken = token;
-}
-
-export function getAccessToken() {
-  return accessToken;
-}
-
-// ============================================================================
-// HTTP Client
-// ============================================================================
-
 export async function fetchAPI(
-  endpoint: string,
-  options: RequestInit = {},
-  useAuth = true,
-  timeoutMs: number = DEFAULT_API_TIMEOUT_MS
+  path: string,
+  init: RequestInit = {},
+  authRequired: boolean = true,
+  timeoutMs: number = SESSION_TIMEOUT_MS
 ) {
+  const url = `${functionsBase}${path.startsWith("/") ? "" : "/"}${path}`;
+  const token = await resolveAuthToken(authRequired);
+
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    apikey: SUPABASE_ANON_KEY,
-    ...(options.headers as Record<string, string> | undefined),
+    apikey: supabaseAnonKey,
   };
 
-  const bearer = await getBearerTokenOrThrow(useAuth);
-  if (bearer) {
-    headers["Authorization"] = `Bearer ${bearer}`;
+  // Preserve caller headers (if any) but allow us to set required defaults.
+  if (init.headers) {
+    const h = init.headers as any;
+    if (typeof h.forEach === "function") {
+      h.forEach((value: string, key: string) => {
+        headers[key] = value;
+      });
+    } else {
+      Object.assign(headers, h);
+    }
   }
 
-  const controller = new AbortController();
-  const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
-
-  // If caller provided a signal, respect it as well.
-  const externalSignal = options.signal;
-  if (externalSignal) {
-    if (externalSignal.aborted) controller.abort();
-    else externalSignal.addEventListener("abort", () => controller.abort(), { once: true });
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
   }
 
-  let response: Response;
-  try {
-    response = await fetch(`${FUNCTIONS_BASE}${endpoint}`, {
-      ...options,
+  const res = await withTimeout(
+    fetch(url, {
+      ...init,
       headers,
-      signal: controller.signal,
-    });
-  } catch (err: any) {
-    window.clearTimeout(timeout);
-    if (err?.name === "AbortError") {
-      throw new Error("요청 시간이 초과되었습니다");
+    }),
+    timeoutMs,
+    "요청 시간이 초과되었습니다"
+  );
+
+  const text = await res.text();
+  const data = text ? (() => {
+    try {
+      return JSON.parse(text);
+    } catch {
+      return text;
     }
-    throw err;
-  } finally {
-    window.clearTimeout(timeout);
-  }
+  })() : null;
 
-  let data: any;
-  try {
-    data = await response.json();
-  } catch {
-    // If the response isn't JSON, surface a generic error.
-    if (!response.ok) {
-      throw new Error("API request failed");
-    }
-    data = null;
-  }
+  if (!res.ok) {
+    const message =
+      (data && typeof data === "object" && "error" in (data as any) && String((data as any).error)) ||
+      (data && typeof data === "object" && "message" in (data as any) && String((data as any).message)) ||
+      (typeof data === "string" ? data : "요청에 실패했습니다");
 
-  if (!response.ok) {
-    const errText = data?.error ? String(data.error) : "";
-    const normalized = errText.toLowerCase();
-
-    // Common Supabase auth error when a JWT references a revoked/non-existent session.
-    if (response.status === 401 && normalized.includes("session from session_id claim") && normalized.includes("does not exist")) {
-      setAccessToken(null);
-      try {
-        // Clear local session so UI can recover.
-        await supabase.auth.signOut({ scope: "local" });
-      } catch {
-        // ignore
-      }
-      try {
-        window.dispatchEvent(new CustomEvent("auth:expired", { detail: { reason: errText } }));
-      } catch {
-        // ignore
-      }
-      throw new Error("세션이 만료되었습니다. 다시 로그인해주세요.");
-    }
-
-    throw new Error(errText || "API request failed");
+    throw new Error(message);
   }
 
   return data;
 }
 
-export const SESSION_TIMEOUT_MS = SESSION_RECOVERY_TIMEOUT_MS;
-
-/**
- * Fetch all rows from a Supabase query using range-based pagination.
- * Needed because Supabase limits rows (usually 1000) per request.
- * 
- * @param queryFactory Function that returns a Supabase query with .range() applied
- * @param pageSize Default 1000
- */
 export async function fetchAll<T>(
-  queryFactory: (from: number, to: number) => Promise<{ data: any; error: any }>,
-  pageSize = 1000
+  pageQuery: (from: number, to: number) => Promise<{ data: T[] | null; error: any }>,
+  pageSize: number = 1000
 ): Promise<T[]> {
-  const allRows: T[] = [];
-  let from = 0;
-  
-  while (true) {
+  const out: T[] = [];
+
+  for (let from = 0; ; from += pageSize) {
     const to = from + pageSize - 1;
-    const { data, error } = await queryFactory(from, to);
-    
+    const { data, error } = await pageQuery(from, to);
     if (error) throw error;
-    if (!data || data.length === 0) break;
-    
-    allRows.push(...(data as T[]));
-    
-    if (data.length < pageSize) break;
-    from += pageSize;
+
+    const rows = data ?? [];
+    out.push(...rows);
+
+    if (rows.length < pageSize) {
+      break;
+    }
   }
-  
-  return allRows;
+
+  return out;
 }
