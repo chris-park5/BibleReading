@@ -109,6 +109,7 @@ export function HomeTab() {
     updateReadingMutation,
     isAllPlansCompletedForDate,
     hasAnyPlanForDate,
+    getCompletionStatusForDate,
     isLoading,
     completedCelebration,
     dismissCompletedCelebration,
@@ -259,10 +260,8 @@ export function HomeTab() {
             }, 0);
           }}
           className={cn(
-            "w-full text-left rounded-[36px] border border-border/50 bg-card shadow-sm px-7 py-6 transition-all",
-            "hover:shadow-md hover:border-border/70 active:scale-[0.99]",
-            todaySummary.isDone && "bg-blue-100/40 border-blue-300/50",
-            !todaySummary.isDone && todaySummary.hasAny && "bg-blue-50/30 border-blue-200/40",
+            "w-full text-left rounded-[36px] bg-card border border-border/50 shadow-sm px-7 py-6 transition-all",
+            "hover:shadow-md active:scale-[0.99]",
             !todaySummary.hasAny && "cursor-default active:scale-100 hover:shadow-sm",
           )}
         >
@@ -332,6 +331,7 @@ export function HomeTab() {
           handleNextDay={handleNextDay}
           isAllPlansCompletedForDate={isAllPlansCompletedForDate}
           hasAnyPlanForDate={hasAnyPlanForDate}
+          getCompletionStatusForDate={getCompletionStatusForDate}
         />
 
         {/* Main Content */}

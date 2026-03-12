@@ -20,6 +20,16 @@ export async function getProgress(planId: string): Promise<{
 }
 
 /**
+ * 여러 계획의 진도를 한번에 조회 (배치 API)
+ */
+export async function getBatchProgress(planIds: string[]): Promise<{
+  success: boolean;
+  progressMap: Record<string, Progress>;
+}> {
+  return api.getBatchProgress(planIds);
+}
+
+/**
  * 특정 읽기의 완료 상태 업데이트
  */
 export async function updateReadingProgress(

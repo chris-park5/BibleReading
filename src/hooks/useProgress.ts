@@ -61,23 +61,25 @@ export function useProgress(planId: string | null) {
       const previous = queryClient.getQueryData<{ success: boolean; progress: Progress }>(progressQueryKey);
 
       queryClient.setQueryData<{ success: boolean; progress: Progress }>(progressQueryKey, (current) => {
-        if (!current?.progress) return current as any;
-
-        const prevProgress = current.progress;
+        // 캐시가 없을 때도 기본값으로 optimistic update 수행
+        const prevProgress: Progress = current?.progress ?? {
+          planId: planId!,
+          completedDays: [],
+          completedReadingsByDay: {},
+          completedChaptersByDay: {},
+          history: [],
+          lastUpdated: new Date().toISOString(),
+        };
+        
         const nextCompletedDays = new Set(prevProgress.completedDays ?? []);
         if (completed) nextCompletedDays.add(day);
         else nextCompletedDays.delete(day);
 
         return {
-          ...current,
+          success: true,
           progress: {
             ...prevProgress,
             completedDays: Array.from(nextCompletedDays),
-            // We do NOT update lastUpdated here for comparison purposes, 
-            // or we use a client-side marker. But simpler to just leave it 
-            // and trust the server response logic to eventually sync.
-            // However, to avoid "flicker" if a query finishes *before* this mutation,
-            // we'll just let the server response handle the authoritative update.
             lastUpdated: new Date().toISOString(),
           },
         };
@@ -166,9 +168,15 @@ export function useProgress(planId: string | null) {
       const previous = queryClient.getQueryData<{ success: boolean; progress: Progress }>(progressQueryKey);
 
       queryClient.setQueryData<{ success: boolean; progress: Progress }>(progressQueryKey, (current) => {
-        if (!current?.progress) return current as any;
-
-        const prevProgress = current.progress;
+        // 캐시가 없을 때도 기본값으로 optimistic update 수행
+        const prevProgress: Progress = current?.progress ?? {
+          planId: planId!,
+          completedDays: [],
+          completedReadingsByDay: {},
+          completedChaptersByDay: {},
+          history: [],
+          lastUpdated: new Date().toISOString(),
+        };
         
         // Update History (Optimistic)
         let nextHistory = prevProgress.history ? [...prevProgress.history] : [];
@@ -227,7 +235,7 @@ export function useProgress(planId: string | null) {
         else nextCompletedDays.delete(day);
 
         return {
-          ...current,
+          success: true,
           progress: {
             ...prevProgress,
             completedReadingsByDay: nextCompletedReadingsByDay,

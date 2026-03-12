@@ -1,6 +1,8 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "../../../components/ui/utils";
 
+type CompletionStatus = 'complete' | 'partial' | 'incomplete' | null;
+
 interface WeeklyCalendarProps {
   weekDates: Date[];
   viewDate: Date;
@@ -11,6 +13,7 @@ interface WeeklyCalendarProps {
   handleNextDay: () => void;
   isAllPlansCompletedForDate: (date: Date) => boolean;
   hasAnyPlanForDate: (date: Date) => boolean;
+  getCompletionStatusForDate: (date: Date) => CompletionStatus;
 }
 
 export function WeeklyCalendar({
@@ -23,6 +26,7 @@ export function WeeklyCalendar({
   handleNextDay,
   isAllPlansCompletedForDate,
   hasAnyPlanForDate,
+  getCompletionStatusForDate,
 }: WeeklyCalendarProps) {
   return (
     <div>
@@ -40,8 +44,23 @@ export function WeeklyCalendar({
             {weekDates.map((date, i) => {
               const isSelected = date.getTime() === viewDate.getTime();
               const isDateToday = date.getTime() === today.getTime();
-              const isCompleted = isAllPlansCompletedForDate(date);
+              const completionStatus = getCompletionStatusForDate(date);
               const hasPlan = hasAnyPlanForDate(date);
+
+              // 점 색깔 결정
+              const getDotColor = () => {
+                if (!hasPlan || !completionStatus) return "bg-transparent";
+                switch (completionStatus) {
+                  case 'complete':
+                    return "bg-emerald-500";
+                  case 'partial':
+                    return "bg-amber-500";
+                  case 'incomplete':
+                    return "bg-muted-foreground/40";
+                  default:
+                    return "bg-transparent";
+                }
+              };
 
               return (
                 <button
@@ -69,20 +88,9 @@ export function WeeklyCalendar({
                     {date.getDate()}
                   </span>
                   {/* Dot indicator */}
-                  <div className="mt-1 h-1 w-1 rounded-full overflow-hidden">
-                    {hasPlan && (
-                      <div
-                        className={cn(
-                          "h-full w-full rounded-full",
-                          isCompleted
-                            ? isSelected
-                              ? "bg-emerald-500"
-                              : "bg-emerald-500"
-                            : isDateToday
-                            ? "bg-primary"
-                            : "bg-transparent",
-                        )}
-                      />
+                  <div className="mt-1 h-1.5 w-1.5 rounded-full overflow-hidden">
+                    {hasPlan && completionStatus && (
+                      <div className={cn("h-full w-full rounded-full", getDotColor())} />
                     )}
                   </div>
                 </button>

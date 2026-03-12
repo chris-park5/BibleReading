@@ -6,6 +6,7 @@ import { ProgressChart } from "../../components/ProgressChart";
 import { ReadingHistory } from "../../components/ReadingHistory";
 import { TodayReading } from "../../components/TodayReading";
 import { BibleProgressModal } from "../../components/BibleProgressModal";
+import { WeeklyReadingChart } from "../../components/WeeklyReadingChart";
 import { BIBLE_BOOKS } from "../../data/bibleBooks";
 import { computeTodayDay, startOfTodayLocal } from "./dateUtils";
 import { computeChaptersTotals } from "../../utils/chaptersProgress";
@@ -230,14 +231,21 @@ export function ProgressTab() {
           <button 
             type="button"
             onClick={() => setShowAchievementModal(true)}
-            className="w-full text-left bg-card text-card-foreground border border-border/50 shadow-sm rounded-[32px] px-7 py-6 transition-all active:scale-[0.99] hover:bg-accent/40"
+            className="w-full text-left bg-card text-card-foreground border border-border/50 shadow-sm rounded-[32px] px-7 py-6 transition-all active:scale-[0.99] hover:shadow-md group"
           >
-            <p className="text-sm text-muted-foreground">달성률</p>
-            <p className="text-2xl font-semibold">{completionRateElapsed}%</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              오늘까지 {formatChapterCount(elapsedChapters)}장 중 {formatChapterCount(completedChapters)}장 완료
-            </p>
-            <p className="text-muted-foreground mt-1">{completionMessage}</p>
+            <div className="flex items-center justify-between">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-muted-foreground">달성률</p>
+                <p className="text-2xl font-semibold">{completionRateElapsed}%</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  오늘까지 {formatChapterCount(elapsedChapters)}장 중 {formatChapterCount(completedChapters)}장 완료
+                </p>
+                <p className="text-muted-foreground mt-1">{completionMessage}</p>
+              </div>
+              <div className="text-muted-foreground/50 group-hover:text-primary transition-colors ml-2 shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+              </div>
+            </div>
           </button>
 
         {showAchievementModal && (
@@ -260,12 +268,17 @@ export function ProgressTab() {
           </button>
         </BibleProgressModal>
 
+        {/* Weekly Reading Chart */}
+        {dailyStats && dailyStats.length > 0 && (
+          <WeeklyReadingChart dailyStats={dailyStats} />
+        )}
+
         {/* Reading History Section Header */}
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold">읽기 기록</h2>
         </div>
 
-        <div className="bg-card text-card-foreground border-none shadow-sm rounded-[32px] p-4 space-y-4">
+        <div className="bg-card text-card-foreground border border-border/50 shadow-sm rounded-[32px] p-4 space-y-4">
           <ReadingHistory
             schedule={plan.schedule}
             completedDays={(() => {

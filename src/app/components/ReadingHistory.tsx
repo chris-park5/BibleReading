@@ -184,7 +184,7 @@ export function ReadingHistory({
   };
 
   return (
-    <div className={cn("bg-card text-card-foreground rounded-xl border-none shadow-sm p-6", className)}>
+    <div className={cn("bg-card text-card-foreground rounded-xl border border-border/50 shadow-sm p-6", className)}>
       {!hideHeader && (
         <div className="flex items-center gap-3 mb-6">
           <div className="p-3 bg-primary/10 rounded-lg">

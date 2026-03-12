@@ -139,7 +139,7 @@ export function ProfileSettingsSection() {
 
   return (
     <>
-      <div className="bg-card text-card-foreground border border-border rounded-xl p-6">
+      <div className="bg-card text-card-foreground border border-border/50 rounded-xl p-6">
         <div className="flex items-center gap-3 mb-4">
           <div className="p-3 bg-primary/10 rounded-lg">
             <User className="w-6 h-6 text-primary" />

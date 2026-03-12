@@ -1,11 +1,11 @@
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
 import { BarChart3, Home, BookOpen, Settings, UsersRound } from "lucide-react";
-import { HomeTab } from "./mainTabs/HomeTab";
 import type { TabKey } from "./mainTabs/tabHash";
 import { parseTabFromHash, setHashTab } from "./mainTabs/tabHash";
 import { Skeleton } from "../components/ui/skeleton";
 
-// Lazy load other tabs
+// Lazy load all tabs for optimal initial bundle size
+const HomeTab = lazy(() => import("./mainTabs/HomeTab").then(m => ({ default: m.HomeTab })));
 const ProgressTab = lazy(() => import("./mainTabs/ProgressTab").then(m => ({ default: m.ProgressTab })));
 const PlanSelectorPage = lazy(() => import("./PlanSelectorPage").then(m => ({ default: m.PlanSelectorPage })));
 const FriendsTabPage = lazy(() => import("./FriendsTabPage").then(m => ({ default: m.FriendsTabPage })));
@@ -16,6 +16,28 @@ function TabLoading() {
     <div className="max-w-4xl mx-auto p-6 space-y-4">
       <Skeleton className="h-12 w-full rounded-xl" />
       <Skeleton className="h-64 w-full rounded-xl" />
+    </div>
+  );
+}
+
+function HomeTabSkeleton() {
+  return (
+    <div className="min-h-screen pb-20 relative">
+      <div className="sticky top-0 z-10 bg-background/95 border-b border-border shadow-sm h-14 flex items-center px-4">
+        <div className="w-full flex justify-between items-center max-w-4xl mx-auto">
+          <Skeleton className="h-6 w-6 rounded-md" />
+          <div className="flex gap-2">
+            <Skeleton className="h-6 w-16 rounded-full" />
+            <Skeleton className="h-6 w-6 rounded-full" />
+          </div>
+        </div>
+      </div>
+      <div className="max-w-4xl mx-auto p-4 space-y-6 pt-4">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-36 w-full rounded-xl" />
+        <Skeleton className="h-64 w-full rounded-xl" />
+        <Skeleton className="h-40 w-full rounded-xl" />
+      </div>
     </div>
   );
 }
@@ -175,7 +197,9 @@ export function MainTabsPage() {
         }}
       >
         <div hidden={tab !== "home"}>
-          <HomeTab />
+          <Suspense fallback={<HomeTabSkeleton />}>
+            {visitedTabs.has("home") && <HomeTab />}
+          </Suspense>
         </div>
         <div hidden={tab !== "progress"}>
           <Suspense fallback={<TabLoading />}>

@@ -158,66 +158,55 @@ export function useHomeLogic(
     return next;
   };
 
-  // Spread out progress fetching to avoid a burst of N simultaneous requests
-  // (especially when a user has many plans).
-  const [progressPrefetchStage, setProgressPrefetchStage] = useState(0);
-  const PROGRESS_PREFETCH_BATCH_SIZE = 2;
+  // 배치 API로 모든 계획의 진도를 한번에 조회
+  const realPlanIds = useMemo(() => 
+    plans.filter(p => !p.id.startsWith("optimistic-")).map(p => p.id),
+    [plans]
+  );
 
-  // Fetch progress for ALL plans to show dots on calendar
-  // but stage it to reduce initial loading pressure.
+  const { data: batchProgressData } = useQuery({
+    queryKey: ["progress-batch", userId, realPlanIds.join(",")],
+    queryFn: () => progressService.getBatchProgress(realPlanIds),
+    enabled: !!userId && realPlanIds.length > 0,
+    staleTime: 1000 * 60 * 5, // 5분
+  });
+
+  // 배치 결과를 개별 캐시에 시딩 (mutation 호환성 유지)
+  useEffect(() => {
+    if (!batchProgressData?.progressMap || !userId) return;
+    
+    for (const [planId, progress] of Object.entries(batchProgressData.progressMap)) {
+      const queryKey = ["progress", userId, planId];
+      // 기존 캐시가 없는 경우에만 시딩 (mutation으로 업데이트된 것은 덮어쓰지 않음)
+      const existing = queryClient.getQueryData(queryKey);
+      if (!existing) {
+        queryClient.setQueryData(queryKey, { success: true, progress });
+      }
+    }
+  }, [batchProgressData, userId, queryClient]);
+
+  // 개별 progress 쿼리들을 구독하여 mutation 후 업데이트 감지
   const allProgressQueries = useQueries({
-    queries: plans.map((plan, idx) => {
+    queries: plans.map((plan) => {
       const isOptimistic = plan.id.startsWith("optimistic-");
-
-      // Always prioritize progress for plans that are active on the current viewDate.
-      // Others are enabled gradually in small batches.
-      const isPlanRelevantForViewDate = viewPlans.some((vp) => vp.plan.id === plan.id);
-      const isEnabledByStage = idx < progressPrefetchStage * PROGRESS_PREFETCH_BATCH_SIZE;
-
+      const batchProgress = batchProgressData?.progressMap?.[plan.id];
+      
       return {
         queryKey: ["progress", userId, plan.id],
         queryFn: () => progressService.getProgress(plan.id),
-        enabled:
-          !!userId &&
-          !isOptimistic &&
-          (prefetchAllProgress || isPlanRelevantForViewDate || isEnabledByStage),
+        enabled: !!userId && !isOptimistic,
+        // 배치 API 결과가 있으면 초기 데이터로 사용 (네트워크 요청 방지)
+        initialData: batchProgress ? { success: true, progress: batchProgress } : undefined,
+        // 배치 API로 이미 데이터를 받았으면 즉시 refetch하지 않음
+        staleTime: batchProgress ? 1000 * 60 * 5 : 0,
       };
     }),
   });
 
-  useEffect(() => {
-    if (!userId) return;
-    const realPlans = plans.filter((p) => !p.id.startsWith("optimistic-"));
-    if (realPlans.length === 0) return;
-
-    const maxStages = Math.ceil(realPlans.length / PROGRESS_PREFETCH_BATCH_SIZE);
-    if (prefetchAllProgress) {
-      // Immediately enable all progress queries.
-      setProgressPrefetchStage(maxStages + 1);
-      return;
-    }
-
-    // Reset when plan list changes meaningfully.
-    setProgressPrefetchStage(1);
-
-    if (maxStages <= 1) return;
-
-    let stage = 1;
-    const timer = setInterval(() => {
-      stage += 1;
-      setProgressPrefetchStage(stage);
-      if (stage >= maxStages) {
-        clearInterval(timer);
-      }
-    }, 350);
-
-    return () => clearInterval(timer);
-  }, [plans, userId, prefetchAllProgress]);
-
   const progressByPlanId = useMemo(() => {
     const map = new Map<string, any>();
     for (let i = 0; i < plans.length; i++) {
-      map.set(plans[i].id, allProgressQueries[i].data?.progress ?? null);
+      map.set(plans[i].id, allProgressQueries[i]?.data?.progress ?? null);
     }
     return map;
   }, [allProgressQueries, plans]);
@@ -512,6 +501,42 @@ export function useHomeLogic(
       });
   }
 
+  // 날짜별 완료 상태 반환: 'complete' | 'partial' | 'incomplete' | null
+  const getCompletionStatusForDate = (date: Date): 'complete' | 'partial' | 'incomplete' | null => {
+    const activePlansForDate = plans.filter(p => {
+      const day = computeTodayDay(p, date);
+      return day >= 1 && day <= p.totalDays;
+    });
+    
+    if (activePlansForDate.length === 0) return null;
+    
+    let totalReadings = 0;
+    let completedReadings = 0;
+    
+    for (const plan of activePlansForDate) {
+      const day = computeTodayDay(plan, date);
+      const progress = progressByPlanId.get(plan.id);
+      const dayEntry = plan.schedule.find(s => s.day === day);
+      const dayReadingsCount = dayEntry?.readings?.length ?? 0;
+      
+      totalReadings += dayReadingsCount;
+      
+      // 하루 전체가 완료된 경우
+      if (progress?.completedDays?.includes(day)) {
+        completedReadings += dayReadingsCount;
+      } else {
+        // 개별 읽기 완료 확인
+        const completedIndices = progress?.completedReadingsByDay?.[String(day)] ?? [];
+        completedReadings += completedIndices.length;
+      }
+    }
+    
+    if (totalReadings === 0) return null;
+    if (completedReadings >= totalReadings) return 'complete';
+    if (completedReadings > 0) return 'partial';
+    return 'incomplete';
+  };
+
   return {
     // Data
     plans,
@@ -545,6 +570,7 @@ export function useHomeLogic(
     // Logic Helpers
     isAllPlansCompletedForDate,
     hasAnyPlanForDate,
+    getCompletionStatusForDate,
 
     isLoading: isPlansLoading || isStreakLoading,
 

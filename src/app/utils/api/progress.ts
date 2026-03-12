@@ -190,6 +190,32 @@ export async function getProgress(planId: string): Promise<{ success: boolean; p
   };
 }
 
+/**
+ * 여러 계획의 진도를 한번에 조회 (배치 API)
+ * 개별 getProgress 호출보다 네트워크 효율이 좋음
+ */
+export async function getBatchProgress(planIds: string[]): Promise<{
+  success: boolean;
+  progressMap: Record<string, Progress>;
+}> {
+  if (planIds.length === 0) {
+    return { success: true, progressMap: {} };
+  }
+
+  // 단일 계획인 경우 기존 getProgress 사용 (history 포함)
+  if (planIds.length === 1) {
+    const result = await getProgress(planIds[0]);
+    return {
+      success: true,
+      progressMap: { [planIds[0]]: result.progress },
+    };
+  }
+
+  // Edge Function 배치 API 호출
+  const url = `/progress/batch?planIds=${planIds.map(id => encodeURIComponent(id)).join(",")}`;
+  return fetchAPI(url);
+}
+
 export async function getDailyStats(planId?: string): Promise<{ success: boolean; stats: { date: string; count: number }[] }> {
   let url = "/daily-stats";
   if (planId) {

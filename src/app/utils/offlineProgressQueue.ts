@@ -100,12 +100,30 @@ function dayKey(userId: string, planId: string, day: number) {
 }
 
 export function isOfflineLikeError(err: unknown): boolean {
+  // 브라우저가 오프라인 상태인 경우
   if (typeof navigator !== "undefined" && navigator && navigator.onLine === false) return true;
+  
+  // 명시적 오프라인 에러
   if (err instanceof OfflineError) return true;
-  if (err instanceof TypeError) return true;
+  
+  // TypeError는 네트워크 에러일 수도 있지만, 다른 원인(코드 버그 등)일 수도 있음
+  // 메시지를 확인해서 네트워크 관련인 경우에만 오프라인으로 판단
+  if (err instanceof TypeError) {
+    const msg = err.message?.toLowerCase() ?? "";
+    // fetch 실패 관련 메시지만 오프라인으로 처리
+    if (/failed to fetch|networkerror|network request failed|load failed|fetch failed/i.test(msg)) {
+      return true;
+    }
+    // 그 외 TypeError는 오프라인이 아닌 실제 에러로 처리
+    return false;
+  }
 
   const msg = (err as any)?.message;
-  if (typeof msg === "string" && /failed to fetch|networkerror|load failed/i.test(msg)) return true;
+  if (typeof msg === "string" && /failed to fetch|networkerror|network request failed|load failed|fetch failed/i.test(msg)) return true;
+  
+  // AbortError(타임아웃)는 네트워크 불안정으로 간주
+  if ((err as any)?.name === "AbortError") return true;
+  
   return false;
 }
 
