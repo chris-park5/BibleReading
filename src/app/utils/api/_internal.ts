@@ -2,6 +2,106 @@ import { createClient } from "@supabase/supabase-js";
 import { projectId, publicAnonKey } from "../../../../utils/supabase/info";
 
 // ============================================================================
+// API Error Class
+// ============================================================================
+
+export type ApiErrorCode = 
+  | "UNAUTHORIZED"      // 401: 인증 필요
+  | "SESSION_EXPIRED"   // 401: 세션 만료
+  | "FORBIDDEN"         // 403: 권한 없음
+  | "NOT_FOUND"         // 404: 리소스 없음
+  | "VALIDATION_ERROR"  // 400: 입력값 오류
+  | "CONFLICT"          // 409: 충돌
+  | "RATE_LIMITED"      // 429: 요청 제한
+  | "SERVER_ERROR"      // 500: 서버 오류
+  | "NETWORK_ERROR"     // 네트워크 오류
+  | "TIMEOUT"           // 타임아웃
+  | "UNKNOWN";          // 알 수 없는 오류
+
+export class ApiError extends Error {
+  constructor(
+    public readonly statusCode: number,
+    public readonly code: ApiErrorCode,
+    message: string,
+    public readonly details?: Record<string, any>
+  ) {
+    super(message);
+    this.name = "ApiError";
+    
+    // Error 클래스 상속 시 프로토타입 체인 복원 (ES5 호환)
+    Object.setPrototypeOf(this, ApiError.prototype);
+  }
+
+  /** 인증 관련 에러인지 확인 */
+  isAuthError(): boolean {
+    return this.code === "UNAUTHORIZED" || this.code === "SESSION_EXPIRED";
+  }
+
+  /** 재시도 가능한 에러인지 확인 */
+  isRetryable(): boolean {
+    return this.code === "NETWORK_ERROR" || 
+           this.code === "TIMEOUT" || 
+           this.code === "SERVER_ERROR" ||
+           this.code === "RATE_LIMITED";
+  }
+
+  /** 사용자에게 보여줄 메시지 */
+  getUserMessage(): string {
+    switch (this.code) {
+      case "SESSION_EXPIRED":
+        return "세션이 만료되었습니다. 다시 로그인해주세요.";
+      case "UNAUTHORIZED":
+        return "로그인이 필요합니다.";
+      case "FORBIDDEN":
+        return "접근 권한이 없습니다.";
+      case "NOT_FOUND":
+        return "요청한 정보를 찾을 수 없습니다.";
+      case "VALIDATION_ERROR":
+        return this.message || "입력값을 확인해주세요.";
+      case "RATE_LIMITED":
+        return "요청이 너무 많습니다. 잠시 후 다시 시도해주세요.";
+      case "NETWORK_ERROR":
+        return "네트워크 연결을 확인해주세요.";
+      case "TIMEOUT":
+        return "요청 시간이 초과되었습니다. 다시 시도해주세요.";
+      case "SERVER_ERROR":
+        return "서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.";
+      default:
+        return this.message || "오류가 발생했습니다.";
+    }
+  }
+}
+
+function getApiErrorCode(statusCode: number, errorText: string): ApiErrorCode {
+  const normalized = errorText.toLowerCase();
+  
+  switch (statusCode) {
+    case 400:
+      return "VALIDATION_ERROR";
+    case 401:
+      if (normalized.includes("session") && normalized.includes("does not exist")) {
+        return "SESSION_EXPIRED";
+      }
+      return "UNAUTHORIZED";
+    case 403:
+      return "FORBIDDEN";
+    case 404:
+      return "NOT_FOUND";
+    case 409:
+      return "CONFLICT";
+    case 429:
+      return "RATE_LIMITED";
+    case 500:
+    case 502:
+    case 503:
+    case 504:
+      return "SERVER_ERROR";
+    default:
+      return "UNKNOWN";
+  }
+}
+
+// ============================================================================
 // Configuration
 // ============================================================================
 
@@ -81,7 +181,7 @@ export async function getBearerTokenOrThrow(useAuth: boolean): Promise<string | 
   }
 
   // Do not fall back to anon key for Authorization; the Edge Function verifies JWT.
-  throw new Error("로그인이 필요합니다. 다시 로그인해주세요.");
+  throw new ApiError(401, "UNAUTHORIZED", "로그인이 필요합니다. 다시 로그인해주세요.");
 }
 
 export function setAccessToken(token: string | null) {
@@ -133,9 +233,10 @@ export async function fetchAPI(
   } catch (err: any) {
     window.clearTimeout(timeout);
     if (err?.name === "AbortError") {
-      throw new Error("요청 시간이 초과되었습니다");
+      throw new ApiError(0, "TIMEOUT", "요청 시간이 초과되었습니다");
     }
-    throw err;
+    // 네트워크 에러 (오프라인, DNS 실패 등)
+    throw new ApiError(0, "NETWORK_ERROR", err?.message || "네트워크 연결을 확인해주세요");
   } finally {
     window.clearTimeout(timeout);
   }
@@ -146,20 +247,20 @@ export async function fetchAPI(
   } catch {
     // If the response isn't JSON, surface a generic error.
     if (!response.ok) {
-      throw new Error("API request failed");
+      const code = getApiErrorCode(response.status, "");
+      throw new ApiError(response.status, code, "API 요청이 실패했습니다");
     }
     data = null;
   }
 
   if (!response.ok) {
     const errText = data?.error ? String(data.error) : "";
-    const normalized = errText.toLowerCase();
+    const code = getApiErrorCode(response.status, errText);
 
-    // Common Supabase auth error when a JWT references a revoked/non-existent session.
-    if (response.status === 401 && normalized.includes("session from session_id claim") && normalized.includes("does not exist")) {
+    // 세션 만료 시 추가 처리
+    if (code === "SESSION_EXPIRED") {
       setAccessToken(null);
       try {
-        // Clear local session so UI can recover.
         await supabase.auth.signOut({ scope: "local" });
       } catch {
         // ignore
@@ -169,10 +270,9 @@ export async function fetchAPI(
       } catch {
         // ignore
       }
-      throw new Error("세션이 만료되었습니다. 다시 로그인해주세요.");
     }
 
-    throw new Error(errText || "API request failed");
+    throw new ApiError(response.status, code, errText || "API 요청이 실패했습니다", data);
   }
 
   return data;

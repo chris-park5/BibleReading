@@ -386,7 +386,9 @@ export default function App() {
       <InstallAppBanner />
       <OfflineBanner visible={!isOnline} />
       <RouteLoadingOverlay visible={showLoadingOverlay} variant={loadingVariant} />
-      <MainTabsPage />
+      <LazyRouteErrorBoundary>
+        <MainTabsPage />
+      </LazyRouteErrorBoundary>
     </>
   );
 }

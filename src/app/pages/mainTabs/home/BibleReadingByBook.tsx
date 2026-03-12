@@ -375,7 +375,7 @@ export function BibleReadingByBook({ plans, progressByPlanId, applyUpdates }: Pr
   }, [selectedBookOccurrences.items.length, selectedSummary.totalDone, selectedSummary.totalSched]);
 
   return (
-    <div className="bg-card text-card-foreground rounded-[28px] border-none shadow-sm p-7">
+    <div className="bg-card text-card-foreground rounded-[28px] border border-border/50 shadow-sm p-7">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
         <div className="flex items-center gap-3 min-w-0">
           <div className="p-3 bg-primary/10 rounded-[18px]">

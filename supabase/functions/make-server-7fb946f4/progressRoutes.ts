@@ -91,3 +91,44 @@ export async function getDailyStats(c: Context) {
   }
 }
 
+/**
+ * 여러 계획의 진도를 한번에 조회 (배치 API)
+ */
+export async function getBatchProgress(c: Context) {
+  try {
+    const userId = c.get("userId");
+    const planIdsParam = c.req.query("planIds");
+
+    if (!planIdsParam) {
+      return c.json({ error: "planIds parameter is required" }, 400);
+    }
+
+    const planIds = planIdsParam.split(",").map(id => id.trim()).filter(Boolean);
+    
+    if (planIds.length === 0) {
+      return c.json({ success: true, progressMap: {} });
+    }
+
+    // 모든 계획의 진도를 병렬로 조회
+    const progressPromises = planIds.map(planId => 
+      fetchUserProgress(userId, planId)
+        .then(progress => ({ planId, progress, error: null }))
+        .catch(error => ({ planId, progress: null, error: String(error) }))
+    );
+
+    const results = await Promise.all(progressPromises);
+    
+    // planId를 key로 하는 맵으로 변환
+    const progressMap: Record<string, any> = {};
+    for (const result of results) {
+      if (result.progress) {
+        progressMap[result.planId] = result.progress;
+      }
+    }
+
+    return c.json({ success: true, progressMap });
+  } catch (error) {
+    return c.json(handleError(error, "Failed to get batch progress"), 500);
+  }
+}
+
