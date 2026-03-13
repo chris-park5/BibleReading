@@ -126,26 +126,32 @@ export function WeeklyReadingChart({ dailyStats, plan, loading = false, classNam
             const goalHeightPercent = maxScale > 0 ? (day.goal / maxScale) * 100 : 0;
             const countText = parseFloat(day.count.toFixed(1));
             const goalText = parseFloat(day.goal.toFixed(1));
+            const labelBottomPercent = Math.min(94, Math.max(countHeightPercent, goalHeightPercent) + 6);
             
             return (
               <div key={i} className="flex-1 flex flex-col items-center gap-1.5 group relative">
                 <div className="w-full flex flex-col items-center justify-end h-20 relative">
+                  {day.count > 0 && (
+                    <span
+                      className="absolute z-20 px-1 rounded bg-card/95 text-[10px] font-medium text-muted-foreground leading-none pointer-events-none"
+                      style={{ bottom: `${labelBottomPercent}%` }}
+                    >
+                      {day.count}
+                    </span>
+                  )}
+
                   {day.goal > 0 && (
                     <div
-                      className="absolute w-full px-0.5 pointer-events-none"
+                      className="absolute z-0 w-full px-0.5 pointer-events-none"
                       style={{ bottom: `${goalHeightPercent}%` }}
                     >
                       <div className="w-full border-t border-dashed border-muted-foreground/60" />
                     </div>
                   )}
-                  {day.count > 0 && (
-                    <span className="text-[10px] font-medium text-muted-foreground mb-1">
-                      {day.count}
-                    </span>
-                  )}
+
                   <div
                     className={cn(
-                      "w-full max-w-[32px] rounded-t-lg transition-all duration-500 relative",
+                      "w-full max-w-[32px] rounded-t-lg transition-all duration-500 relative z-10",
                       day.isToday 
                         ? "bg-primary" 
                         : day.count > 0 
