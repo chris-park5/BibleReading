@@ -17,18 +17,22 @@ export function ProgressChart({
   className,
 }: ProgressChartProps) {
   const percentage = totalChapters <= 0 ? 0 : Math.round((completedChapters / totalChapters) * 100);
+  const safeCompleted = formatChapterCount(completedChapters);
+  const safeTotal = formatChapterCount(totalChapters);
 
   return (
     <div className={cn("bg-card text-card-foreground rounded-[32px] border border-border/50 shadow-sm p-6 group transition-all hover:shadow-md", className)}>
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-start justify-between gap-3 mb-4">
         <div className="flex-1 min-w-0">
-          <p className="text-sm text-muted-foreground">진행상황</p>
-          <p className="text-lg font-semibold">
-            {formatChapterCount(completedChapters)}장 / {formatChapterCount(totalChapters)}장 완료
+          <p className="text-sm font-medium text-muted-foreground">진행상황</p>
+          <p className="mt-1 text-2xl font-bold tracking-tight leading-none">
+            {safeCompleted}
+            <span className="text-base font-semibold text-muted-foreground"> / {safeTotal}장</span>
           </p>
         </div>
-        <div className="flex items-center gap-2 ml-2 shrink-0">
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-lg">
+
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-primary/20 bg-primary/10">
             <TrendingUp className="w-4 h-4 text-primary" />
             <span className="text-sm font-bold text-primary">{percentage}%</span>
           </div>
@@ -45,6 +49,11 @@ export function ProgressChart({
             style={{ width: `${percentage}%` }}
           />
         </div>
+      </div>
+
+      <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+        <span className="inline-flex items-center rounded-full border border-border/50 bg-muted/20 px-2 py-0.5">완료 {safeCompleted}장</span>
+        <span className="inline-flex items-center rounded-full border border-border/50 bg-muted/20 px-2 py-0.5">전체 {safeTotal}장</span>
       </div>
     </div>
   );
