@@ -1,4 +1,4 @@
-import { BookOpenCheck, CheckCircle, Circle, CircleDashed, ChevronDown, ChevronUp } from "lucide-react";
+import { BookOpenCheck, CheckCircle, Circle, CircleDashed, ChevronDown, ChevronUp, History } from "lucide-react";
 import { useState, useMemo } from "react";
 
 interface Reading {
@@ -9,11 +9,15 @@ interface Reading {
 
 interface TodayReadingProps {
   day?: number;
+  title?: string;
   readings: Reading[];
   completedByIndex: boolean[];
   completedChaptersByIndex?: string[][]; // Array of completed chapter strings for each reading
   onToggleReading: (readingIndex: number, completed: boolean, completedChapters?: string[]) => void;
   subtitle?: string | null;
+  lastReadDateLabel?: string | null;
+  onJumpToLastReadDate?: () => void;
+  disableJumpToLastReadDate?: boolean;
 }
 
 // Helper to expand "1-3,5" into ["1", "2", "3", "5"]
@@ -223,11 +227,15 @@ function ReadingItem({
 
 export function TodayReading({
   day,
+  title,
   readings,
   completedByIndex,
   completedChaptersByIndex = [],
   onToggleReading,
   subtitle = "오늘의 읽기",
+  lastReadDateLabel,
+  onJumpToLastReadDate,
+  disableJumpToLastReadDate = false,
 }: TodayReadingProps) {
   const allCompleted = readings.length > 0 && completedByIndex.every(Boolean);
   const [expandedIndices, setExpandedIndices] = useState<Set<number>>(new Set());
@@ -267,34 +275,58 @@ export function TodayReading({
 
   return (
     <div className="bg-card text-card-foreground rounded-[32px] border border-border/50 shadow-sm px-7 py-7">
-      <div className="flex items-start justify-between mb-6 gap-3">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-6 gap-3">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
           <div className="p-3 bg-primary/10 rounded-[18px]">
             <BookOpenCheck className="w-6 h-6 text-primary" />
           </div>
-          <div>
-            <h2 className="text-base font-bold">{typeof day === "number" ? `Day ${day}` : "오늘"}</h2>
+          <div className="min-w-0 flex-1">
+            <h2 className="text-base font-bold leading-snug break-keep sm:truncate">
+              {title ?? (typeof day === "number" ? `Day ${day}` : "오늘")}
+            </h2>
             {subtitle ? <p className="text-sm text-muted-foreground">{subtitle}</p> : null}
           </div>
         </div>
-        <button
-          type="button"
-          disabled={readings.length === 0}
-          onClick={() => {
-            if (bulkState === true) setAllReadings(false);
-            else setAllReadings(true);
-          }}
-          className={
-            "shrink-0 inline-flex items-center justify-center select-none rounded-full px-3 py-1 text-[11px] font-bold transition-all duration-300 mt-2 " +
-            (readings.length === 0
-              ? "bg-muted/5 text-muted-foreground/20 cursor-not-allowed"
-              : bulkState === true
-                ? "bg-emerald-50/60 text-emerald-600 border border-emerald-100/50 shadow-none hover:bg-emerald-100/40 active:scale-95"
-                : "bg-muted/20 text-muted-foreground/50 hover:bg-muted/40 hover:text-muted-foreground border border-border/20 active:scale-95")
-          }
-        >
-          {bulkState === true ? "전체 해제" : "전체 완료"}
-        </button>
+
+        <div className="w-full sm:w-auto flex flex-wrap items-center justify-between sm:justify-end gap-2">
+          {lastReadDateLabel && onJumpToLastReadDate ? (
+            <button
+              type="button"
+              disabled={disableJumpToLastReadDate}
+              onClick={onJumpToLastReadDate}
+              className={
+                "inline-flex w-full sm:w-auto items-center justify-center gap-1.5 rounded-[16px] border px-3 py-2 text-[11px] font-semibold transition-colors " +
+                (disableJumpToLastReadDate
+                  ? "border-border/40 bg-muted/20 text-muted-foreground/50 cursor-default"
+                  : "border-primary/20 bg-primary/10 text-primary hover:bg-primary/15")
+              }
+            >
+              <History className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">
+                {disableJumpToLastReadDate ? "최근 읽은 Day" : `최근 읽은 ${lastReadDateLabel}로 이동`}
+              </span>
+            </button>
+          ) : null}
+
+          <button
+            type="button"
+            disabled={readings.length === 0}
+            onClick={() => {
+              if (bulkState === true) setAllReadings(false);
+              else setAllReadings(true);
+            }}
+            className={
+              "inline-flex w-full sm:w-auto items-center justify-center select-none rounded-[16px] border px-3 py-2 text-[11px] font-semibold shadow-sm transition-colors " +
+              (readings.length === 0
+                ? "border-border/30 bg-muted/10 text-muted-foreground/30 cursor-not-allowed shadow-none"
+                : bulkState === true
+                  ? "border-border/60 bg-background text-foreground hover:bg-muted/30"
+                  : "border-primary/20 bg-primary/10 text-primary hover:bg-primary/15")
+            }
+          >
+            {bulkState === true ? "전체 해제" : "전체 선택"}
+          </button>
+        </div>
       </div>
 
       <div className="space-y-4">

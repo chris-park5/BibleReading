@@ -387,17 +387,16 @@ export function BibleReadingByBook({ plans, progressByPlanId, applyUpdates }: Pr
         </div>
 
         {availablePlans.length > 0 ? (
-          <div className="w-full sm:w-44 sm:shrink-0">
+          <div className="shrink-0 w-full sm:w-auto">
             <Select value={planFilterId} onValueChange={setPlanFilterId}>
-              <SelectTrigger className="h-9">
+              <SelectTrigger className="h-9 rounded-[16px] bg-primary/10 text-primary border-primary/20 font-semibold text-xs w-full sm:w-[180px]">
+                <BookOpen className="w-3.5 h-3.5 shrink-0" />
                 <SelectValue placeholder="계획 선택" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={PLAN_FILTER_ALL}>전체</SelectItem>
                 {availablePlans.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.name}
-                  </SelectItem>
+                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -412,7 +411,7 @@ export function BibleReadingByBook({ plans, progressByPlanId, applyUpdates }: Pr
             placeholder="성경 검색 (예: 히브리서, 히)"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
+            className="pl-9 rounded-full"
           />
         </div>
       </div>

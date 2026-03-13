@@ -1,7 +1,7 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "./ui/dialog";
 import { BIBLE_BOOKS, getBookChapters } from "../data/bibleBooks";
-import { cn } from "./ui/utils";
+import { cn, generateModalId, openModalStack, isProgrammaticBack, setProgrammaticBack } from "./ui/utils";
 import { BookOpen, Check, Search, X, LayoutGrid, List as ListIcon } from "lucide-react";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
@@ -33,8 +33,68 @@ const BIBLE_GENRES = [
 ];
 
 export function BibleProgressModal({ children, bookProgressRows }: BibleProgressModalProps) {
+  const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+
+  const wasOpenRef = useRef(false);
+  const modalIdRef = useRef<string | null>(null);
+
+  // 모달 열릴 때 history 스택에 push
+  useEffect(() => {
+    if (open && !wasOpenRef.current) {
+      modalIdRef.current = generateModalId();
+      openModalStack.push(modalIdRef.current);
+      window.history.pushState({ modalId: modalIdRef.current }, "");
+      wasOpenRef.current = true;
+    } else if (!open && wasOpenRef.current) {
+      if (modalIdRef.current) {
+        const idx = openModalStack.indexOf(modalIdRef.current);
+        if (idx !== -1) openModalStack.splice(idx, 1);
+      }
+      wasOpenRef.current = false;
+      modalIdRef.current = null;
+    }
+  }, [open]);
+
+  // 뒤로가기 버튼 처리
+  useEffect(() => {
+    if (!open) return;
+    const handlePopState = () => {
+      if (isProgrammaticBack) {
+        setProgrammaticBack(false);
+        return;
+      }
+      if (wasOpenRef.current && modalIdRef.current) {
+        const topModalId = openModalStack[openModalStack.length - 1];
+        if (topModalId === modalIdRef.current) {
+          openModalStack.pop();
+          wasOpenRef.current = false;
+          modalIdRef.current = null;
+          setOpen(false);
+          setSearchQuery("");
+        }
+      }
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [open]);
+
+  // X 버튼/오버레이로 닫을 때 history 정리
+  const handleOpenChange = useCallback((newOpen: boolean) => {
+    if (!newOpen && wasOpenRef.current && modalIdRef.current) {
+      const topModalId = openModalStack[openModalStack.length - 1];
+      if (topModalId === modalIdRef.current) {
+        openModalStack.pop();
+        wasOpenRef.current = false;
+        modalIdRef.current = null;
+        setProgrammaticBack(true);
+        window.history.back();
+      }
+    }
+    setOpen(newOpen);
+    if (!newOpen) setSearchQuery("");
+  }, []);
 
   // Helper to get stats
   const getBookStats = (row: BookProgressRow) => {
@@ -186,7 +246,7 @@ export function BibleProgressModal({ children, bookProgressRows }: BibleProgress
   };
 
   return (
-    <Dialog onOpenChange={(open) => !open && setSearchQuery("")}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
