@@ -103,6 +103,7 @@ export function HomeTab() {
     viewPlans,
     combined,
     isToday,
+    viewDateLabel,
     setViewDate,
     handlePrevDay,
     handleNextDay,
@@ -110,6 +111,7 @@ export function HomeTab() {
     isAllPlansCompletedForDate,
     hasAnyPlanForDate,
     getCompletionStatusForDate,
+    lastReadTarget,
     isLoading,
     completedCelebration,
     dismissCompletedCelebration,
@@ -207,6 +209,16 @@ export function HomeTab() {
       hasAny: list.length > 0,
     };
   }, [combined]);
+
+  const lastReadTargetLabel = useMemo(() => {
+    if (!lastReadTarget) return null;
+    return `Day ${lastReadTarget.day}`;
+  }, [lastReadTarget]);
+
+  const isViewingLastReadDate = useMemo(() => {
+    if (!lastReadTarget) return false;
+    return viewDate.getTime() === lastReadTarget.date.getTime();
+  }, [lastReadTarget, viewDate]);
 
   if (isLoading) {
     return <HomeTabSkeleton />;
@@ -350,10 +362,23 @@ export function HomeTab() {
                 <div ref={todayReadingRef} className="scroll-mt-24">
                   <TodayReading
                     day={isToday ? undefined : displayDay}
+                    title={viewDateLabel}
                     subtitle={isToday ? "오늘의 읽기" : "이날의 읽기"}
                     readings={readings}
                     completedByIndex={completedByIndex}
                     completedChaptersByIndex={completedChaptersByIndex}
+                    lastReadDateLabel={lastReadTargetLabel}
+                    disableJumpToLastReadDate={isViewingLastReadDate}
+                    onJumpToLastReadDate={
+                      lastReadTarget
+                        ? () => {
+                            setViewDate(lastReadTarget.date);
+                            window.setTimeout(() => {
+                              todayReadingRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+                            }, 0);
+                          }
+                        : undefined
+                    }
                     onToggleReading={(index, completed, completedChapters) => {
                       const target = combined[index];
                       if (!target) return;

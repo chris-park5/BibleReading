@@ -46,10 +46,15 @@ export function ProgressTab() {
   const plan = usePlan(activePlanId);
   const { progress, toggleReading } = useProgress(activePlanId);
 
-  const { data: dailyStats } = useQuery({
+  const {
+    data: dailyStats = [],
+    isLoading: isDailyStatsLoading,
+  } = useQuery({
     queryKey: ["dailyStats", activePlanId],
     queryFn: () => getDailyStats(activePlanId!).then(r => r.stats),
     enabled: !!activePlanId,
+    staleTime: 60_000,
+    placeholderData: (prev) => prev ?? [],
   });
 
   // NOTE:
@@ -201,18 +206,29 @@ export function ProgressTab() {
 
   return (
     <div className="min-h-screen pb-24">
-      {/* Sticky Header with Plan Selection */}
+      {/* Sticky Header */}
       <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border shadow-sm transition-all duration-200">
         <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between gap-4">
           <h2 className="text-xl font-bold whitespace-nowrap">진행률</h2>
-          {activePlans.length > 0 && (
-            <div className="flex-1 max-w-[200px]">
+        </div>
+      </div>
+
+      <div className="max-w-4xl mx-auto px-6 pt-6 pb-10 space-y-8">
+        {activePlans.length > 0 && (
+          <div className="bg-card text-card-foreground border border-border/50 shadow-sm rounded-[24px] px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground">현재 계획</p>
+              <p className="text-sm font-semibold truncate">{plan.name}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">총 {plan.totalDays}일 진행 계획</p>
+            </div>
+
+            <div className="w-full sm:w-[160px] shrink-0">
               <Select
                 value={activePlanId ?? undefined}
                 onValueChange={selectPlan}
               >
-                <SelectTrigger className="h-9">
-                  <SelectValue placeholder="계획 선택" />
+                <SelectTrigger className="h-9 rounded-full bg-primary/10 text-primary border-primary/20">
+                  <SelectValue placeholder="계획 전환" />
                 </SelectTrigger>
                 <SelectContent>
                   {activePlans.map((p) => (
@@ -223,11 +239,9 @@ export function ProgressTab() {
                 </SelectContent>
               </Select>
             </div>
-          )}
-        </div>
-      </div>
+          </div>
+        )}
 
-      <div className="max-w-4xl mx-auto px-6 pt-6 pb-10 space-y-8">
           <button 
             type="button"
             onClick={() => setShowAchievementModal(true)}
@@ -259,26 +273,31 @@ export function ProgressTab() {
         )}
 
         <BibleProgressModal bookProgressRows={bookProgressRows}>
-          <button type="button" className="w-full text-left">
+          <button
+            type="button"
+            className="w-full text-left transition-transform active:scale-[0.99]"
+          >
             <ProgressChart 
               totalChapters={totalChapters} 
               completedChapters={completedChapters} 
-              className="cursor-pointer hover:bg-accent/50 transition-colors"
+              className="cursor-pointer"
             />
           </button>
         </BibleProgressModal>
 
         {/* Weekly Reading Chart */}
-        {dailyStats && dailyStats.length > 0 && (
-          <WeeklyReadingChart dailyStats={dailyStats} />
-        )}
-
-        {/* Reading History Section Header */}
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold">읽기 기록</h2>
-        </div>
+        <WeeklyReadingChart
+          dailyStats={dailyStats}
+          plan={plan}
+          loading={isDailyStatsLoading && dailyStats.length === 0}
+        />
 
         <div className="bg-card text-card-foreground border border-border/50 shadow-sm rounded-[32px] p-4 space-y-4">
+          <div className="px-1">
+            <p className="text-sm font-semibold text-foreground">일별 진행</p>
+            <p className="text-xs text-muted-foreground mt-0.5">날짜별 완료 상태를 확인하고 수정할 수 있어요</p>
+          </div>
+
           <ReadingHistory
             schedule={plan.schedule}
             completedDays={(() => {

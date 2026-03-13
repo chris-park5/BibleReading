@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { BookOpen, LogOut, Plus, Trash2, Calendar } from 'lucide-react';
+import { cn } from '../components/ui/utils';
 import { usePlans } from '../../hooks/usePlans';
 import { usePlanStore } from '../../stores/plan.store';
 import { useAuthStore } from '../../stores/auth.store';
@@ -10,13 +11,7 @@ import * as api from '../utils/api';
 import { bundledPresetPlans, normalizeSchedule } from '../plans/bundledPresets';
 import { expandChapters } from '../utils/expandChapters';
 import { Tabs, TabsContent } from '../components/ui/tabs';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../components/ui/select';
+
 import {
   Dialog,
   DialogContent,
@@ -151,16 +146,30 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
             <div>
               <p className="text-xl font-bold text-foreground">계획</p>
             </div>
-            <div className="w-32">
-              <Select value={activeTab} onValueChange={setActiveTab}>
-                <SelectTrigger className="h-9">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="my-plans">나의 계획</SelectItem>
-                  <SelectItem value="add-plan">계획 추가</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="flex items-center bg-muted rounded-full p-1 gap-0.5">
+              <button
+                onClick={() => setActiveTab("my-plans")}
+                className={cn(
+                  "px-3.5 py-1.5 text-xs font-semibold rounded-full transition-all",
+                  activeTab === "my-plans"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                나의 계획
+              </button>
+              <button
+                onClick={() => setActiveTab("add-plan")}
+                className={cn(
+                  "flex items-center gap-1 px-3.5 py-1.5 text-xs font-semibold rounded-full transition-all",
+                  activeTab === "add-plan"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Plus className="w-3 h-3" />
+                계획 추가
+              </button>
             </div>
           </div>
         </div>
@@ -212,7 +221,7 @@ export function PlanSelectorPage({ embedded = false }: { embedded?: boolean }) {
                   </h2>
                   <button
                     onClick={() => setActiveTab("add-plan")}
-                    className="flex items-center gap-1 px-3 py-1.5 bg-primary/10 text-primary rounded-lg text-sm font-medium hover:bg-primary/20 transition-colors"
+                    className="flex items-center gap-1 px-4 py-1.5 bg-primary/10 text-primary rounded-full text-sm font-semibold hover:bg-primary/20 transition-colors"
                   >
                     <Plus className="w-4 h-4" />
                     계획 추가

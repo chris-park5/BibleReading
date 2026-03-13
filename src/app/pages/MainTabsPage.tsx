@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
-import { BarChart3, Home, BookOpen, Settings, UsersRound } from "lucide-react";
+import { BarChart3, Home, BookOpen, User, UsersRound } from "lucide-react";
 import type { TabKey } from "./mainTabs/tabHash";
 import { parseTabFromHash, setHashTab } from "./mainTabs/tabHash";
 import { Skeleton } from "../components/ui/skeleton";
@@ -131,7 +131,7 @@ export function MainTabsPage() {
         { key: "progress" as const, label: "진행률", icon: BarChart3 },
         { key: "add" as const, label: "계획", icon: BookOpen },
         { key: "friends" as const, label: "친구", icon: UsersRound },
-        { key: "settings" as const, label: "설정", icon: Settings },
+        { key: "settings" as const, label: "내 페이지", icon: User },
       ],
     []
   );

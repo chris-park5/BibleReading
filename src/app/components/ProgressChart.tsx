@@ -19,7 +19,7 @@ export function ProgressChart({
   const percentage = totalChapters <= 0 ? 0 : Math.round((completedChapters / totalChapters) * 100);
 
   return (
-    <div className={cn("bg-card text-card-foreground rounded-[32px] border border-border/50 shadow-sm p-6 group", className)}>
+    <div className={cn("bg-card text-card-foreground rounded-[32px] border border-border/50 shadow-sm p-6 group transition-all hover:shadow-md", className)}>
       <div className="flex items-center justify-between mb-4">
         <div className="flex-1 min-w-0">
           <p className="text-sm text-muted-foreground">진행상황</p>

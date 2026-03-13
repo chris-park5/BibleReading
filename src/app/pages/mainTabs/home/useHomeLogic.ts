@@ -7,7 +7,7 @@ import * as progressService from "../../../../services/progressService";
 import * as friendService from "../../../../services/friendService";
 import * as authService from "../../../../services/authService";
 import { enqueueReadingToggle, isOfflineLikeError, OfflineError } from "../../../utils/offlineProgressQueue";
-import { computeTodayDay, startOfTodayLocal } from "../dateUtils";
+import { computeTodayDay, parseYYYYMMDDLocal, startOfTodayLocal } from "../dateUtils";
 import { expandChapters } from "../../../utils/expandChapters";
 import { computeChaptersTotals } from "../../../utils/chaptersProgress";
 import type { Plan } from "../../../../types/domain";
@@ -537,6 +537,48 @@ export function useHomeLogic(
     return 'incomplete';
   };
 
+  const lastReadTarget = useMemo(() => {
+    let latestEntry: { planId: string; day: number; completedAt: string } | null = null;
+
+    for (const plan of plans) {
+      const progress = progressByPlanId.get(plan.id);
+      const history = progress?.history ?? [];
+      if (history.length === 0) continue;
+
+      for (const entry of history) {
+        if (!Number.isFinite(entry.day)) continue;
+        if (entry.day < 1 || entry.day > plan.totalDays) continue;
+
+        if (!latestEntry || new Date(entry.completedAt).getTime() > new Date(latestEntry.completedAt).getTime()) {
+          latestEntry = {
+            planId: plan.id,
+            day: entry.day,
+            completedAt: entry.completedAt,
+          };
+        }
+      }
+    }
+
+    if (!latestEntry) return null;
+
+    const plan = plans.find((item) => item.id === latestEntry?.planId);
+    if (!plan) return null;
+
+    const planStartDate = parseYYYYMMDDLocal(plan.startDate);
+    if (Number.isNaN(planStartDate.getTime())) return null;
+
+    const targetDate = new Date(planStartDate);
+    targetDate.setDate(planStartDate.getDate() + latestEntry.day - 1);
+
+    return {
+      date: targetDate,
+      day: latestEntry.day,
+      planId: latestEntry.planId,
+      planName: plan.name,
+      completedAt: latestEntry.completedAt,
+    };
+  }, [plans, progressByPlanId]);
+
   return {
     // Data
     plans,
@@ -571,6 +613,7 @@ export function useHomeLogic(
     isAllPlansCompletedForDate,
     hasAnyPlanForDate,
     getCompletionStatusForDate,
+    lastReadTarget,
 
     isLoading: isPlansLoading || isStreakLoading,
 
