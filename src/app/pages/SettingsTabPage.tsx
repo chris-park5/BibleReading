@@ -66,8 +66,11 @@ export function SettingsTabPage() {
     let streak = 0;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const todayYmd = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+    const todayCount = byDate.get(todayYmd) ?? 0;
+    const startOffset = todayCount > 0 ? 0 : 1;
 
-    let i = 0;
+    let i = startOffset;
     while (true) {
       const d = new Date(today);
       d.setDate(today.getDate() - i);
