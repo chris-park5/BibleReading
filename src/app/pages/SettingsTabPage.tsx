@@ -36,7 +36,8 @@ export function SettingsTabPage() {
     dailyStats.forEach((s) => {
       const ymd = String(s.date).split("T")[0];
       const count = Number(s.count);
-      byDate.set(ymd, Number.isFinite(count) ? count : 0);
+      const prev = byDate.get(ymd) ?? 0;
+      byDate.set(ymd, prev + (Number.isFinite(count) ? count : 0));
     });
 
     const today = new Date();
@@ -58,7 +59,8 @@ export function SettingsTabPage() {
     dailyStats.forEach((s) => {
       const ymd = String(s.date).split("T")[0];
       const count = Number(s.count);
-      byDate.set(ymd, Number.isFinite(count) ? count : 0);
+      const prev = byDate.get(ymd) ?? 0;
+      byDate.set(ymd, prev + (Number.isFinite(count) ? count : 0));
     });
 
     let streak = 0;

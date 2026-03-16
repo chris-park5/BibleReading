@@ -70,7 +70,8 @@ export function useHomeLogic(
     readingStreakDailyStats.forEach((s) => {
       const ymd = String(s.date).split("T")[0];
       const count = Number(s.count);
-      byDate.set(ymd, Number.isFinite(count) ? count : 0);
+      const prev = byDate.get(ymd) ?? 0;
+      byDate.set(ymd, prev + (Number.isFinite(count) ? count : 0));
     });
 
     let streak = 0;
@@ -453,6 +454,8 @@ export function useHomeLogic(
       // Only refetch once after the rapid sequence drains.
       queryClient.invalidateQueries({ queryKey: key });
       queryClient.invalidateQueries({ queryKey: ["dailyStats", vars.planId] });
+      queryClient.invalidateQueries({ queryKey: ["readingStreakStats", userId] });
+      queryClient.invalidateQueries({ queryKey: ["myPageDailyStats"] });
     },
   });
 
