@@ -7,6 +7,7 @@ import * as progressService from "../../../../services/progressService";
 import * as friendService from "../../../../services/friendService";
 import * as authService from "../../../../services/authService";
 import { enqueueReadingToggle, isOfflineLikeError, OfflineError } from "../../../utils/offlineProgressQueue";
+import { getDailyStats } from "../../../utils/api";
 import { computeTodayDay, parseYYYYMMDDLocal, startOfTodayLocal } from "../dateUtils";
 import { expandChapters } from "../../../utils/expandChapters";
 import { computeChaptersTotals } from "../../../utils/chaptersProgress";
@@ -52,8 +53,42 @@ export function useHomeLogic(
     enabled: !!userId,
   });
 
-  const streak = streakData?.currentStreak ?? 0;
-  const longestStreak = streakData?.longestStreak ?? 0;
+  const loginStreak = streakData?.currentStreak ?? 0;
+  const longestLoginStreak = streakData?.longestStreak ?? 0;
+
+  const { data: readingStreakDailyStats = [] } = useQuery({
+    queryKey: ["readingStreakStats", userId],
+    queryFn: () => getDailyStats().then((r) => r.stats),
+    enabled: !!userId,
+    staleTime: 60_000,
+    placeholderData: (prev) => prev ?? [],
+  });
+
+  // 기준: 하루에 1장 이상 읽으면 연속읽기 1일로 인정
+  const readingStreak = useMemo(() => {
+    const byDate = new Map<string, number>();
+    readingStreakDailyStats.forEach((s) => {
+      const ymd = String(s.date).split("T")[0];
+      const count = Number(s.count);
+      byDate.set(ymd, Number.isFinite(count) ? count : 0);
+    });
+
+    let streak = 0;
+    const cursor = startOfTodayLocal();
+
+    let i = 0;
+    while (true) {
+      const d = new Date(cursor);
+      d.setDate(cursor.getDate() - i);
+      const ymd = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      const count = byDate.get(ymd) ?? 0;
+      if (count >= 1) streak += 1;
+      else break;
+      i += 1;
+    }
+
+    return streak;
+  }, [readingStreakDailyStats]);
 
   // Priority Loading: Defer secondary data (friend requests)
   const [isIdle, setIsIdle] = useState(false);
@@ -302,6 +337,15 @@ export function useHomeLogic(
 
         const prevProgress = current.progress;
         const dayKey = String(vars.day);
+        const nextHistory = Array.isArray(prevProgress.history) ? [...prevProgress.history] : [];
+        if (vars.completed) {
+          nextHistory.push({
+            day: vars.day,
+            readingIndex: vars.readingIndex,
+            completedAt: new Date().toISOString(),
+          });
+        }
+
         const prevMap = prevProgress.completedReadingsByDay ?? {};
         const prevList = Array.isArray(prevMap[dayKey]) ? prevMap[dayKey] : [];
 
@@ -346,6 +390,7 @@ export function useHomeLogic(
             completedReadingsByDay: nextCompletedReadingsByDay,
             completedChaptersByDay: nextCompletedChaptersByDay,
             completedDays: Array.from(nextCompletedDays),
+            history: nextHistory,
             lastUpdated: new Date().toISOString(),
           },
         };
@@ -548,8 +593,12 @@ export function useHomeLogic(
       for (const entry of history) {
         if (!Number.isFinite(entry.day)) continue;
         if (entry.day < 1 || entry.day > plan.totalDays) continue;
+        if (!entry.completedAt) continue;
 
-        if (!latestEntry || new Date(entry.completedAt).getTime() > new Date(latestEntry.completedAt).getTime()) {
+        const completedAtMs = new Date(entry.completedAt).getTime();
+        if (!Number.isFinite(completedAtMs)) continue;
+
+        if (!latestEntry || completedAtMs > new Date(latestEntry.completedAt).getTime()) {
           latestEntry = {
             planId: plan.id,
             day: entry.day,
@@ -559,7 +608,57 @@ export function useHomeLogic(
       }
     }
 
-    if (!latestEntry) return null;
+    // Fallback: some update paths may not have history yet. Use latest day with any progress.
+    if (!latestEntry) {
+      let fallback: { planId: string; day: number; date: Date } | null = null;
+
+      for (const plan of plans) {
+        const progress = progressByPlanId.get(plan.id);
+        if (!progress) continue;
+
+        const candidateDays = new Set<number>();
+        for (const d of progress.completedDays ?? []) {
+          if (Number.isFinite(d)) candidateDays.add(d);
+        }
+        for (const [dayKey, indices] of Object.entries(progress.completedReadingsByDay ?? {})) {
+          const d = Number(dayKey);
+          if (Number.isFinite(d) && Array.isArray(indices) && indices.length > 0) candidateDays.add(d);
+        }
+        for (const [dayKey, chapterMap] of Object.entries(progress.completedChaptersByDay ?? {})) {
+          const d = Number(dayKey);
+          const hasAny = Object.values(chapterMap ?? {}).some((chapters) => Array.isArray(chapters) && chapters.length > 0);
+          if (Number.isFinite(d) && hasAny) candidateDays.add(d);
+        }
+
+        if (candidateDays.size === 0) continue;
+
+        const planStartDate = parseYYYYMMDDLocal(plan.startDate);
+        if (Number.isNaN(planStartDate.getTime())) continue;
+
+        for (const d of candidateDays) {
+          if (d < 1 || d > plan.totalDays) continue;
+          const date = new Date(planStartDate);
+          date.setDate(planStartDate.getDate() + d - 1);
+
+          if (!fallback || date.getTime() > fallback.date.getTime()) {
+            fallback = { planId: plan.id, day: d, date };
+          }
+        }
+      }
+
+      if (!fallback) return null;
+
+      const fallbackPlan = plans.find((item) => item.id === fallback.planId);
+      if (!fallbackPlan) return null;
+
+      return {
+        date: fallback.date,
+        day: fallback.day,
+        planId: fallback.planId,
+        planName: fallbackPlan.name,
+        completedAt: fallback.date.toISOString(),
+      };
+    }
 
     const plan = plans.find((item) => item.id === latestEntry?.planId);
     if (!plan) return null;
@@ -584,8 +683,9 @@ export function useHomeLogic(
     plans,
     progressByPlanId,
     userName,
-    streak,
-    longestStreak,
+    readingStreak,
+    loginStreak,
+    longestLoginStreak,
     incomingRequestsCount,
     today,
     viewDate,

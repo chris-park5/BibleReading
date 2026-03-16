@@ -121,6 +121,11 @@ export function useProgress(planId: string | null) {
     },
     onSettled: () => {
       pendingMutations.current = Math.max(0, pendingMutations.current - 1);
+      if (pendingMutations.current > 0) return;
+
+      // Keep Home/Progress tabs in sync by refetching authoritative progress after burst updates.
+      queryClient.invalidateQueries({ queryKey: progressQueryKey, refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['progress-batch', userId], refetchType: 'all' });
     }
   });
 
@@ -186,8 +191,6 @@ export function useProgress(planId: string | null) {
                 readingIndex,
                 completedAt: new Date().toISOString()
             });
-        } else {
-            nextHistory = nextHistory.filter(h => !(h.day === day && h.readingIndex === readingIndex));
         }
 
         const key = String(day);
@@ -288,6 +291,11 @@ export function useProgress(planId: string | null) {
     },
     onSettled: () => {
       pendingMutations.current = Math.max(0, pendingMutations.current - 1);
+      if (pendingMutations.current > 0) return;
+
+      // Keep Home/Progress tabs in sync by refetching authoritative progress after burst updates.
+      queryClient.invalidateQueries({ queryKey: progressQueryKey, refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['progress-batch', userId], refetchType: 'all' });
     }
   });
   
