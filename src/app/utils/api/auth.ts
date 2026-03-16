@@ -167,7 +167,8 @@ export async function getMyProfile(): Promise<{
 }
 
 export async function checkStreak(): Promise<{ currentStreak: number; longestStreak: number }> {
-  const { error } = await supabase.rpc('update_user_streak');
+  const localDate = new Date().toLocaleDateString('en-CA');
+  const { error } = await supabase.rpc('update_user_streak', { p_today_local: localDate });
   if (error) {
     console.error("Streak update failed:", error);
     // Ignore error, just fetch current streak

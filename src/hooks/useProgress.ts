@@ -126,6 +126,8 @@ export function useProgress(planId: string | null) {
       // Keep Home/Progress tabs in sync by refetching authoritative progress after burst updates.
       queryClient.invalidateQueries({ queryKey: progressQueryKey, refetchType: 'all' });
       queryClient.invalidateQueries({ queryKey: ['progress-batch', userId], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['readingStreakStats', userId] });
+      queryClient.invalidateQueries({ queryKey: ['myPageDailyStats'] });
     }
   });
 
@@ -296,6 +298,8 @@ export function useProgress(planId: string | null) {
       // Keep Home/Progress tabs in sync by refetching authoritative progress after burst updates.
       queryClient.invalidateQueries({ queryKey: progressQueryKey, refetchType: 'all' });
       queryClient.invalidateQueries({ queryKey: ['progress-batch', userId], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['readingStreakStats', userId] });
+      queryClient.invalidateQueries({ queryKey: ['myPageDailyStats'] });
     }
   });
   
