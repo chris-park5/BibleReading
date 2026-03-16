@@ -64,7 +64,8 @@ export function useHomeLogic(
     placeholderData: (prev) => prev ?? [],
   });
 
-  // 기준: 하루에 1장 이상 읽으면 연속읽기 1일로 인정
+  // 기준: 하루에 조금이라도 읽으면(0 초과) 연속읽기 1일로 인정.
+  // 오늘 아직 읽지 않았더라도 자정 전에는 전날 기준 streak를 유지한다.
   const readingStreak = useMemo(() => {
     const byDate = new Map<string, number>();
     readingStreakDailyStats.forEach((s) => {
@@ -76,14 +77,17 @@ export function useHomeLogic(
 
     let streak = 0;
     const cursor = startOfTodayLocal();
+    const todayYmd = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}-${String(cursor.getDate()).padStart(2, "0")}`;
+    const todayCount = byDate.get(todayYmd) ?? 0;
+    const startOffset = todayCount > 0 ? 0 : 1;
 
-    let i = 0;
+    let i = startOffset;
     while (true) {
       const d = new Date(cursor);
       d.setDate(cursor.getDate() - i);
       const ymd = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
       const count = byDate.get(ymd) ?? 0;
-      if (count >= 1) streak += 1;
+      if (count > 0) streak += 1;
       else break;
       i += 1;
     }

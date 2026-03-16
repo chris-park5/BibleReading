@@ -87,7 +87,7 @@ export function HomeHeader({
                   <Flame className="w-6 h-6 text-orange-500 fill-orange-500" />
                 </div>
                 <div className="text-center space-y-1">
-                  <p className="text-xs text-muted-foreground font-medium">연속 읽기 (하루 1장 이상)</p>
+                  <p className="text-xs text-muted-foreground font-medium">연속 읽기 (하루에 읽기만 해도 인정)</p>
                   <p className="text-xl font-bold text-foreground">{readingStreak ?? 0}일</p>
                 </div>
                 <div className="w-full h-px bg-border/60 my-1" />
