@@ -90,8 +90,9 @@ export function HomeTab() {
     plans,
     progressByPlanId,
     userName,
-    streak,
-    longestStreak,
+    readingStreak,
+    loginStreak,
+    longestLoginStreak,
     incomingRequestsCount,
     today,
     viewDate,
@@ -245,8 +246,9 @@ export function HomeTab() {
       )}
       <HomeHeader
         incomingRequestsCount={incomingRequestsCount}
-        streak={streak ?? 0}
-        longestStreak={longestStreak ?? 0}
+        readingStreak={readingStreak ?? 0}
+        loginStreak={loginStreak ?? 0}
+        longestLoginStreak={longestLoginStreak ?? 0}
       />
 
       <div className="max-w-4xl mx-auto px-6 pt-6 pb-10 space-y-8">

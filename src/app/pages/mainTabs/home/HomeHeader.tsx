@@ -16,14 +16,16 @@ import { setHashTab } from "../tabHash";
 
 interface HomeHeaderProps {
   incomingRequestsCount: number;
-  streak: number;
-  longestStreak: number;
+  readingStreak: number;
+  loginStreak: number;
+  longestLoginStreak: number;
 }
 
 export function HomeHeader({
   incomingRequestsCount,
-  streak,
-  longestStreak,
+  readingStreak,
+  loginStreak,
+  longestLoginStreak,
 }: HomeHeaderProps) {
   return (
     <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border shadow-sm transition-all duration-200">
@@ -75,7 +77,7 @@ export function HomeHeader({
               >
                 <Flame className="w-4 h-4 text-orange-500 fill-orange-500" />
                 <span className="text-sm font-bold text-orange-600 dark:text-orange-400">
-                  {streak ?? 0}일
+                  {readingStreak ?? 0}일
                 </span>
               </button>
             </PopoverTrigger>
@@ -84,13 +86,16 @@ export function HomeHeader({
                 <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-full">
                   <Flame className="w-6 h-6 text-orange-500 fill-orange-500" />
                 </div>
-                <div className="text-center">
-                  <p className="text-xs text-muted-foreground font-medium">최대 연속 접속</p>
-                  <p className="text-xl font-bold text-foreground">{longestStreak ?? 0}일</p>
+                <div className="text-center space-y-1">
+                  <p className="text-xs text-muted-foreground font-medium">연속 읽기 (하루 1장 이상)</p>
+                  <p className="text-xl font-bold text-foreground">{readingStreak ?? 0}일</p>
                 </div>
-                <p className="text-[10px] text-muted-foreground text-center max-w-[140px]">
-                  매일 말씀을 읽고<br/>기록을 경신해보세요!
-                </p>
+                <div className="w-full h-px bg-border/60 my-1" />
+                <div className="text-center space-y-1">
+                  <p className="text-xs text-muted-foreground font-medium">연속 접속</p>
+                  <p className="text-sm font-semibold text-foreground">{loginStreak ?? 0}일</p>
+                  <p className="text-[10px] text-muted-foreground">최고 기록 {longestLoginStreak ?? 0}일</p>
+                </div>
               </div>
             </PopoverContent>
           </Popover>

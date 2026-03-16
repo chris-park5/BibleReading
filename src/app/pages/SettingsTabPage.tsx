@@ -65,7 +65,8 @@ export function SettingsTabPage() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    for (let i = 0; i < 3650; i++) {
+    let i = 0;
+    while (true) {
       const d = new Date(today);
       d.setDate(today.getDate() - i);
       const ymd = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -75,6 +76,7 @@ export function SettingsTabPage() {
       } else {
         break;
       }
+      i += 1;
     }
 
     return streak;
@@ -132,7 +134,7 @@ export function SettingsTabPage() {
             <div className="rounded-2xl border border-border/60 bg-muted/20 p-3">
               <div className="flex items-center gap-2 text-muted-foreground mb-1">
                 <Flame className="w-4 h-4" />
-                <span className="text-xs">연속일</span>
+                <span className="text-xs">연속 읽기</span>
               </div>
               <p className="text-lg font-semibold">{currentStreakDays}</p>
               <p className="text-xs text-muted-foreground">일</p>

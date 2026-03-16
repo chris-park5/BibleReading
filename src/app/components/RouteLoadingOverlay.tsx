@@ -1,7 +1,41 @@
+import { useEffect, useState } from "react";
 import { Skeleton } from "./ui/skeleton";
 
+let hasShownInitialBrandLoading = false;
+
 export function RouteLoadingOverlay({ visible, variant = "default" }: { visible: boolean; variant?: "home" | "friends" | "default" }) {
+  const [showBrandOnly, setShowBrandOnly] = useState(false);
+
+  useEffect(() => {
+    if (!visible) {
+      setShowBrandOnly(false);
+      return;
+    }
+
+    if (hasShownInitialBrandLoading) {
+      setShowBrandOnly(false);
+      return;
+    }
+
+    hasShownInitialBrandLoading = true;
+    setShowBrandOnly(true);
+
+    const timer = window.setTimeout(() => {
+      setShowBrandOnly(false);
+    }, 800);
+
+    return () => window.clearTimeout(timer);
+  }, [visible]);
+
   if (!visible) return null;
+
+  if (showBrandOnly) {
+    return (
+      <div className="fixed inset-0 z-50 bg-background flex items-center justify-center">
+        <p className="text-3xl sm:text-4xl font-black tracking-tight text-foreground animate-pulse">Bible Plan</p>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-background">
