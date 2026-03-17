@@ -105,6 +105,27 @@ export async function updatePassword(currentPassword: string, newPassword: strin
 }
 
 /**
+ * 비밀번호 분실: 재설정 메일 전송
+ */
+export async function requestPasswordReset(identifier: string) {
+  return api.requestPasswordReset(identifier);
+}
+
+/**
+ * 비밀번호 재설정 링크의 복구 세션 준비
+ */
+export async function preparePasswordRecoverySession() {
+  return api.preparePasswordRecoverySession();
+}
+
+/**
+ * 비밀번호 분실 후 새 비밀번호 설정
+ */
+export async function completePasswordReset(newPassword: string) {
+  return api.completePasswordReset(newPassword);
+}
+
+/**
  * 액세스 토큰 설정
  */
 export function setAccessToken(token: string | null) {

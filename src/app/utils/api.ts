@@ -19,6 +19,9 @@ export {
   getMyProfile,
   updateUsername,
   updatePassword,
+  requestPasswordReset,
+  preparePasswordRecoverySession,
+  completePasswordReset,
   checkStreak,
 } from "./api/auth";
 

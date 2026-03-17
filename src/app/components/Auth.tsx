@@ -15,6 +15,10 @@ export function Auth({ onAuthSuccess }: AuthProps) {
   const [username, setUsername] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetIdentifier, setResetIdentifier] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,6 +54,20 @@ export function Auth({ onAuthSuccess }: AuthProps) {
       console.error("Google sign in error:", err);
       setError(err.message || "구글 로그인에 실패했습니다");
       setLoading(false);
+    }
+  };
+
+  const handleRequestPasswordReset = async () => {
+    setError("");
+    setResetLoading(true);
+    try {
+      await authService.requestPasswordReset(resetIdentifier.trim());
+      setResetSent(true);
+    } catch (err: any) {
+      console.error("Password reset request error:", err);
+      setError(err?.message || "재설정 메일 전송에 실패했습니다");
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -155,7 +173,50 @@ export function Auth({ onAuthSuccess }: AuthProps) {
                   )}
                 </button>
               </div>
+              {!isSignUp && (
+                <div className="mt-2 text-right">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowForgotPassword((v) => !v);
+                      setResetSent(false);
+                      setError("");
+                    }}
+                    className="text-xs text-primary hover:opacity-90"
+                  >
+                    비밀번호를 잊으셨나요?
+                  </button>
+                </div>
+              )}
             </div>
+
+            {!isSignUp && showForgotPassword && (
+              <div className="p-3 border border-border rounded-lg bg-muted/20 space-y-3">
+                <p className="text-xs text-muted-foreground">
+                  가입한 아이디 또는 이메일을 입력하면 비밀번호 재설정 링크를 보냅니다.
+                </p>
+                <input
+                  type="text"
+                  value={resetIdentifier}
+                  onChange={(e) => setResetIdentifier(e.target.value)}
+                  placeholder="아이디 또는 이메일"
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-input-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                />
+                <button
+                  type="button"
+                  onClick={handleRequestPasswordReset}
+                  disabled={resetLoading || !resetIdentifier.trim()}
+                  className="w-full py-2 bg-secondary text-secondary-foreground rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {resetLoading ? "전송 중..." : "재설정 메일 보내기"}
+                </button>
+                {resetSent && (
+                  <p className="text-xs text-emerald-600">
+                    입력한 정보가 등록되어 있다면 재설정 메일이 전송되었습니다.
+                  </p>
+                )}
+              </div>
+            )}
 
             {error && (
               <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
@@ -215,6 +276,8 @@ export function Auth({ onAuthSuccess }: AuthProps) {
                 setIsSignUp(!isSignUp);
                 setError("");
                 setShowPassword(false);
+                setShowForgotPassword(false);
+                setResetSent(false);
               }}
               className="text-primary hover:opacity-90"
             >

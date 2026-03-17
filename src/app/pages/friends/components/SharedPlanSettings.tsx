@@ -5,7 +5,7 @@ import * as friendService from "../../../../services/friendService";
 import { useAuthStore } from "../../../../stores/auth.store";
 import { usePlans } from "../../../../hooks/usePlans";
 
-export function SharedPlanSettings() {
+export function SharedPlanSettings({ compact = false }: { compact?: boolean }) {
   const { plans } = usePlans();
   const [sharedPlanId, setSharedPlanId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -37,6 +37,29 @@ export function SharedPlanSettings() {
   };
 
   if (plans.length === 0) return null;
+
+  if (compact) {
+    return (
+      <div className="w-full sm:w-auto sm:min-w-[240px]">
+        <label className="block text-[11px] font-semibold text-muted-foreground mb-1">
+          현재 계획 공유
+        </label>
+        <select
+          value={sharedPlanId ?? ""}
+          onChange={handleChange}
+          disabled={loading}
+          className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+        >
+          <option value="">공유 안 함</option>
+          {plans.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-card border border-border rounded-xl p-4 shadow-sm">
