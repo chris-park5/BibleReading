@@ -261,3 +261,78 @@ export async function updatePassword(currentPassword: string, newPassword: strin
 
   return { success: true };
 }
+
+export async function requestPasswordReset(identifier: string): Promise<{ success: true }> {
+  const raw = String(identifier ?? "").trim();
+  if (!raw) throw new Error("아이디 또는 이메일을 입력해주세요");
+
+  let email = raw;
+  const looksLikeEmail = raw.includes("@");
+
+  if (!looksLikeEmail) {
+    try {
+      const { success, email: foundEmail } = await getUsernameEmail(raw);
+      if (!success || !foundEmail) {
+        return { success: true };
+      }
+      email = foundEmail;
+    } catch (err: any) {
+      const msg = String(err?.message ?? "");
+      if (msg.includes("사용자를 찾을 수 없습니다")) {
+        return { success: true };
+      }
+      throw err;
+    }
+  }
+
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const redirectTo = `${origin}/auth/reset-password`;
+  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+  if (error) throw error;
+
+  return { success: true };
+}
+
+export async function preparePasswordRecoverySession(): Promise<{ ready: boolean }> {
+  // Handle query-based auth code if present.
+  await getSession();
+
+  if (typeof window === "undefined") {
+    return { ready: false };
+  }
+
+  const searchParams = new URLSearchParams(window.location.search);
+  const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+
+  const type = hashParams.get("type") || searchParams.get("type");
+  const code = searchParams.get("code");
+  const accessToken = hashParams.get("access_token");
+  const refreshToken = hashParams.get("refresh_token");
+
+  if (accessToken && refreshToken) {
+    const { error } = await supabase.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    });
+    if (error) throw error;
+  }
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  const hasRecoveryMarker = type === "recovery" || Boolean(code) || window.location.pathname === "/auth/reset-password";
+  return { ready: Boolean(session && hasRecoveryMarker) };
+}
+
+export async function completePasswordReset(newPassword: string): Promise<{ success: true }> {
+  const password = String(newPassword ?? "");
+  if (password.length < 6) {
+    throw new Error("새 비밀번호는 6자 이상이어야 합니다");
+  }
+
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) throw error;
+
+  return { success: true };
+}

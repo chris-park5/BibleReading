@@ -70,14 +70,17 @@ export function FriendsTabPage({ isActive = true }: { isActive?: boolean }) {
       </div>
 
       <div className="max-w-4xl mx-auto px-6 pt-6 pb-10 space-y-8">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="p-3 bg-primary/10 rounded-[18px]">
-            <UsersRound className="w-6 h-6 text-primary" />
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-2">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-primary/10 rounded-[18px]">
+              <UsersRound className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold">친구들과 함께</h2>
+              <p className="text-muted-foreground text-sm">함께 읽으며 격려하세요</p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-lg font-bold">친구들과 함께</h2>
-            <p className="text-muted-foreground text-sm">함께 읽으며 격려하세요</p>
-          </div>
+          <SharedPlanSettings compact />
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -104,7 +107,6 @@ export function FriendsTabPage({ isActive = true }: { isActive?: boolean }) {
           </TabsContent>
 
           <TabsContent value="friends" className="mt-0 space-y-6">
-            <SharedPlanSettings />
             <FriendsListView
               friends={friends}
               leaderboard={leaderboard}
